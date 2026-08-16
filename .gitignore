@@ -3,6 +3,13 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# Db files (Sqlite)
+*.db
+*.db-*
+
+# JetBrains files
+.idea/
+
 # User-specific files
 *.rsuser
 *.suo
