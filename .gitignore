@@ -10,6 +10,9 @@
 # JetBrains files
 .idea/
 
+# Local development configuration
+**/appsettings.Development.json
+
 # User-specific files
 *.rsuser
 *.suo
