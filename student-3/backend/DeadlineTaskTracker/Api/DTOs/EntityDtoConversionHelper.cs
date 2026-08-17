@@ -1,4 +1,5 @@
 using Api.Models;
+using TaskStatus = Api.Models.TaskStatus;
 
 namespace Api.DTOs;
 
@@ -11,10 +12,12 @@ public static class EntityDtoConversionHelper
             Title: task.Title,
             Description: task.Description,
             DueDate: task.DueDate,
-            Priority: task.Priority,
-            Status: task.Status,
+            Priority: task.Priority.ToString(),
+            Status: task.Status.ToString(),
             CourseId: task.CourseId,
-            CourseName: task.Course?.Name
+            CourseName: task.Course?.Name,
+            ParentTaskId: task.ParentTaskId,
+            ParentTaskTitle: task.ParentTask?.Title
         );
     }
 

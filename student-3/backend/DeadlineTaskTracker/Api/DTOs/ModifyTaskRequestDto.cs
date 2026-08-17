@@ -8,8 +8,6 @@ public record ModifyTaskRequestDto(
     bool UpdateDescription,
     string? NewDescription,
     DateTimeOffset? NewDueDate,
-    TaskPriority? NewPriority,
-    TaskStatus? NewStatus,
-    bool? UpdateCourseId,
-    Guid? NewCourseId
+    string? NewPriority,
+    string? NewStatus
 );

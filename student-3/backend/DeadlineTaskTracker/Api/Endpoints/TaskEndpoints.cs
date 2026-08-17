@@ -25,21 +25,27 @@ public static class TaskEndpoints
         var query = db.Tasks
             .AsNoTracking()
             .Include(t => t.Course)
+            .Include(t => t.ParentTask)
             .AsQueryable();
 
-        if (filter.Status.HasValue)
+        if (!string.IsNullOrEmpty(filter.Status))
         {
-            query = query.Where(t => t.Status == filter.Status.Value);
+            query = query.Where(t => t.Status.ToString() == filter.Status);
         }
 
-        if (filter.Priority.HasValue)
+        if (!string.IsNullOrEmpty(filter.Priority))
         {
-            query = query.Where(t => t.Priority == filter.Priority.Value);
+            query = query.Where(t => t.Priority.ToString() == filter.Priority);
         }
 
         if (filter.CourseId.HasValue)
         {
             query = query.Where(t => t.CourseId == filter.CourseId.Value);
+        }
+
+        if (filter.ParentTaskId.HasValue)
+        {
+            query = query.Where(t => t.ParentTaskId == filter.ParentTaskId.Value);
         }
 
         if (filter.Overdue.HasValue)
@@ -77,6 +83,11 @@ public static class TaskEndpoints
             return Results.BadRequest("`title` is a required argument");
         }
 
+        if (!Enum.TryParse(requestDto.Priority, out TaskPriority resolvedTaskPriority))
+        {
+            return Results.BadRequest("`priority` could not be correlated with a valid TaskPriority");
+        }
+        
         if (requestDto.CourseId.HasValue)
         {
             var courseExists = await db.Courses.AnyAsync(c => c.Id == requestDto.CourseId.Value);
@@ -85,15 +96,25 @@ public static class TaskEndpoints
                 return Results.BadRequest("Specified course does not exist.");
             }
         }
+
+        if (requestDto.ParentTaskId.HasValue)
+        {
+            var parentTaskExists = await db.Tasks.AnyAsync(c => c.Id == requestDto.ParentTaskId.Value);
+            if (!parentTaskExists)
+            {
+                return Results.BadRequest("Specified parentTask does not exist.");
+            }
+        }
         
         var task = new TaskEntity
         {
             Title = requestDto.Title,
             Description = requestDto.Description,
             DueDate = requestDto.DueDate,
-            Priority = requestDto.Priority,
+            Priority = resolvedTaskPriority,
             Status = TaskStatus.Todo,
             CourseId = requestDto.CourseId,
+            ParentTaskId = requestDto.ParentTaskId,
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow
         };
@@ -121,28 +142,14 @@ public static class TaskEndpoints
             return Results.NotFound();
         }
 
-        if (requestDto.NewCourseId.HasValue)
-        {
-            var courseExists = await db.Courses
-                .AnyAsync(c => c.Id == requestDto.NewCourseId.Value);
-
-            if (!courseExists)
-            {
-                return Results.BadRequest("Specified course does not exist.");
-            }
-        }
-
-        if (requestDto.NewTitle?.Trim()?.Length == 0)
-        {
-            return Results.BadRequest("`title` is a required argument");
-        }
+        var hasNewPriority = Enum.TryParse(requestDto.NewPriority, out TaskPriority newPriority);
+        var hasNewStatus = Enum.TryParse(requestDto.NewStatus, out TaskStatus newStatus);
 
         task.Title = requestDto.NewTitle ?? task.Title;
-        task.Description = requestDto.UpdateDescription == true ? requestDto.NewDescription : task.Description;
+        task.Description = requestDto.UpdateDescription ? requestDto.NewDescription : task.Description;
         task.DueDate = requestDto.NewDueDate ?? task.DueDate;
-        task.Priority = requestDto.NewPriority ?? task.Priority;
-        task.Status = requestDto.NewStatus ?? task.Status;
-        task.CourseId = requestDto.UpdateCourseId == true ? requestDto.NewCourseId : task.CourseId;
+        task.Priority = hasNewPriority ? newPriority : task.Priority;
+        task.Status = hasNewStatus ? newStatus : task.Status;
         task.UpdatedAt = DateTimeOffset.UtcNow;
         
         await db.SaveChangesAsync();

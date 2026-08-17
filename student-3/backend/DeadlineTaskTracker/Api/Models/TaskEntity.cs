@@ -13,6 +13,11 @@ public class TaskEntity
 
     public Guid? CourseId { get; set; }
     public Course? Course { get; set; }
+    
+    public Guid? ParentTaskId { get; set; }
+    public TaskEntity? ParentTask { get; set; }
+
+    public ICollection<TaskEntity> ChildrenTasks { get; set; } = new List<TaskEntity>();
 }
 
 public enum TaskPriority

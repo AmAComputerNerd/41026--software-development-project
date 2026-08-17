@@ -6,6 +6,7 @@ public record CreateTaskRequestDto(
     string Title,
     string? Description,
     DateTimeOffset? DueDate,
-    TaskPriority Priority,
-    Guid? CourseId
+    string Priority,
+    Guid? CourseId,
+    Guid? ParentTaskId
 );

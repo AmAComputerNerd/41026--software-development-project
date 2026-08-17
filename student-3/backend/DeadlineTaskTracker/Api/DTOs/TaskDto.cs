@@ -1,6 +1,3 @@
-using Api.Models;
-using TaskStatus = Api.Models.TaskStatus;
-
 namespace Api.DTOs;
 
 public record TaskDto(
@@ -8,8 +5,10 @@ public record TaskDto(
     string Title,
     string? Description,
     DateTimeOffset? DueDate,
-    TaskPriority Priority,
-    TaskStatus Status,
+    string Priority,
+    string Status,
     Guid? CourseId,
-    string? CourseName
+    string? CourseName,
+    Guid? ParentTaskId,
+    string? ParentTaskTitle
 );

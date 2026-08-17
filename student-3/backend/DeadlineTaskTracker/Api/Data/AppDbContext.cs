@@ -23,6 +23,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<TaskEntity>()
+            .HasOne(t => t.ParentTask)
+            .WithMany(t => t.ChildrenTasks)
+            .HasForeignKey(t => t.ParentTaskId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<TaskEntity>()
             .Property(t => t.Priority)
             .HasConversion<string>();
         

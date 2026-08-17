@@ -54,6 +54,9 @@ namespace Api.Migrations
                     b.Property<DateTimeOffset?>("DueDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("ParentTaskId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Priority")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -73,6 +76,8 @@ namespace Api.Migrations
 
                     b.HasIndex("CourseId");
 
+                    b.HasIndex("ParentTaskId");
+
                     b.ToTable("Tasks");
                 });
 
@@ -83,12 +88,24 @@ namespace Api.Migrations
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("Api.Models.TaskEntity", "ParentTask")
+                        .WithMany("ChildrenTasks")
+                        .HasForeignKey("ParentTaskId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.Navigation("Course");
+
+                    b.Navigation("ParentTask");
                 });
 
             modelBuilder.Entity("Api.Models.Course", b =>
                 {
                     b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("Api.Models.TaskEntity", b =>
+                {
+                    b.Navigation("ChildrenTasks");
                 });
 #pragma warning restore 612, 618
         }
