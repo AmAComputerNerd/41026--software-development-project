@@ -1,1 +1,15 @@
-services: {}
+services:
+
+    student-3-backend:
+        build:
+            context: ./student-3/backend
+            dockerfile: Api/Dockerfile
+        ports:
+            - "5103:8080"
+        volumes:
+            - student-3-db:/app/Data
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+
+volumes:
+    student-3-db:

@@ -3,7 +3,7 @@ using TaskStatus = Api.Models.TaskStatus;
 
 namespace Api.Data;
 
-public class DbSeeder
+public static class DbSeeder
 {
     public static void SeedData(AppDbContext db)
     {

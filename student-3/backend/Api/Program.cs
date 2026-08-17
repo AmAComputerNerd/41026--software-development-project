@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Services
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -24,12 +25,17 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// API
 app.MapCourseEndpoints();
 app.MapTaskEndpoints();
 
+// Infrastructure
+app.UseApiExceptionHandling();
 app.UseHttpsRedirection();
+await app.InitialiseDatabaseAsync();
 app.Run();
