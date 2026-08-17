@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics;
 
-namespace Api.Endpoints;
+namespace Api.Extensions;
 
 public static class ExceptionHandlingExtensions
 {

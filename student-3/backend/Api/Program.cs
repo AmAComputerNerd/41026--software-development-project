@@ -1,5 +1,6 @@
 using Api.Data;
 using Api.Endpoints;
+using Api.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,4 +39,5 @@ app.MapTaskEndpoints();
 app.UseApiExceptionHandling();
 app.UseHttpsRedirection();
 await app.InitialiseDatabaseAsync();
+
 app.Run();

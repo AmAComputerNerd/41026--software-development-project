@@ -1,5 +1,5 @@
 using Api.Data;
-using Api.DTOs;
+using Api.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 

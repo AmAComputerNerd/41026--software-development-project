@@ -1,9 +1,9 @@
+using Api.DTOs;
 using Api.Models;
-using TaskStatus = Api.Models.TaskStatus;
 
-namespace Api.DTOs;
+namespace Api.Extensions;
 
-public static class EntityDtoConversionHelper
+public static class DtoExtensions
 {
     public static TaskDto ToDto(this TaskEntity task)
     {
