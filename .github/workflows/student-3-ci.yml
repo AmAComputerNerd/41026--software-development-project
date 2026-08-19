@@ -5,15 +5,15 @@ on:
     branches: [main]
     paths:
       - "student-3/backend/**"
-      - ".github/workflows/student-3-backend-ci.yml"
+      - ".github/workflows/student-3-ci.yml"
   pull_request:
     paths:
       - "student-3/backend/**"
-      - ".github/workflows/student-3-backend-ci.yml"
+      - ".github/workflows/student-3-ci.yml"
 
 # Cancel superseded runs on the same branch/PR to save CI minutes.
 concurrency:
-  group: student-3-backend-ci-${{ github.ref }}
+  group: student-3-ci-${{ github.ref }}
   cancel-in-progress: true
 
 env:
