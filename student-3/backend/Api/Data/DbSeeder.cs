@@ -11,7 +11,7 @@ public static class DbSeeder
         SeedTasks(db, courses);
     }
 
-    private static ICollection<Course> SeedCourses(AppDbContext db)
+    private static List<Course> SeedCourses(AppDbContext db)
     {
         var courses = db.Courses;
         if (!courses.Any())
@@ -75,7 +75,7 @@ public static class DbSeeder
         return courses.ToList();
     }
 
-    private static ICollection<TaskEntity> SeedTasks(AppDbContext db, ICollection<Course> courses)
+    private static List<TaskEntity> SeedTasks(AppDbContext db, ICollection<Course> courses)
     {
         var tasks = db.Tasks;
 
@@ -92,7 +92,7 @@ public static class DbSeeder
                 CreatedAt = DateTimeOffset.UtcNow,
                 UpdatedAt = DateTimeOffset.UtcNow
             };
-            
+
             tasks.AddRange(
                 new TaskEntity
                 {

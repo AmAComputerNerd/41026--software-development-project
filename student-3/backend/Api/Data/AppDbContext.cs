@@ -5,17 +5,17 @@ namespace Api.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public DbSet<TaskEntity> Tasks { get; set; }
-    public DbSet<Course> Courses { get; set; }
+    public DbSet<TaskEntity> Tasks { get; set; } = null!;
+    public DbSet<Course> Courses { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Course>()
             .HasKey(c => c.Id);
-        
+
         modelBuilder.Entity<TaskEntity>()
             .HasKey(t => t.Id);
-        
+
         modelBuilder.Entity<TaskEntity>()
             .HasOne(t => t.Course)
             .WithMany(c => c.Tasks)
@@ -31,7 +31,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<TaskEntity>()
             .Property(t => t.Priority)
             .HasConversion<string>();
-        
+
         modelBuilder.Entity<TaskEntity>()
             .Property(t => t.Status)
             .HasConversion<string>();

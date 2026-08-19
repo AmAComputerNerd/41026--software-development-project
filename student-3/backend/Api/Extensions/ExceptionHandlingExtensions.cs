@@ -19,7 +19,7 @@ public static class ExceptionHandlingExtensions
                     await Results.ValidationProblem(
                         new Dictionary<string, string[]>
                         {
-                            ["request"] = 
+                            ["request"] =
                             [
                                 "The request body could not be parsed as valid JSON for this endpoint."
                             ]
