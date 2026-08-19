@@ -3,7 +3,7 @@ namespace Api.Models;
 public class TaskEntity
 {
     public Guid Id { get; }
-    public string Title { get; set; }
+    public required string Title { get; set; }
     public string? Description { get; set; }
     public DateTimeOffset? DueDate { get; set; }
     public TaskPriority Priority { get; set; }
@@ -13,7 +13,7 @@ public class TaskEntity
 
     public Guid? CourseId { get; set; }
     public Course? Course { get; set; }
-    
+
     public Guid? ParentTaskId { get; set; }
     public TaskEntity? ParentTask { get; set; }
 

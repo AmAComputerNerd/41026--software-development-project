@@ -63,7 +63,7 @@ public static class TaskEndpoints
         }
 
         var taskDtos = await query.Select(t => t.ToDto()).ToListAsync();
-        
+
         return Results.Ok(taskDtos);
     }
 
@@ -88,7 +88,7 @@ public static class TaskEndpoints
         {
             return Results.BadRequest("`priority` could not be correlated with a valid TaskPriority");
         }
-        
+
         if (requestDto.CourseId.HasValue)
         {
             var courseExists = await db.Courses.AnyAsync(c => c.Id == requestDto.CourseId.Value);
@@ -106,7 +106,7 @@ public static class TaskEndpoints
                 return Results.BadRequest("Specified parentTask does not exist.");
             }
         }
-        
+
         var task = new TaskEntity
         {
             Title = requestDto.Title,
@@ -119,7 +119,7 @@ public static class TaskEndpoints
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow
         };
-        
+
         db.Tasks.Add(task);
         await db.SaveChangesAsync();
 
@@ -152,7 +152,7 @@ public static class TaskEndpoints
         task.Priority = hasNewPriority ? newPriority : task.Priority;
         task.Status = hasNewStatus ? newStatus : task.Status;
         task.UpdatedAt = DateTimeOffset.UtcNow;
-        
+
         await db.SaveChangesAsync();
 
         return Results.Ok(task.ToDto());

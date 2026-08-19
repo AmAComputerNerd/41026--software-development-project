@@ -14,7 +14,7 @@ public static class CourseEndpoints
 
         group.MapGet("/", GetCourses);
         group.MapGet("/{id:guid}", GetCourse);
-        
+
         return endpoints;
     }
 
@@ -25,7 +25,7 @@ public static class CourseEndpoints
             .ToListAsync();
 
         var courseDtos = courses.Select(c => c.ToDto());
-        
+
         return Results.Ok(courseDtos);
     }
 
@@ -34,7 +34,7 @@ public static class CourseEndpoints
         var course = await db.Courses
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id);
-        
+
         return course == null ? Results.NotFound() : Results.Ok(course.ToDto());
     }
 }
