@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json.Serialization;
 using Api.Models;
@@ -9,7 +8,7 @@ namespace Api.Services;
 public class OpenRouterDigestService : IAiDigestService
 {
     private const string Model = "nvidia/nemotron-3-ultra-550b-a55b:free";
-    private const string Endpoint = "https://openrouter.ai/api/v1/chat/completions";
+    private const string DefaultBaseUrl = "http://ai-mode:8080";
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
@@ -22,16 +21,12 @@ public class OpenRouterDigestService : IAiDigestService
 
     public async Task<string> GenerateDigestAsync(Guid studentId, IReadOnlyList<Notification> unreadNotifications, CancellationToken cancellationToken = default)
     {
-        var apiKey = _configuration["OpenRouter:ApiKey"];
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            throw new InvalidOperationException("OpenRouter:ApiKey configuration value is not set.");
-        }
+        var baseUrl = _configuration["AiGateway:BaseUrl"] ?? DefaultBaseUrl;
+        var endpoint = $"{baseUrl.TrimEnd('/')}/v1/chat/completions";
 
         var prompt = BuildPrompt(studentId, unreadNotifications);
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
         request.Content = JsonContent.Create(new ChatCompletionRequest
         {
             Model = Model,

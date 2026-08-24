@@ -6,9 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Configuration["OpenRouter:ApiKey"] =
-    Environment.GetEnvironmentVariable("OPENROUTER_API_KEY") ?? builder.Configuration["OpenRouter:ApiKey"];
-
 // Services
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
@@ -36,12 +33,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-if (string.IsNullOrWhiteSpace(builder.Configuration["OpenRouter:ApiKey"]))
+if (string.IsNullOrWhiteSpace(builder.Configuration["AiGateway:BaseUrl"]))
 {
-    app.Logger.LogWarning(
-        "OpenRouter:ApiKey is not set. AI digest generation will fail until you set the " +
-        "OPENROUTER_API_KEY environment variable or run 'dotnet user-secrets set OpenRouter:ApiKey <key>' " +
-        "in student-1/backend/Api (see student-1/backend/README.md).");
+    Log.AiGatewayBaseUrlNotSet(app.Logger);
 }
 
 // Configure the HTTP request pipeline.
@@ -66,3 +60,11 @@ app.UseHttpsRedirection();
 await app.InitialiseDatabaseAsync();
 
 app.Run();
+
+internal static partial class Log
+{
+    [LoggerMessage(Level = LogLevel.Warning, Message =
+        "AiGateway:BaseUrl is not set. AI digest generation will fail until you set it " +
+        "(see student-1/backend/README.md).")]
+    public static partial void AiGatewayBaseUrlNotSet(ILogger logger);
+}
