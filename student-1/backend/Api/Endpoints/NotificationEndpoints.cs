@@ -15,6 +15,7 @@ public static class NotificationEndpoints
         group.MapGet("/", GetNotifications);
         group.MapGet("/{id:guid}", GetNotification);
         group.MapPut("/{id:guid}/read", MarkAsRead);
+        group.MapPut("/{id:guid}/unread", MarkAsUnread);
         group.MapPut("/read-all", MarkAllAsRead);
         group.MapDelete("/{id:guid}", DeleteNotification);
         group.MapPost("/push", PushNotification);
@@ -64,6 +65,21 @@ public static class NotificationEndpoints
         }
 
         notification.IsRead = true;
+        await db.SaveChangesAsync();
+
+        return Results.Ok(notification.ToDto());
+    }
+
+    private static async Task<IResult> MarkAsUnread([FromRoute] Guid id, AppDbContext db)
+    {
+        var notification = await db.Notifications.FindAsync(id);
+
+        if (notification is null)
+        {
+            return Results.NotFound();
+        }
+
+        notification.IsRead = false;
         await db.SaveChangesAsync();
 
         return Results.Ok(notification.ToDto());

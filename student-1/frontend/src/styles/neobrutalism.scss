@@ -1,0 +1,340 @@
+// Design tokens extracted from the "Notifications UI System" mockup
+// (claude.ai/design project 5afc3379-890a-4fb9-8e8d-516a388c619a, Notifications.dc.html).
+// Every neobrutalist component in this app should pull from these tokens
+// rather than hardcoding colours/borders/shadows locally.
+
+// ---- Colour palette ----
+$nb-color-bg: #EDEBE6; // off-white / concrete background
+$nb-color-ink: #111111; // near-black, used for borders, text, high-contrast fills
+$nb-color-accent-orange: #FF5A1F; // safety-orange accent (primary CTA, unread indicators)
+$nb-color-accent-yellow: #F2C94C; // hazard-yellow accent (secondary tag, e.g. GRADE)
+$nb-color-white: #FFFFFF; // pure white, used for unread row backgrounds / AI tag
+$nb-color-muted: #555555; // secondary/meta text (timestamps, captions)
+
+// ---- Borders ----
+// All borders are solid $nb-color-ink, no border-radius anywhere.
+$nb-border-width-sm: 2px; // tags, chips, small controls
+$nb-border-width-md: 3px; // buttons, toggles, row dividers
+$nb-border-width-lg: 4px; // panel borders, section dividers, top bar
+$nb-border-radius: 0; // neobrutalism: never round corners
+
+// ---- Shadows ----
+// Hard offset shadow, no blur/spread.
+$nb-shadow-offset: 6px;
+$nb-shadow: #{$nb-shadow-offset} #{$nb-shadow-offset} 0 $nb-color-ink;
+
+// ---- Typography ----
+$nb-font-display: 'Space Grotesk', system-ui, sans-serif; // headers, body copy
+$nb-font-mono: 'JetBrains Mono', monospace; // labels, tags, timestamps, nav
+$nb-font-weight-regular: 400;
+$nb-font-weight-medium: 500;
+$nb-font-weight-semibold: 600;
+$nb-font-weight-bold: 700;
+
+// ---- Spacing scale (px) ----
+$nb-space-1: 4px;
+$nb-space-2: 8px;
+$nb-space-3: 12px;
+$nb-space-4: 16px;
+$nb-space-5: 20px;
+$nb-space-6: 24px;
+$nb-space-8: 32px;
+$nb-space-16: 64px;
+
+// ---- Same tokens as CSS custom properties, for use outside SCSS (e.g. inline
+// component styles, Vuetify runtime theming) ----
+:root {
+  --nb-color-bg: #{$nb-color-bg};
+  --nb-color-ink: #{$nb-color-ink};
+  --nb-color-accent-orange: #{$nb-color-accent-orange};
+  --nb-color-accent-yellow: #{$nb-color-accent-yellow};
+  --nb-color-white: #{$nb-color-white};
+  --nb-color-muted: #{$nb-color-muted};
+
+  --nb-border-width-sm: #{$nb-border-width-sm};
+  --nb-border-width-md: #{$nb-border-width-md};
+  --nb-border-width-lg: #{$nb-border-width-lg};
+
+  --nb-shadow: #{$nb-shadow};
+
+  --nb-font-display: #{$nb-font-display};
+  --nb-font-mono: #{$nb-font-mono};
+}
+
+// ---- Base resets matching the mockup ----
+body {
+  margin: 0;
+  background: $nb-color-bg;
+  font-family: $nb-font-display;
+  color: $nb-color-ink;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: $nb-color-ink;
+
+  &:hover {
+    color: $nb-color-accent-orange;
+  }
+}
+
+::selection {
+  background: $nb-color-accent-orange;
+  color: $nb-color-ink;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+// ---- Reusable neobrutalist utility classes ----
+.nb-panel {
+  border: $nb-border-width-lg solid $nb-color-ink;
+  background: $nb-color-bg;
+  box-shadow: $nb-shadow;
+}
+
+.nb-mono {
+  font-family: $nb-font-mono;
+  letter-spacing: 0.5px;
+}
+
+// ---- Notification-centric components ----
+// Source-type tag chips: deadline/grade are solid accent fills, automation
+// is an outline, account is ink-filled, ai is a white/ink outline.
+.nb-tag {
+  display: inline-flex;
+  align-items: center;
+  border: $nb-border-width-sm solid $nb-color-ink;
+  padding: 2px $nb-space-2;
+  font-family: $nb-font-mono;
+  font-size: 11px;
+  font-weight: $nb-font-weight-bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &--deadline {
+    background: $nb-color-accent-orange;
+    color: $nb-color-ink;
+  }
+
+  &--grade {
+    background: $nb-color-accent-yellow;
+    color: $nb-color-ink;
+  }
+
+  &--automation {
+    background: $nb-color-bg;
+    color: $nb-color-ink;
+  }
+
+  &--account {
+    background: $nb-color-ink;
+    color: $nb-color-bg;
+  }
+
+  &--ai {
+    background: $nb-color-white;
+    color: $nb-color-ink;
+  }
+}
+
+// Solid ink-filled call-to-action ("MARK ALL READ", "VIEW ALL", chips).
+.nb-btn {
+  border: $nb-border-width-md solid $nb-color-ink;
+  background: $nb-color-ink;
+  color: $nb-color-bg;
+  font-family: $nb-font-mono;
+  font-weight: $nb-font-weight-bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: $nb-space-2 $nb-space-4;
+  transition: none;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  &--outline {
+    background: $nb-color-bg;
+    color: $nb-color-ink;
+  }
+
+  &--accent {
+    background: $nb-color-accent-orange;
+    color: $nb-color-ink;
+  }
+}
+
+.nb-chip {
+  border: $nb-border-width-sm solid $nb-color-ink;
+  background: $nb-color-bg;
+  color: $nb-color-ink;
+  font-family: $nb-font-mono;
+  font-size: 12px;
+  font-weight: $nb-font-weight-semibold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: $nb-space-1 $nb-space-3;
+
+  &--active {
+    background: $nb-color-ink;
+    color: $nb-color-bg;
+  }
+}
+
+// Shared notification row: unread gets a hard orange left border and
+// white background, read rows fall back to a transparent border/bg fill.
+.nb-row {
+  display: flex;
+  flex-direction: column;
+  gap: $nb-space-1;
+  border-bottom: $nb-border-width-sm solid $nb-color-ink;
+  border-left: 6px solid transparent;
+  background: $nb-color-bg;
+  padding: $nb-space-3 $nb-space-4;
+
+  &--unread {
+    border-left-color: $nb-color-accent-orange;
+    background: $nb-color-white;
+  }
+
+  &--list {
+    display: grid;
+    grid-template-columns: 120px 1fr 140px 130px;
+    align-items: center;
+    gap: $nb-space-3;
+  }
+}
+
+.nb-row__message {
+  font-size: 14px;
+
+  .nb-row--unread & {
+    font-weight: $nb-font-weight-bold;
+  }
+}
+
+.nb-row__meta {
+  font-family: $nb-font-mono;
+  font-size: 11px;
+  color: $nb-color-muted;
+}
+
+// Segmented ON/OFF control used by preference rows: a two-cell bordered
+// button group, active cell filled orange.
+.nb-toggle {
+  display: inline-flex;
+  border: $nb-border-width-md solid $nb-color-ink;
+}
+
+.nb-toggle__cell {
+  border: none;
+  background: $nb-color-bg;
+  color: $nb-color-ink;
+  font-family: $nb-font-mono;
+  font-size: 11px;
+  font-weight: $nb-font-weight-bold;
+  letter-spacing: 0.5px;
+  padding: $nb-space-1 $nb-space-3;
+
+  &:not(:last-child) {
+    border-right: $nb-border-width-md solid $nb-color-ink;
+  }
+
+  &--active {
+    background: $nb-color-accent-orange;
+  }
+}
+
+// Preferences table.
+.nb-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.nb-table__head th {
+  border-top: $nb-border-width-lg solid $nb-color-ink;
+  border-bottom: $nb-border-width-lg solid $nb-color-ink;
+  padding: $nb-space-3 $nb-space-4;
+  font-family: $nb-font-mono;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-align: left;
+}
+
+.nb-table__row td {
+  border-bottom: $nb-border-width-sm solid $nb-color-ink;
+  padding: $nb-space-4;
+  vertical-align: middle;
+}
+
+.nb-table__row-label {
+  font-weight: $nb-font-weight-bold;
+}
+
+.nb-table__row-desc {
+  font-family: $nb-font-mono;
+  font-size: 12px;
+  color: $nb-color-muted;
+}
+
+// Inset block used for AI-generated content, with an ink-filled disclaimer
+// header stacked above the body text.
+.nb-inset {
+  border: $nb-border-width-md solid $nb-color-ink;
+  background: $nb-color-white;
+  margin-top: $nb-space-4;
+}
+
+.nb-inset__header {
+  background: $nb-color-ink;
+  color: $nb-color-bg;
+  font-family: $nb-font-mono;
+  font-size: 11px;
+  font-weight: $nb-font-weight-bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: $nb-space-2 $nb-space-3;
+}
+
+.nb-inset__body {
+  padding: $nb-space-4;
+  white-space: pre-wrap;
+}
+
+// Past-digests list.
+.nb-history__row {
+  display: flex;
+  gap: $nb-space-4;
+  border-bottom: $nb-border-width-sm solid $nb-color-ink;
+  padding: $nb-space-3 0;
+}
+
+.nb-history__date {
+  flex: 0 0 90px;
+  font-family: $nb-font-mono;
+  font-size: 11px;
+  color: $nb-color-muted;
+}
+
+.nb-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: $nb-border-width-sm solid $nb-color-ink;
+  background: $nb-color-accent-orange;
+  color: $nb-color-ink;
+  font-family: $nb-font-mono;
+  font-size: 11px;
+  font-weight: $nb-font-weight-bold;
+}

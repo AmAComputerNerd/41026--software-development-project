@@ -25,8 +25,24 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IAiDigestService, OpenRouterDigestService>();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy => policy
+        .WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+            ?? ["http://localhost:5173", "http://localhost:5174", "http://localhost:5199"])
+        .AllowAnyHeader()
+        .AllowAnyMethod());
+});
 
 var app = builder.Build();
+
+if (string.IsNullOrWhiteSpace(builder.Configuration["OpenRouter:ApiKey"]))
+{
+    app.Logger.LogWarning(
+        "OpenRouter:ApiKey is not set. AI digest generation will fail until you set the " +
+        "OPENROUTER_API_KEY environment variable or run 'dotnet user-secrets set OpenRouter:ApiKey <key>' " +
+        "in student-1/backend/Api (see student-1/backend/README.md).");
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -36,6 +52,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors();
 
 // Endpoints
 app.MapNotificationEndpoints();
