@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import ChannelToggle from './ChannelToggle.vue'
+import { ChannelToggle } from '@better-canvas/ui-kit'
 import { NOTIFICATION_TYPES } from '@/composables/useNotifications'
 import { NOTIFICATION_CHANNELS, usePreferences } from '@/composables/usePreferences'
 

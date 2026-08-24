@@ -1,7 +1,8 @@
 # Notifications UI — design reference
 
 Source: claude.ai/design project `5afc3379-890a-4fb9-8e8d-516a388c619a`,
-`Notifications.dc.html`. Tokens live in [`neobrutalism.scss`](./neobrutalism.scss).
+`Notifications.dc.html`. Tokens live in `@better-canvas/ui-kit`; feature-specific
+classes live in [`neobrutalism.scss`](./neobrutalism.scss).
 Not yet built — this is the structural reference for Prompts 14/15.
 
 ## Shared chrome

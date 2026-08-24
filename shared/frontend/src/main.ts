@@ -1,13 +1,24 @@
+/**
+ * main.ts
+ *
+ * Bootstraps plugins then mounts the App
+ */
+
+// Composables
 import { createApp } from 'vue'
 
+// Plugins
+import { registerPlugins } from '@/plugins'
+
+// Components
 import App from './App.vue'
-import router from './router'
+
+// Styles
 import '@better-canvas/ui-kit/styles/tokens.css'
 import '@better-canvas/ui-kit/styles/primitives.css'
-import './styles/neobrutalism.scss'
 
 const app = createApp(App)
 
-app.use(router)
+registerPlugins(app)
 
 app.mount('#app')

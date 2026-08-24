@@ -10,6 +10,7 @@
     "type-check": "vue-tsc -b"
   },
   "dependencies": {
+    "@better-canvas/ui-kit": "*",
     "vue": "^3.5.41",
     "vue-router": "^5.2.0"
   },
