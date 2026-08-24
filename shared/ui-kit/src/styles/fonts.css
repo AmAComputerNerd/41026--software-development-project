@@ -1,0 +1,5 @@
+/*
+ * Fonts used by the neobrutalist design tokens (--nb-font-display / --nb-font-mono),
+ * centralised from student-1/frontend/index.html's Google Fonts <link> tag.
+ */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');

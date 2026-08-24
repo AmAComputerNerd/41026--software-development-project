@@ -5,6 +5,8 @@
  * tokens rather than hardcoding colours/borders/shadows locally.
  */
 
+@import './fonts.css';
+
 :root {
   /* Colour palette */
   --nb-color-bg: #EDEBE6; /* off-white / concrete background */
