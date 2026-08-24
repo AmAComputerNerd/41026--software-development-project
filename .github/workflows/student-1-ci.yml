@@ -1,0 +1,118 @@
+name: Student 1 - CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "student-1/backend/**"
+      - ".github/workflows/student-1-ci.yml"
+  pull_request:
+    paths:
+      - "student-1/backend/**"
+      - ".github/workflows/student-1-ci.yml"
+
+# Cancel superseded runs on the same branch/PR to save CI minutes.
+concurrency:
+  group: student-1-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  WORKING_DIR: student-1/backend/Api
+
+jobs:
+  build-and-analyze:
+    name: Build, analyze & format check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-1/backend/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build --configuration Release --no-restore -warnaserror
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Verify code formatting
+        run: dotnet format --verify-no-changes --severity warn
+        working-directory: ${{ env.WORKING_DIR }}
+
+  ef-core-migrations-check:
+    name: EF Core migrations drift check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-1/backend/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Install dotnet-ef (matching project's EF Core version)
+        run: dotnet tool install --global dotnet-ef --version 10.0.11
+
+      # Fails the build if the current model has diverged from the latest
+      # migration snapshot (e.g. an entity property changed without a
+      # corresponding `dotnet ef migrations add`).
+      - name: Check for pending model changes
+        run: dotnet ef migrations has-pending-model-changes
+        working-directory: ${{ env.WORKING_DIR }}
+
+  vulnerability-scan:
+    name: NuGet vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore
+        working-directory: ${{ env.WORKING_DIR }}
+
+      # `dotnet list package --vulnerable` exits 0 even when vulnerabilities are
+      # found, so grep the output to fail the job when any are reported.
+      - name: Scan for known-vulnerable packages
+        run: |
+          set -o pipefail
+          dotnet list package --vulnerable --include-transitive | tee vuln-report.txt
+          if grep -qi "has the following vulnerable packages" vuln-report.txt; then
+            echo "::error::Vulnerable NuGet packages detected. See log above."
+            exit 1
+          fi
+        working-directory: ${{ env.WORKING_DIR }}

@@ -1,5 +1,17 @@
 services:
 
+    student-1-backend:
+        build:
+            context: ./student-1/backend
+            dockerfile: Api/Dockerfile
+        ports:
+            - "5101:8080"
+        volumes:
+            - student-1-db:/app/Data
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+            OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+
     student-3-backend:
         build:
             context: ./student-3/backend
@@ -12,4 +24,5 @@ services:
             ASPNETCORE_ENVIRONMENT: Development
 
 volumes:
+    student-1-db:
     student-3-db:
