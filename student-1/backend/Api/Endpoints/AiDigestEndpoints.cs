@@ -39,7 +39,7 @@ public static class AiDigestEndpoints
 
         db.AiDigests.Add(digest);
         await db.SaveChangesAsync();
-        
+
         return Results.Created($"/digest/{digest.Id}", digest.ToDto());
     }
 
