@@ -9,7 +9,7 @@ const props = defineProps<{
   variant?: 'dropdown' | 'list'
 }>()
 
-const emit = defineEmits<{ 'mark-read': [id: string] }>()
+const emit = defineEmits<{ 'mark-read': [id: string]; 'mark-unread': [id: string] }>()
 
 const variant = computed(() => props.variant ?? 'dropdown')
 const time = computed(() => formatRelativeTime(props.notification.createdAtUtc))
@@ -18,7 +18,7 @@ const time = computed(() => formatRelativeTime(props.notification.createdAtUtc))
 <template>
   <div class="nb-row" :class="[`nb-row--${variant}`, { 'nb-row--unread': !notification.isRead }]">
     <template v-if="variant === 'dropdown'">
-      <div class="d-flex align-center justify-space-between">
+      <div class="nb-row__top">
         <NotificationTag :type="notification.type" />
         <span class="nb-row__meta">{{ time }}</span>
       </div>
@@ -40,7 +40,22 @@ const time = computed(() => formatRelativeTime(props.notification.createdAtUtc))
       >
         MARK READ
       </button>
-      <span v-else class="nb-row__meta">&check; READ</span>
+      <button
+        v-else
+        type="button"
+        class="nb-btn nb-btn--outline"
+        @click="emit('mark-unread', notification.id)"
+      >
+        &check; READ &mdash; UNMARK
+      </button>
     </template>
   </div>
 </template>
+
+<style scoped>
+.nb-row__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+</style>

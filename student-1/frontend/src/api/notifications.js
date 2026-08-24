@@ -12,6 +12,10 @@ export function markNotificationRead(id) {
   return request(`/notifications/${id}/read`, { method: 'PUT' })
 }
 
+export function markNotificationUnread(id) {
+  return request(`/notifications/${id}/unread`, { method: 'PUT' })
+}
+
 export function markAllNotificationsRead(studentId) {
   const query = buildQuery({ studentId })
   return request(`/notifications/read-all${query}`, { method: 'PUT' })

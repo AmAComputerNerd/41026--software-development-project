@@ -1,5 +1,10 @@
 import { computed, ref } from 'vue'
-import { getNotifications, markAllNotificationsRead, markNotificationRead } from '@/api/notifications'
+import {
+  getNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+  markNotificationUnread,
+} from '@/api/notifications'
 import { CURRENT_STUDENT_ID } from '@/config'
 
 export interface NotificationDto {
@@ -76,6 +81,19 @@ export function useNotifications() {
     }
   }
 
+  async function markAsUnread(id: string) {
+    const notification = notifications.value.find((n) => n.id === id)
+    if (!notification || !notification.isRead) return
+
+    notification.isRead = false
+    try {
+      await markNotificationUnread(id)
+    } catch (err) {
+      notification.isRead = true
+      error.value = err instanceof Error ? err.message : 'Failed to mark notification as unread'
+    }
+  }
+
   async function markAllAsRead() {
     const unread = notifications.value.filter((n) => !n.isRead)
     if (unread.length === 0) return
@@ -100,6 +118,7 @@ export function useNotifications() {
     toggleFilter,
     setAllFilters,
     markAsRead,
+    markAsUnread,
     markAllAsRead,
   }
 }

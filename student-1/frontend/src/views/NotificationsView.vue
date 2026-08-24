@@ -13,13 +13,14 @@ const {
   toggleFilter,
   setAllFilters,
   markAsRead,
+  markAsUnread,
 } = useNotifications()
 
 onMounted(fetchNotifications)
 </script>
 
 <template>
-  <v-container class="nb-list">
+  <div class="nb-list">
     <div class="nb-list__header">
       <h1 class="nb-list__title">ALL NOTIFICATIONS</h1>
       <span class="nb-mono nb-list__count">{{ filteredNotifications.length }} SHOWN</span>
@@ -44,9 +45,10 @@ onMounted(fetchNotifications)
         :notification="n"
         variant="list"
         @mark-read="markAsRead"
+        @mark-unread="markAsUnread"
       />
     </div>
-  </v-container>
+  </div>
 </template>
 
 <style scoped>

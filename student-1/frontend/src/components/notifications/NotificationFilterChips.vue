@@ -9,7 +9,7 @@ const allActive = (activeFilters: Record<string, boolean>) =>
 </script>
 
 <template>
-  <div class="d-flex flex-wrap ga-2">
+  <div class="nb-chips">
     <button
       type="button"
       class="nb-chip"
@@ -30,3 +30,11 @@ const allActive = (activeFilters: Record<string, boolean>) =>
     </button>
   </div>
 </template>
+
+<style scoped>
+.nb-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+</style>

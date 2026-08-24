@@ -12,7 +12,7 @@ onMounted(fetchDigests)
 </script>
 
 <template>
-  <v-container class="nb-digest">
+  <div class="nb-digest">
     <h1 class="nb-digest__title">AI DIGEST</h1>
 
     <p v-if="error" class="nb-digest__error nb-mono">{{ error }}</p>
@@ -20,7 +20,7 @@ onMounted(fetchDigests)
     <DigestCard :latest-digest="latestDigest" :generating="generating" @generate="generate" />
 
     <DigestHistoryList :digests="digests" />
-  </v-container>
+  </div>
 </template>
 
 <style scoped>

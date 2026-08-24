@@ -9,8 +9,7 @@ Not yet built — this is the structural reference for Prompts 14/15.
 - Top bar (68px, `border-bottom: 4px solid ink`): logo mark + "COURSEHUB" +
   "STUDENT DASHBOARD" mono badge on the left; nav links + bell icon button on
   the right. Bell shows an orange badge with `unreadCount` when > 0.
-- Tab strip below the top bar: 4 tabs (`01 CENTRE`, `02 LIST`, `03 PREFS`,
-  `04 DIGEST`), active tab filled ink/bg-inverted, others outlined.
+- Tab strip below the top bar: 4 tabs (`01 LIST`, `02 PREFS`, `03 DIGEST`), active tab filled ink/bg-inverted, others outlined.
 - Notification "type" taxonomy used across all screens: `deadline` (orange),
   `grade` (yellow), `automation` (bg/ink), `account` (ink/bg-inverted),
   `ai` (white/ink). Unread rows get a 6px orange left border and white

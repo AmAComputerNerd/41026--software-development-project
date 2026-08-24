@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import NotificationRow from './NotificationRow.vue'
 import { useNotifications } from '@/composables/useNotifications'
 
@@ -12,21 +13,40 @@ const recentNotifications = computed(() =>
     .slice(0, 5),
 )
 
-onMounted(fetchNotifications)
+const open = ref(false)
+const root = ref<HTMLElement | null>(null)
+
+function toggle() {
+  open.value = !open.value
+}
+
+function onClickOutside(event: MouseEvent) {
+  if (open.value && root.value && !root.value.contains(event.target as Node)) {
+    open.value = false
+  }
+}
+
+onMounted(() => {
+  fetchNotifications()
+  document.addEventListener('click', onClickOutside)
+})
+
+onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
 </script>
 
 <template>
-  <v-menu :close-on-content-click="false" location="bottom end" offset="12">
-    <template #activator="{ props: menuProps }">
-      <button type="button" class="nb-bell" v-bind="menuProps" aria-label="Notifications">
-        <v-icon icon="mdi-bell-outline" />
-        <span v-if="unreadCount > 0" class="nb-badge">{{ unreadCount }}</span>
-      </button>
-    </template>
+  <div ref="root" class="nb-centre-wrap">
+    <button type="button" class="nb-bell" aria-label="Notifications" @click="toggle">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </svg>
+      <span v-if="unreadCount > 0" class="nb-badge">{{ unreadCount }}</span>
+    </button>
 
-    <div class="nb-panel nb-centre">
+    <div v-if="open" class="nb-panel nb-centre">
       <div class="nb-centre__header">
-        <span class="nb-mono font-weight-bold">NOTIFICATIONS</span>
+        <span class="nb-mono nb-centre__heading">NOTIFICATIONS</span>
         <button
           type="button"
           class="nb-btn"
@@ -48,14 +68,18 @@ onMounted(fetchNotifications)
         @click="markAsRead(n.id)"
       />
 
-      <RouterLink to="/notifications" class="nb-btn nb-centre__footer">
+      <RouterLink to="/notifications" class="nb-btn nb-centre__footer" @click="open = false">
         VIEW ALL NOTIFICATIONS &rarr;
       </RouterLink>
     </div>
-  </v-menu>
+  </div>
 </template>
 
 <style scoped>
+.nb-centre-wrap {
+  position: relative;
+}
+
 .nb-bell {
   position: relative;
   display: inline-flex;
@@ -66,18 +90,26 @@ onMounted(fetchNotifications)
   color: var(--nb-color-ink);
   width: 44px;
   height: 44px;
+}
 
-  .nb-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-  }
+.nb-bell .nb-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
 }
 
 .nb-centre {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
   width: 460px;
   max-width: 90vw;
   padding: 16px;
+  z-index: 20;
+}
+
+.nb-centre__heading {
+  font-weight: 700;
 }
 
 .nb-centre__header {
