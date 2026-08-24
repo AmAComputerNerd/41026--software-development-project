@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import PreferencesPanel from '@/components/notifications/PreferencesPanel.vue'
 </script>
 
 <template>
   <v-container>
-    <h1>Preferences</h1>
-    <p>Notification preference settings go here.</p>
+    <PreferencesPanel />
   </v-container>
 </template>

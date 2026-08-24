@@ -3,6 +3,8 @@ import 'vuetify/styles'
 
 import { createVuetify } from 'vuetify'
 import type { ThemeDefinition } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
 
 // Neobrutalist theme mirroring the design tokens in src/styles/neobrutalism.scss
 const neobrutalism: ThemeDefinition = {
@@ -22,6 +24,8 @@ const neobrutalism: ThemeDefinition = {
 }
 
 export default createVuetify({
+  components,
+  directives,
   theme: {
     defaultTheme: 'neobrutalism',
     themes: { neobrutalism },

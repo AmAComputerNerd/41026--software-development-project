@@ -17,6 +17,11 @@ const router = createRouter({
       name: 'preferences',
       component: () => import('../views/PreferencesView.vue'),
     },
+    {
+      path: '/digest',
+      name: 'digest',
+      component: () => import('../views/AiDigestView.vue'),
+    },
   ],
 })
 

@@ -102,3 +102,239 @@ button {
   font-family: $nb-font-mono;
   letter-spacing: 0.5px;
 }
+
+// ---- Notification-centric components ----
+// Source-type tag chips: deadline/grade are solid accent fills, automation
+// is an outline, account is ink-filled, ai is a white/ink outline.
+.nb-tag {
+  display: inline-flex;
+  align-items: center;
+  border: $nb-border-width-sm solid $nb-color-ink;
+  padding: 2px $nb-space-2;
+  font-family: $nb-font-mono;
+  font-size: 11px;
+  font-weight: $nb-font-weight-bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &--deadline {
+    background: $nb-color-accent-orange;
+    color: $nb-color-ink;
+  }
+
+  &--grade {
+    background: $nb-color-accent-yellow;
+    color: $nb-color-ink;
+  }
+
+  &--automation {
+    background: $nb-color-bg;
+    color: $nb-color-ink;
+  }
+
+  &--account {
+    background: $nb-color-ink;
+    color: $nb-color-bg;
+  }
+
+  &--ai {
+    background: $nb-color-white;
+    color: $nb-color-ink;
+  }
+}
+
+// Solid ink-filled call-to-action ("MARK ALL READ", "VIEW ALL", chips).
+.nb-btn {
+  border: $nb-border-width-md solid $nb-color-ink;
+  background: $nb-color-ink;
+  color: $nb-color-bg;
+  font-family: $nb-font-mono;
+  font-weight: $nb-font-weight-bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: $nb-space-2 $nb-space-4;
+  transition: none;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  &--outline {
+    background: $nb-color-bg;
+    color: $nb-color-ink;
+  }
+
+  &--accent {
+    background: $nb-color-accent-orange;
+    color: $nb-color-ink;
+  }
+}
+
+.nb-chip {
+  border: $nb-border-width-sm solid $nb-color-ink;
+  background: $nb-color-bg;
+  color: $nb-color-ink;
+  font-family: $nb-font-mono;
+  font-size: 12px;
+  font-weight: $nb-font-weight-semibold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: $nb-space-1 $nb-space-3;
+
+  &--active {
+    background: $nb-color-ink;
+    color: $nb-color-bg;
+  }
+}
+
+// Shared notification row: unread gets a hard orange left border and
+// white background, read rows fall back to a transparent border/bg fill.
+.nb-row {
+  display: flex;
+  flex-direction: column;
+  gap: $nb-space-1;
+  border-bottom: $nb-border-width-sm solid $nb-color-ink;
+  border-left: 6px solid transparent;
+  background: $nb-color-bg;
+  padding: $nb-space-3 $nb-space-4;
+
+  &--unread {
+    border-left-color: $nb-color-accent-orange;
+    background: $nb-color-white;
+  }
+
+  &--list {
+    display: grid;
+    grid-template-columns: 120px 1fr 140px 130px;
+    align-items: center;
+    gap: $nb-space-3;
+  }
+}
+
+.nb-row__message {
+  font-size: 14px;
+
+  .nb-row--unread & {
+    font-weight: $nb-font-weight-bold;
+  }
+}
+
+.nb-row__meta {
+  font-family: $nb-font-mono;
+  font-size: 11px;
+  color: $nb-color-muted;
+}
+
+// Segmented ON/OFF control used by preference rows: a two-cell bordered
+// button group, active cell filled orange.
+.nb-toggle {
+  display: inline-flex;
+  border: $nb-border-width-md solid $nb-color-ink;
+}
+
+.nb-toggle__cell {
+  border: none;
+  background: $nb-color-bg;
+  color: $nb-color-ink;
+  font-family: $nb-font-mono;
+  font-size: 11px;
+  font-weight: $nb-font-weight-bold;
+  letter-spacing: 0.5px;
+  padding: $nb-space-1 $nb-space-3;
+
+  &:not(:last-child) {
+    border-right: $nb-border-width-md solid $nb-color-ink;
+  }
+
+  &--active {
+    background: $nb-color-accent-orange;
+  }
+}
+
+// Preferences table.
+.nb-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.nb-table__head th {
+  border-top: $nb-border-width-lg solid $nb-color-ink;
+  border-bottom: $nb-border-width-lg solid $nb-color-ink;
+  padding: $nb-space-3 $nb-space-4;
+  font-family: $nb-font-mono;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-align: left;
+}
+
+.nb-table__row td {
+  border-bottom: $nb-border-width-sm solid $nb-color-ink;
+  padding: $nb-space-4;
+  vertical-align: middle;
+}
+
+.nb-table__row-label {
+  font-weight: $nb-font-weight-bold;
+}
+
+.nb-table__row-desc {
+  font-family: $nb-font-mono;
+  font-size: 12px;
+  color: $nb-color-muted;
+}
+
+// Inset block used for AI-generated content, with an ink-filled disclaimer
+// header stacked above the body text.
+.nb-inset {
+  border: $nb-border-width-md solid $nb-color-ink;
+  background: $nb-color-white;
+  margin-top: $nb-space-4;
+}
+
+.nb-inset__header {
+  background: $nb-color-ink;
+  color: $nb-color-bg;
+  font-family: $nb-font-mono;
+  font-size: 11px;
+  font-weight: $nb-font-weight-bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: $nb-space-2 $nb-space-3;
+}
+
+.nb-inset__body {
+  padding: $nb-space-4;
+  white-space: pre-wrap;
+}
+
+// Past-digests list.
+.nb-history__row {
+  display: flex;
+  gap: $nb-space-4;
+  border-bottom: $nb-border-width-sm solid $nb-color-ink;
+  padding: $nb-space-3 0;
+}
+
+.nb-history__date {
+  flex: 0 0 90px;
+  font-family: $nb-font-mono;
+  font-size: 11px;
+  color: $nb-color-muted;
+}
+
+.nb-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: $nb-border-width-sm solid $nb-color-ink;
+  background: $nb-color-accent-orange;
+  color: $nb-color-ink;
+  font-family: $nb-font-mono;
+  font-size: 11px;
+  font-weight: $nb-font-weight-bold;
+}
