@@ -37,13 +37,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Infrastructure
-app.UseHttpsRedirection();
-await app.InitialiseDatabaseAsync();
-
 // Endpoints
 app.MapNotificationEndpoints();
 app.MapPreferenceEndpoints();
 app.MapAiDigestEndpoints();
+
+// Infrastructure
+app.UseApiExceptionHandling();
+app.UseHttpsRedirection();
+await app.InitialiseDatabaseAsync();
 
 app.Run();
