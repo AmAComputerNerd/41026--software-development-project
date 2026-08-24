@@ -1,7 +1,13 @@
+using Api.Endpoints;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration["OpenRouter:ApiKey"] =
+    Environment.GetEnvironmentVariable("OPENROUTER_API_KEY") ?? builder.Configuration["OpenRouter:ApiKey"];
 
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpClient();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy => policy
@@ -24,5 +30,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 
 app.UseHttpsRedirection();
+
+app.MapChatEndpoints();
 
 app.Run();
