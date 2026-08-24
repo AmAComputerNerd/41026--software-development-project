@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "workspaces": [
+    "shared/frontend",
+    "shared/ui-kit",
+    "student-1/frontend"
+  ]
+}
