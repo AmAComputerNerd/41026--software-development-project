@@ -10,7 +10,6 @@ services:
             - student-1-db:/app/Data
         environment:
             ASPNETCORE_ENVIRONMENT: Development
-            OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
 
     student-3-backend:
         build:
