@@ -14,8 +14,8 @@ import { registerPlugins } from '@/plugins'
 import App from './App.vue'
 
 // Styles
-import './styles/tokens.css'
-import './styles/shell.css'
+import '@better-canvas/ui-kit/styles/tokens.css'
+import '@better-canvas/ui-kit/styles/primitives.css'
 
 const app = createApp(App)
 

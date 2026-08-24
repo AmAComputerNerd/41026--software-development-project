@@ -9,98 +9,80 @@ onMounted(load)
 </script>
 
 <template>
-  <header class="shell-topbar">
-    <div class="shell-topbar__brand">
-      <span class="shell-topbar__logo">B</span>
-      <span class="shell-topbar__title">BETTER CANVAS</span>
-      <span class="shell-topbar__badge">STUDENT DASHBOARD</span>
+  <header class="nb-topbar">
+    <div class="nb-topbar__brand">
+      <span class="nb-topbar__logo">B</span>
+      <span class="nb-topbar__name">BETTER CANVAS</span>
+      <span class="nb-topbar__badge nb-mono">STUDENT DASHBOARD</span>
     </div>
-    <div class="shell-topbar__actions">
-      <button class="shell-bell" type="button" aria-label="Notifications">
+    <div class="nb-topbar__actions">
+      <button class="nb-btn nb-btn--outline nb-topbar__bell" type="button" aria-label="Notifications">
         <TileIcon name="bell" />
-        <span v-if="count > 0" class="shell-bell__badge">{{ count > 99 ? '99+' : count }}</span>
+        <span v-if="count > 0" class="nb-badge nb-topbar__bell-badge">{{ count > 99 ? '99+' : count }}</span>
       </button>
     </div>
   </header>
 </template>
 
 <style scoped>
-.shell-topbar {
+.nb-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 68px;
-  padding: 0 var(--space-6);
-  border-bottom: var(--border-width-lg) solid var(--border-color);
-  background: var(--color-surface);
+  padding: 0 24px;
+  border-bottom: var(--nb-border-width-lg) solid var(--nb-color-ink);
 }
 
-.shell-topbar__brand {
+.nb-topbar__brand {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
+  align-items: center;
+  gap: 12px;
 }
 
-.shell-topbar__logo {
+.nb-topbar__logo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: var(--border-width-md) solid var(--border-color);
-  background: var(--color-accent-primary);
-  color: var(--color-text-primary);
-  font-family: var(--font-mono);
+  width: 28px;
+  height: 28px;
+  background: var(--nb-color-ink);
+  color: var(--nb-color-bg);
   font-weight: 700;
+  font-size: 15px;
 }
 
-.shell-topbar__title {
+.nb-topbar__name {
   font-weight: 700;
+  font-size: 18px;
   letter-spacing: 0.5px;
 }
 
-.shell-topbar__badge {
-  font-family: var(--font-mono);
-  font-size: 12px;
+.nb-topbar__badge {
+  border: var(--nb-border-width-sm) solid var(--nb-color-ink);
+  padding: 2px 8px;
+  font-size: 11px;
   letter-spacing: 0.5px;
-  color: var(--color-text-secondary);
-  border: var(--border-width-sm) solid var(--border-color);
-  padding: 2px var(--space-2);
 }
 
-.shell-topbar__actions {
+.nb-topbar__actions {
   display: flex;
   align-items: center;
 }
 
-.shell-bell {
+.nb-topbar__bell {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: var(--border-width-md) solid var(--border-color);
-  background: var(--color-surface);
-  font-size: 18px;
-  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  padding: 0;
 }
 
-.shell-bell__badge {
+.nb-topbar__bell-badge {
   position: absolute;
   top: -8px;
   right: -8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border: var(--border-width-sm) solid var(--border-color);
-  background: var(--color-accent-primary);
-  color: var(--color-text-primary);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
 }
 </style>
