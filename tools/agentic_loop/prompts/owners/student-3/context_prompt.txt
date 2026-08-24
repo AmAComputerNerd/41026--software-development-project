@@ -1,0 +1,17 @@
+Feature: Deadlines and Task Tracker
+
+This service lets a student track coursework tasks against their courses so
+nothing gets missed. Core functionality:
+
+- Courses: create/list courses (Code, Name) that tasks can be linked to.
+- Tasks: create/read/update/delete tasks with a Title, optional
+  Description, DueDate, Priority (Low/Medium/High), Status
+  (Todo/InProgress/Done), and optional links to a Course and/or a parent
+  Task (for subtasks/checklists).
+- Filtering: list tasks filtered by Status, Priority, Course, and an
+  "overdue" flag (DueDate in the past and Status != Done).
+- Data integrity: deleting a Course should not delete its Tasks (just
+  unlink them); deleting a parent Task should cascade to its subtasks.
+
+Out of scope for this service: authentication/user accounts, notifications
+or reminders, and any UI - this is a backend-only API for now.

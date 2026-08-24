@@ -1,0 +1,22 @@
+Implementation Recommendation:
+{{RECOMMENDATION}}
+
+Evidence it was based on:
+{{VALIDATION_EVIDENCE}}
+
+Task:
+Review the recommendation strictly against the evidence above.
+
+- If the recommendation reports no issue (e.g. "No evidence-backed
+  improvement identified", "Feature undocumented in README.md", or
+  "Unable to verify live behavior") and that is consistent with the
+  evidence, reply with a brief confirmation that this is a reasonable,
+  well-supported outcome - do not invent a disagreement.
+- Otherwise, identify the single weakest point in the recommendation:
+  an unsupported assumption, evidence it ignored, or a claim the evidence
+  doesn't actually back up.
+
+Output Format:
+- Keep it short and succinct - couple sentences only.
+- Maximum 80 words.
+- No explanations beyond the critique or confirmation itself.

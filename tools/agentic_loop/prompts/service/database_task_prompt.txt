@@ -1,0 +1,29 @@
+Review Target: {{REVIEW_TARGET}}
+
+The evidence below is a live schema introspection of the owner's actual
+SQLite database (tables, columns, types, primary/foreign keys, row counts,
+and any foreign-key violations) - not a fixed migration or hardcoded
+schema, since the schema is expected to change as the feature evolves.
+
+Live Schema Evidence:
+{{VALIDATION_EVIDENCE}}
+
+Task:
+Compare the schema evidence against the Feature Context. Identify ONE
+precise, evidence-backed observation about whether the schema makes sense
+for the described feature, covering at most one of:
+- A table/column that seems missing for the stated feature to work
+- A table/column that seems unused by or unrelated to the stated feature
+- A structural issue visible in the evidence itself (missing primary key,
+  foreign key violation, empty table)
+
+If the Feature Context says the feature is undocumented: say "Feature
+undocumented in README.md - cannot assess schema fit."
+If no issue is supported by the evidence, that is a valid and good
+outcome - say exactly: "No evidence-backed improvement identified."
+
+Output Format:
+- Return exactly two bullet points (Observation + Recommendation), or one
+  of the sentences above.
+- Maximum 100 words total.
+- No explanations, no reasoning.
