@@ -1,0 +1,717 @@
+{
+  ".claude/.headroom_wrap_marker.json": {
+    "mtime": 1787553187.3698123,
+    "ast_hash": "814f87baf93f8248c79aa5580b76e27e",
+    "semantic_hash": "814f87baf93f8248c79aa5580b76e27e"
+  },
+  ".claude/settings.local.json": {
+    "mtime": 1787553410.745516,
+    "ast_hash": "ccf441af01dc3b63173cd2b21e96e560",
+    "semantic_hash": "ccf441af01dc3b63173cd2b21e96e560"
+  },
+  "student-3/backend/Api/Api.csproj": {
+    "mtime": 1787269787.4441657,
+    "ast_hash": "9cb2139be7a88edd905e39d25f6df5e9",
+    "semantic_hash": "9cb2139be7a88edd905e39d25f6df5e9"
+  },
+  "student-3/backend/Api/DTOs/CourseDto.cs": {
+    "mtime": 1787269787.4442961,
+    "ast_hash": "e419e8f99d39a32f056ea9b6c26e2de1",
+    "semantic_hash": "e419e8f99d39a32f056ea9b6c26e2de1"
+  },
+  "student-3/backend/Api/DTOs/CreateTaskRequestDto.cs": {
+    "mtime": 1787269787.4443784,
+    "ast_hash": "1888950a63d4ed97087c3b02766d12d8",
+    "semantic_hash": "1888950a63d4ed97087c3b02766d12d8"
+  },
+  "student-3/backend/Api/DTOs/ModifyTaskRequestDto.cs": {
+    "mtime": 1787269787.4444482,
+    "ast_hash": "f26afda98a1743da72b2e28f5ea534f5",
+    "semantic_hash": "f26afda98a1743da72b2e28f5ea534f5"
+  },
+  "student-3/backend/Api/DTOs/TaskDto.cs": {
+    "mtime": 1787269787.4445162,
+    "ast_hash": "3f7441a91171792a8522d70e61d9b634",
+    "semantic_hash": "3f7441a91171792a8522d70e61d9b634"
+  },
+  "student-3/backend/Api/DTOs/TaskFilterDto.cs": {
+    "mtime": 1787269787.444591,
+    "ast_hash": "8aed9d2e7c4956587ffa5803bf6d2229",
+    "semantic_hash": "8aed9d2e7c4956587ffa5803bf6d2229"
+  },
+  "student-3/backend/Api/Data/AppDbContext.cs": {
+    "mtime": 1787269787.4447043,
+    "ast_hash": "925b82b4b72ba2a6398349ddf7350aa4",
+    "semantic_hash": "925b82b4b72ba2a6398349ddf7350aa4"
+  },
+  "student-3/backend/Api/Data/DbSeeder.cs": {
+    "mtime": 1787269787.4448595,
+    "ast_hash": "ac1bec391ba9ad833265dad515fb2c77",
+    "semantic_hash": "ac1bec391ba9ad833265dad515fb2c77"
+  },
+  "student-3/backend/Api/Endpoints/CourseEndpoints.cs": {
+    "mtime": 1787269787.4450684,
+    "ast_hash": "902946ed3024a6da8c5f1ba15fa077a4",
+    "semantic_hash": "902946ed3024a6da8c5f1ba15fa077a4"
+  },
+  "student-3/backend/Api/Endpoints/TaskEndpoints.cs": {
+    "mtime": 1787269787.4452202,
+    "ast_hash": "b465de1b889134fe6199ce760a12c103",
+    "semantic_hash": "b465de1b889134fe6199ce760a12c103"
+  },
+  "student-3/backend/Api/Extensions/DatabaseExtensions.cs": {
+    "mtime": 1787269787.445343,
+    "ast_hash": "3c3ab7b0bc2523d7c0ea7b12229b067f",
+    "semantic_hash": "3c3ab7b0bc2523d7c0ea7b12229b067f"
+  },
+  "student-3/backend/Api/Extensions/DtoExtensions.cs": {
+    "mtime": 1787269787.4454274,
+    "ast_hash": "f43738c9c03579690a18b7b27321a98d",
+    "semantic_hash": "f43738c9c03579690a18b7b27321a98d"
+  },
+  "student-3/backend/Api/Extensions/ExceptionHandlingExtensions.cs": {
+    "mtime": 1787269787.4455054,
+    "ast_hash": "f856b7bb96c3095102973cbc87da9688",
+    "semantic_hash": "f856b7bb96c3095102973cbc87da9688"
+  },
+  "student-3/backend/Api/Migrations/20260817112734_InitialCreate.Designer.cs": {
+    "mtime": 1787269787.4456315,
+    "ast_hash": "46ec8e03628513a85f59b9a172f3f8ed",
+    "semantic_hash": "46ec8e03628513a85f59b9a172f3f8ed"
+  },
+  "student-3/backend/Api/Migrations/20260817112734_InitialCreate.cs": {
+    "mtime": 1787269787.4457078,
+    "ast_hash": "05e4b2995ee62f59829f65e25464bfe7",
+    "semantic_hash": "05e4b2995ee62f59829f65e25464bfe7"
+  },
+  "student-3/backend/Api/Migrations/AppDbContextModelSnapshot.cs": {
+    "mtime": 1787269787.4457724,
+    "ast_hash": "4b83925946a6ddf503ea45af59be374c",
+    "semantic_hash": "4b83925946a6ddf503ea45af59be374c"
+  },
+  "student-3/backend/Api/Models/Course.cs": {
+    "mtime": 1787269787.4458904,
+    "ast_hash": "bce026aadb34d81a7cdbb6553cc23510",
+    "semantic_hash": "bce026aadb34d81a7cdbb6553cc23510"
+  },
+  "student-3/backend/Api/Models/TaskEntity.cs": {
+    "mtime": 1787269787.4459646,
+    "ast_hash": "3dec218786772ccb08712c3bac60b4a4",
+    "semantic_hash": "3dec218786772ccb08712c3bac60b4a4"
+  },
+  "student-3/backend/Api/Program.cs": {
+    "mtime": 1787269787.4460382,
+    "ast_hash": "f19d0ae15795e8fe2ed97399df75c229",
+    "semantic_hash": "f19d0ae15795e8fe2ed97399df75c229"
+  },
+  "student-3/backend/Api/Properties/launchSettings.json": {
+    "mtime": 1787269787.4461596,
+    "ast_hash": "9bf405506a9961efa99d75a9eae79efb",
+    "semantic_hash": "9bf405506a9961efa99d75a9eae79efb"
+  },
+  "student-3/backend/Api/appsettings.json": {
+    "mtime": 1787269787.4462316,
+    "ast_hash": "82a1ca091df480c9aa6295e154e3b25b",
+    "semantic_hash": "82a1ca091df480c9aa6295e154e3b25b"
+  },
+  "student-3/backend/DeadlineTaskTracker.sln": {
+    "mtime": 1787269787.4463122,
+    "ast_hash": "d63113c4db7f47816ea3380957c167eb",
+    "semantic_hash": "d63113c4db7f47816ea3380957c167eb"
+  },
+  "tools/agentic_loop.py": {
+    "mtime": 1787553422.6255646,
+    "ast_hash": "4e87b119883abb907040802b6f1809c4",
+    "semantic_hash": "4e87b119883abb907040802b6f1809c4"
+  },
+  "tools/agentic_loop/collectors/__init__.py": {
+    "mtime": 1787553422.6264114,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "tools/agentic_loop/collectors/backend_collector.py": {
+    "mtime": 1787553422.6267853,
+    "ast_hash": "64641925cdadddb9aea8594e353bfb92",
+    "semantic_hash": "64641925cdadddb9aea8594e353bfb92"
+  },
+  "tools/agentic_loop/collectors/compose_collector.py": {
+    "mtime": 1787553422.6270669,
+    "ast_hash": "50bd2b85ca9555ca4f16fd119f88c869",
+    "semantic_hash": "50bd2b85ca9555ca4f16fd119f88c869"
+  },
+  "tools/agentic_loop/collectors/database_collector.py": {
+    "mtime": 1787553422.6273515,
+    "ast_hash": "234f5ea55cf6d701ded3dcfd722b7f73",
+    "semantic_hash": "234f5ea55cf6d701ded3dcfd722b7f73"
+  },
+  "tools/agentic_loop/collectors/frontend_collector.py": {
+    "mtime": 1787553422.6278522,
+    "ast_hash": "670178e107cce8c68606147b2c9f2b29",
+    "semantic_hash": "670178e107cce8c68606147b2c9f2b29"
+  },
+  "tools/agentic_loop/config/__init__.py": {
+    "mtime": 1787553422.6279328,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "tools/agentic_loop/config/review_config.py": {
+    "mtime": 1787553422.6280892,
+    "ast_hash": "940119f914a4ec983ee57d0bb752736e",
+    "semantic_hash": "940119f914a4ec983ee57d0bb752736e"
+  },
+  "tools/agentic_loop/core/__init__.py": {
+    "mtime": 1787553422.6281629,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "tools/agentic_loop/core/ai_runner.py": {
+    "mtime": 1787553422.6283107,
+    "ast_hash": "9cf25047d62a8023d398eac06ac3a043",
+    "semantic_hash": "9cf25047d62a8023d398eac06ac3a043"
+  },
+  "tools/agentic_loop/core/compose_utils.py": {
+    "mtime": 1787553422.6284456,
+    "ast_hash": "bc44387570f31be68c920c03b91e37f8",
+    "semantic_hash": "bc44387570f31be68c920c03b91e37f8"
+  },
+  "tools/agentic_loop/core/orchestrator.py": {
+    "mtime": 1787553422.628579,
+    "ast_hash": "24c2178808ff45ab984f6e56975fcd63",
+    "semantic_hash": "24c2178808ff45ab984f6e56975fcd63"
+  },
+  "tools/agentic_loop/core/prompt_registry.py": {
+    "mtime": 1787553422.6287022,
+    "ast_hash": "b39c8e6b3f65fa84fb2c89e79dd598cc",
+    "semantic_hash": "b39c8e6b3f65fa84fb2c89e79dd598cc"
+  },
+  "tools/agentic_loop/core/reporter.py": {
+    "mtime": 1787553422.6289024,
+    "ast_hash": "d12d35f3eb6ef0050c30d180ec8a8ecc",
+    "semantic_hash": "d12d35f3eb6ef0050c30d180ec8a8ecc"
+  },
+  "tools/agentic_loop/main.py": {
+    "mtime": 1787553422.6291006,
+    "ast_hash": "4a67672b2f53fa151d7e08ad9f9a3b72",
+    "semantic_hash": "4a67672b2f53fa151d7e08ad9f9a3b72"
+  },
+  "tools/agentic_loop/pipelines/__init__.py": {
+    "mtime": 1787553422.6291783,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "tools/agentic_loop/pipelines/backend_pipeline.py": {
+    "mtime": 1787553422.6296446,
+    "ast_hash": "a7307f8566e1169eb72e2d1c00dee859",
+    "semantic_hash": "a7307f8566e1169eb72e2d1c00dee859"
+  },
+  "tools/agentic_loop/pipelines/compose_pipeline.py": {
+    "mtime": 1787553422.62978,
+    "ast_hash": "eecb4a6501a55dc5792fda1f7771b168",
+    "semantic_hash": "eecb4a6501a55dc5792fda1f7771b168"
+  },
+  "tools/agentic_loop/pipelines/database_pipeline.py": {
+    "mtime": 1787553422.6298811,
+    "ast_hash": "a5120362313e7fdda2800fbc8a254240",
+    "semantic_hash": "a5120362313e7fdda2800fbc8a254240"
+  },
+  "tools/agentic_loop/pipelines/frontend_pipeline.py": {
+    "mtime": 1787553422.630038,
+    "ast_hash": "001c88e5f84b8d45b78040fc1b47dbd1",
+    "semantic_hash": "001c88e5f84b8d45b78040fc1b47dbd1"
+  },
+  "tools/agentic_loop/pipelines/review_pipeline.py": {
+    "mtime": 1787553422.6302152,
+    "ast_hash": "e8b58f31c4a6414861ad4093299bf5f5",
+    "semantic_hash": "e8b58f31c4a6414861ad4093299bf5f5"
+  },
+  ".github/workflows/student-3-ci.yml": {
+    "mtime": 1787269787.4428542,
+    "ast_hash": "4a77b3ab6acd21d30478c3cf20ce88bf",
+    "semantic_hash": "4a77b3ab6acd21d30478c3cf20ce88bf"
+  },
+  ".serena/project.yml": {
+    "mtime": 1787553186.7579374,
+    "ast_hash": "8297d81b18faccaea10463c48c4fec08",
+    "semantic_hash": "8297d81b18faccaea10463c48c4fec08"
+  },
+  "README.md": {
+    "mtime": 1787562626.1574128,
+    "ast_hash": "523692c7533e84be52c72a6cf6939a44",
+    "semantic_hash": ""
+  },
+  "docker-compose.yml": {
+    "mtime": 1787568577.5570085,
+    "ast_hash": "5cee61a5b16bed21774778ae777c3293",
+    "semantic_hash": ""
+  },
+  "tools/agentic_loop/README.md": {
+    "mtime": 1787553422.626304,
+    "ast_hash": "1be8113b6d41d4892832145ea383d484",
+    "semantic_hash": "1be8113b6d41d4892832145ea383d484"
+  },
+  "tools/agentic_loop/prompts/owners/student-3/context_prompt.txt": {
+    "mtime": 1787553422.630531,
+    "ast_hash": "14087584d79e53639983f2eeeb317ea3",
+    "semantic_hash": "14087584d79e53639983f2eeeb317ea3"
+  },
+  "tools/agentic_loop/prompts/service/backend_task_prompt.txt": {
+    "mtime": 1787553422.6308725,
+    "ast_hash": "0e85977d382320d4244cc0c5bdab215d",
+    "semantic_hash": "0e85977d382320d4244cc0c5bdab215d"
+  },
+  "tools/agentic_loop/prompts/service/compose_task_prompt.txt": {
+    "mtime": 1787553422.6310513,
+    "ast_hash": "7d923ee8f5504573a5af84cd43338f83",
+    "semantic_hash": "7d923ee8f5504573a5af84cd43338f83"
+  },
+  "tools/agentic_loop/prompts/service/database_task_prompt.txt": {
+    "mtime": 1787553422.631194,
+    "ast_hash": "0849ce7aeedce11272f474bb0adc0393",
+    "semantic_hash": "0849ce7aeedce11272f474bb0adc0393"
+  },
+  "tools/agentic_loop/prompts/service/frontend_task_prompt.txt": {
+    "mtime": 1787553422.6313791,
+    "ast_hash": "d4caa0c859cdbde0f6fe3acc91c78657",
+    "semantic_hash": "d4caa0c859cdbde0f6fe3acc91c78657"
+  },
+  "tools/agentic_loop/prompts/service/review_system_prompt.txt": {
+    "mtime": 1787553422.631585,
+    "ast_hash": "3f198e81a0e01652cd698a5edbe4282d",
+    "semantic_hash": "3f198e81a0e01652cd698a5edbe4282d"
+  },
+  "tools/agentic_loop/prompts/service/review_task_prompt.txt": {
+    "mtime": 1787553422.632077,
+    "ast_hash": "77e258b335cd66c0f92ae1041bf3c72d",
+    "semantic_hash": "77e258b335cd66c0f92ae1041bf3c72d"
+  },
+  "tools/agentic_loop/prompts/service/system_prompt.txt": {
+    "mtime": 1787553422.6322103,
+    "ast_hash": "aa82a83c3e6e50b2313690fb5b0e65d2",
+    "semantic_hash": "aa82a83c3e6e50b2313690fb5b0e65d2"
+  },
+  "tools/agentic_loop/requirements.txt": {
+    "mtime": 1787553422.6323469,
+    "ast_hash": "abbc86873ba02f6d127973b74a64f6a2",
+    "semantic_hash": "abbc86873ba02f6d127973b74a64f6a2"
+  },
+  "student-1/backend/Api/Api.csproj": {
+    "mtime": 1787557283.2448092,
+    "ast_hash": "de2219e5489b03b4b80fd7aacc27d343",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/DTOs/AiDigestDto.cs": {
+    "mtime": 1787557283.244979,
+    "ast_hash": "24d253a5b628e5386e4993e085fee344",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/DTOs/NotificationDto.cs": {
+    "mtime": 1787557283.2450914,
+    "ast_hash": "87ed5713638304009d56dc3fbeb91e0f",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/DTOs/NotificationFilterDto.cs": {
+    "mtime": 1787557283.245201,
+    "ast_hash": "1eac060ed36a28eb04dc33a81ef97c6b",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/DTOs/NotificationPreferenceDto.cs": {
+    "mtime": 1787557283.2453141,
+    "ast_hash": "f20d2dbb343478572dd738d97691c58f",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/DTOs/NotificationPreferenceRequestDto.cs": {
+    "mtime": 1787557283.2454255,
+    "ast_hash": "c059fd1cfd1f2e18a829eab85b7748e0",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/DTOs/PushNotificationRequestDto.cs": {
+    "mtime": 1787557283.2455513,
+    "ast_hash": "c3eb0dc65e4b8f7a27b8124a4e28a8a9",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Data/AppDbContext.cs": {
+    "mtime": 1787557283.2457256,
+    "ast_hash": "79e750542d634dd0b2afd346908b6cf3",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Data/DbSeeder.cs": {
+    "mtime": 1787557283.2459307,
+    "ast_hash": "a4d9072ae0a71a196153c5b121f5ddf6",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Endpoints/AiDigestEndpoints.cs": {
+    "mtime": 1787557283.2463229,
+    "ast_hash": "c76e4de789b64e4bd726ac127a00237e",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Endpoints/NotificationEndpoints.cs": {
+    "mtime": 1787562807.1386569,
+    "ast_hash": "9e3f168982c35ad0bc5b52916af484da",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Endpoints/PreferenceEndpoints.cs": {
+    "mtime": 1787557283.246608,
+    "ast_hash": "1afbeee2e44d6a4a12449cbe610bbeee",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Extensions/DatabaseExtensions.cs": {
+    "mtime": 1787557283.2467947,
+    "ast_hash": "0ae9cba78918621f3c7e809a7a9aa8cb",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Extensions/DtoExtensions.cs": {
+    "mtime": 1787557283.2469056,
+    "ast_hash": "d6396373e5fdf23dff2629230e542c66",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Extensions/ExceptionHandlingExtensions.cs": {
+    "mtime": 1787557283.247024,
+    "ast_hash": "05b5a3b30e4283108c90a65174dbc392",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Migrations/20260824064709_InitialCreate.Designer.cs": {
+    "mtime": 1787557283.2471874,
+    "ast_hash": "96106f5cf19c9d7af6b1a3ec8899534c",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Migrations/20260824064709_InitialCreate.cs": {
+    "mtime": 1787557283.2473102,
+    "ast_hash": "54f8170a9a2735e53b0d910ece7465ce",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Migrations/20260824065441_AddNotificationMessage.Designer.cs": {
+    "mtime": 1787557283.2474241,
+    "ast_hash": "d397d73f04d211e627a04c502db9ec2f",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Migrations/20260824065441_AddNotificationMessage.cs": {
+    "mtime": 1787557283.2475286,
+    "ast_hash": "61f64b6813aba88cd8830dbb5b033c06",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Migrations/AppDbContextModelSnapshot.cs": {
+    "mtime": 1787557283.2476425,
+    "ast_hash": "3e3e8bc6e9b40e17b94f696c92c14d22",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Models/AiDigest.cs": {
+    "mtime": 1787557283.2478027,
+    "ast_hash": "d583596254e3c67e3efc2bff6285df46",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Models/Notification.cs": {
+    "mtime": 1787557283.2479217,
+    "ast_hash": "6c49d3cd30682de4318f211029e3cf6f",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Models/NotificationPreference.cs": {
+    "mtime": 1787557283.2480373,
+    "ast_hash": "62d2dd3721887f35065ea4229df83342",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Program.cs": {
+    "mtime": 1787564695.5004034,
+    "ast_hash": "6e9d983ae33b1db684947f39927bbf2c",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Properties/launchSettings.json": {
+    "mtime": 1787557283.2483351,
+    "ast_hash": "2d99d996895f4bcb0d9b626b59d09187",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Services/IAiDigestService.cs": {
+    "mtime": 1787557283.2484913,
+    "ast_hash": "c2b722d2b2fd366e6870d9ed7fa1bcce",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/Services/OpenRouterDigestService.cs": {
+    "mtime": 1787557283.2486181,
+    "ast_hash": "1e3b0150fac2951b672dc0a94736c59b",
+    "semantic_hash": ""
+  },
+  "student-1/backend/Api/appsettings.json": {
+    "mtime": 1787558205.2069108,
+    "ast_hash": "86b59dd4dc6ad9d4d685509a30f2e9d9",
+    "semantic_hash": ""
+  },
+  "student-1/backend/NotificationService.sln": {
+    "mtime": 1787557283.2488675,
+    "ast_hash": "d63ae1c09e24003218286b72712dcb62",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/package.json": {
+    "mtime": 1787563840.905509,
+    "ast_hash": "f203532aa372622ef1fa5a2e00a11a85",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/App.vue": {
+    "mtime": 1787565424.5755312,
+    "ast_hash": "9281b1ca5cc1c0ca44a342137a07203f",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/main.ts": {
+    "mtime": 1787563680.5114713,
+    "ast_hash": "eb7a2213236f7ba3c1f409eebc270a5b",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/router/index.ts": {
+    "mtime": 1787559702.9676898,
+    "ast_hash": "1c103846d83a3ab59a7d8151970bcf89",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/views/NotificationsView.vue": {
+    "mtime": 1787563773.0476518,
+    "ast_hash": "b8292f04c8774e15c3d26725479abeee",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/views/PreferencesView.vue": {
+    "mtime": 1787563784.4705071,
+    "ast_hash": "0b8323c0e8ccea8db2661d46ec25ec30",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/vite-env.d.ts": {
+    "mtime": 1787557577.0983613,
+    "ast_hash": "0352474ba2918efe13895edbc3780d94",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/tsconfig.app.json": {
+    "mtime": 1787558520.0079505,
+    "ast_hash": "1e49dee7ac841950dc4b648945835399",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/tsconfig.json": {
+    "mtime": 1787557519.8915975,
+    "ast_hash": "a3d39fa780ebff65444de257f291ce6c",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/tsconfig.node.json": {
+    "mtime": 1787557656.4594247,
+    "ast_hash": "a36d607c9cc8294628039412eb6a63ac",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/vite.config.ts": {
+    "mtime": 1787557543.812772,
+    "ast_hash": "6c6a9d812286aa9e8619e86e340802aa",
+    "semantic_hash": ""
+  },
+  ".github/workflows/student-1-ci.yml": {
+    "mtime": 1787557283.2442207,
+    "ast_hash": "0f31f1984967b8f72d99cac4b8dcbd99",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/index.html": {
+    "mtime": 1787563686.6936963,
+    "ast_hash": "39942d6405038ba647eb0651d994de37",
+    "semantic_hash": ""
+  },
+  "tools/agentic_loop/prompts/owners/student-1/context_prompt.txt": {
+    "mtime": 1787557283.249188,
+    "ast_hash": "f8404b6c407c850a0a4e2de6edcca273",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/styles/notifications-design-reference.md": {
+    "mtime": 1787565412.1758952,
+    "ast_hash": "91c38820c9eaac42e4f965c57be5d814",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/api/digest.js": {
+    "mtime": 1787559623.4113996,
+    "ast_hash": "14474e944c39232800eb4dfc0b42e72e",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/api/http.js": {
+    "mtime": 1787559612.0884275,
+    "ast_hash": "fa0d4745563c17a3322758a3453f0571",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/api/notifications.js": {
+    "mtime": 1787562810.978545,
+    "ast_hash": "fed8f4e2b02a1866ff99dff72d2583ea",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/api/preferences.js": {
+    "mtime": 1787559620.3935485,
+    "ast_hash": "eb4eb543225879cb2ce45e4454aea8b3",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/components/notifications/ChannelToggle.vue": {
+    "mtime": 1787559665.5224144,
+    "ast_hash": "f7fa7a3e209d4e2fe7e734387e366a19",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/components/notifications/DigestCard.vue": {
+    "mtime": 1787559682.4746354,
+    "ast_hash": "f8a9b1fda6b677543d4d35ce76a1381e",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/components/notifications/DigestHistoryList.vue": {
+    "mtime": 1787559689.2093225,
+    "ast_hash": "2d2780f077967f2bfcfb1ae8833d8a8e",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/components/notifications/NotificationCentre.vue": {
+    "mtime": 1787563830.6510417,
+    "ast_hash": "42668458fc03d3b0451a2f4358616883",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/components/notifications/NotificationFilterChips.vue": {
+    "mtime": 1787563762.0820363,
+    "ast_hash": "799bbc203a8c3083b019f740533084a4",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/components/notifications/NotificationRow.vue": {
+    "mtime": 1787563751.1314855,
+    "ast_hash": "8f5eb5ac2f79694f19e0d4ae2d775079",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/components/notifications/NotificationTag.vue": {
+    "mtime": 1787558407.9836195,
+    "ast_hash": "8c64a0d507f9bfb8bbb6dd44d9c8abc0",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/components/notifications/PreferencesPanel.vue": {
+    "mtime": 1787559675.521806,
+    "ast_hash": "50016f87b8a4cd66bc5a8c0e37d2fadc",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/composables/useAiDigest.ts": {
+    "mtime": 1787559645.8324714,
+    "ast_hash": "6c763e8827df65d66e2c8b381a21a571",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/composables/useNotifications.ts": {
+    "mtime": 1787562821.6236181,
+    "ast_hash": "4b8d42a0142c54b95ffcbe34a3e73f26",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/composables/usePreferences.ts": {
+    "mtime": 1787559640.0537884,
+    "ast_hash": "7e3a3d97b12ceea6620ce2dbfa044c1b",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/config.ts": {
+    "mtime": 1787565224.9129078,
+    "ast_hash": "02f4704615f63d9561cfce80f0711565",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/utils/formatTime.ts": {
+    "mtime": 1787558863.03205,
+    "ast_hash": "0b472d01cbb227ff1e279d8befcfed54",
+    "semantic_hash": ""
+  },
+  "student-1/frontend/src/views/AiDigestView.vue": {
+    "mtime": 1787563801.1506484,
+    "ast_hash": "fe2492ef09ef9d1aa8b53c1cedbe9800",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1787562632.302404,
+    "ast_hash": "3224d0327157567c1be81bd9f5a9fc71",
+    "semantic_hash": ""
+  },
+  "student-1/backend/README.md": {
+    "mtime": 1787562641.628288,
+    "ast_hash": "4725e40bc710205aa6827806b4a1694a",
+    "semantic_hash": ""
+  },
+  "shared/frontend/.vscode/extensions.json": {
+    "mtime": 1787567064.2406979,
+    "ast_hash": "51c204b5e7cc261317f4454ad8ebc88c",
+    "semantic_hash": ""
+  },
+  "shared/frontend/env.d.ts": {
+    "mtime": 1787567273.5218618,
+    "ast_hash": "0352474ba2918efe13895edbc3780d94",
+    "semantic_hash": ""
+  },
+  "shared/frontend/package.json": {
+    "mtime": 1787568297.9222322,
+    "ast_hash": "04b31c9f3e501d5bfd87197786341dee",
+    "semantic_hash": ""
+  },
+  "shared/frontend/src/App.vue": {
+    "mtime": 1787568240.6722121,
+    "ast_hash": "f43d5392eb3c171d8fa23face0bfcbfc",
+    "semantic_hash": ""
+  },
+  "shared/frontend/src/components/DashboardGrid.vue": {
+    "mtime": 1787567892.6934474,
+    "ast_hash": "52ba73f951a3a0b2e702728c49e3a9da",
+    "semantic_hash": ""
+  },
+  "shared/frontend/src/components/TileIcon.vue": {
+    "mtime": 1787567875.5069997,
+    "ast_hash": "2929c1eee596ec3fd2fd260ad9d4467a",
+    "semantic_hash": ""
+  },
+  "shared/frontend/src/components/TopNav.vue": {
+    "mtime": 1787567879.4701552,
+    "ast_hash": "9b5d004350e789c5eb8b19444df34217",
+    "semantic_hash": ""
+  },
+  "shared/frontend/src/composables/useUnreadCount.ts": {
+    "mtime": 1787567235.9697907,
+    "ast_hash": "4cff9d3ccd28c8a343cbf842f7259824",
+    "semantic_hash": ""
+  },
+  "shared/frontend/src/config.ts": {
+    "mtime": 1787567235.7143,
+    "ast_hash": "f31d7cc9bf11657aea296981068c83c8",
+    "semantic_hash": ""
+  },
+  "shared/frontend/src/data/tiles.ts": {
+    "mtime": 1787567596.336022,
+    "ast_hash": "3e55f8ec64a34aecf2cac9853b636835",
+    "semantic_hash": ""
+  },
+  "shared/frontend/src/main.ts": {
+    "mtime": 1787568242.8793166,
+    "ast_hash": "4e86494d1601fbf5f38a73f27dcdf1f5",
+    "semantic_hash": ""
+  },
+  "shared/frontend/src/pages/index.vue": {
+    "mtime": 1787567264.4059107,
+    "ast_hash": "6c05a99f8b90e47b15459b1e5c127fab",
+    "semantic_hash": ""
+  },
+  "shared/frontend/src/plugins/index.ts": {
+    "mtime": 1787568244.9947019,
+    "ast_hash": "0e2aef29233b50cd68ba31803499ce2a",
+    "semantic_hash": ""
+  },
+  "shared/frontend/src/router/index.ts": {
+    "mtime": 1787567065.0611734,
+    "ast_hash": "b4b47157e577ddedae2b861e8122e47a",
+    "semantic_hash": ""
+  },
+  "shared/frontend/tsconfig.app.json": {
+    "mtime": 1787567065.079357,
+    "ast_hash": "40339fa658f084c159d2a8d57d7cdbf9",
+    "semantic_hash": ""
+  },
+  "shared/frontend/tsconfig.json": {
+    "mtime": 1787567064.2470403,
+    "ast_hash": "95c50cdab2472124432dc71e994b481b",
+    "semantic_hash": ""
+  },
+  "shared/frontend/tsconfig.node.json": {
+    "mtime": 1787567064.2472441,
+    "ast_hash": "848c34362971933605aba650eaa4f1af",
+    "semantic_hash": ""
+  },
+  "shared/frontend/vite.config.mts": {
+    "mtime": 1787568294.268145,
+    "ast_hash": "d5e1df164e433b43c0c86eac7c05abc7",
+    "semantic_hash": ""
+  },
+  "shared/frontend/index.html": {
+    "mtime": 1787568247.7205667,
+    "ast_hash": "81f7cac52d97623e9bf3852d2d82ec9b",
+    "semantic_hash": ""
+  },
+  "shared/README.md": {
+    "mtime": 1787568872.491695,
+    "ast_hash": "eb91a13d1dbc9b8acff1bee21f40d3e6",
+    "semantic_hash": ""
+  }
+}

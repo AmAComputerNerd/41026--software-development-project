@@ -19,7 +19,7 @@ export const TILES: Tile[] = [
     name: 'Notifications',
     description: 'Alerts, digests, and preferences for deadlines, grades, and account activity.',
     icon: 'bell',
-    route: 'http://localhost:5173/notifications',
+    route: '/notifications/',
     live: true,
   },
   {

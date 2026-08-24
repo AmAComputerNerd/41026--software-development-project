@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+ENV VITE_NOTIFICATIONS_API_BASE_URL=/api/notifications
 RUN npm run build
 
 # Serve stage

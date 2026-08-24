@@ -1,0 +1,1 @@
+{"nodes": [{"id": "tools_agentic_loop_prompts_service_database_task_prompt", "label": "Database Task Prompt", "file_type": "document", "source_file": "tools/agentic_loop/prompts/service/database_task_prompt.txt"}], "edges": [], "hyperedges": []}

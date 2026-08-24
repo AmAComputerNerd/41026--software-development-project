@@ -5,10 +5,6 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/notifications',
-    },
-    {
-      path: '/notifications',
       name: 'notifications',
       component: () => import('../views/NotificationsView.vue'),
     },
