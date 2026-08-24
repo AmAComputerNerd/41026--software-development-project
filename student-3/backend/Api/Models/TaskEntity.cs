@@ -10,6 +10,11 @@ public class TaskEntity
     public TaskStatus Status { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+    public long? CanvasAssignmentId { get; set; }
+    public DateTimeOffset? CanvasUpdatedAt { get; set; }
+    public string? CanvasWorkflowState { get; set; }
+    public string? CanvasSubmissionState { get; set; }
+    public bool? CanvasIsActive { get; set; }
 
     public Guid? CourseId { get; set; }
     public Course? Course { get; set; }

@@ -18,11 +18,17 @@ public static class CourseEndpoints
         return endpoints;
     }
 
-    private static async Task<IResult> GetCourses(AppDbContext db)
+    private static async Task<IResult> GetCourses(
+        AppDbContext db,
+        bool includeInactiveCanvas = false)
     {
-        var courses = await db.Courses
-            .AsNoTracking()
-            .ToListAsync();
+        var query = db.Courses.AsNoTracking();
+        if (!includeInactiveCanvas)
+        {
+            query = query.Where(course => course.CanvasIsActive != false);
+        }
+
+        var courses = await query.ToListAsync();
 
         var courseDtos = courses.Select(c => c.ToDto());
 

@@ -29,6 +29,11 @@ public static class TaskEndpoints
             .Include(t => t.ParentTask)
             .AsQueryable();
 
+        if (filter.IncludeInactiveCanvas != true)
+        {
+            query = query.Where(t => t.CanvasIsActive != false);
+        }
+
         if (!string.IsNullOrEmpty(filter.Status))
         {
             query = query.Where(t => t.Status.ToString() == filter.Status);

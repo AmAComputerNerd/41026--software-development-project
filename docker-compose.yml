@@ -1,5 +1,18 @@
 services:
 
+    shared-backend:
+        build:
+            context: ./shared/backend
+            dockerfile: Api/Dockerfile
+        ports:
+            - "5110:8080"
+        volumes:
+            - shared-db:/app/Data
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+            CANVAS_BASE_URL: ${CANVAS_BASE_URL}
+            CANVAS_API_TOKEN: ${CANVAS_API_TOKEN}
+
     student-1-backend:
         build:
             context: ./student-1/backend
@@ -21,6 +34,9 @@ services:
             - student-3-db:/app/Data
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+            SharedService__BaseUrl: http://shared-backend:8080
+        depends_on:
+            - shared-backend
 
     student-1-frontend:
         build:
@@ -45,5 +61,6 @@ services:
             - student-1-backend
 
 volumes:
+    shared-db:
     student-1-db:
     student-3-db:

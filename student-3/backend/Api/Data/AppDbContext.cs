@@ -13,8 +13,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Course>()
             .HasKey(c => c.Id);
 
+        modelBuilder.Entity<Course>()
+            .HasIndex(c => c.CanvasCourseId)
+            .IsUnique();
+
         modelBuilder.Entity<TaskEntity>()
             .HasKey(t => t.Id);
+
+        modelBuilder.Entity<TaskEntity>()
+            .HasIndex(t => t.CanvasAssignmentId)
+            .IsUnique();
 
         modelBuilder.Entity<TaskEntity>()
             .HasOne(t => t.Course)

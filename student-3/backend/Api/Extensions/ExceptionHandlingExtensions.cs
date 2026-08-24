@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Api.Services;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace Api.Extensions;
@@ -12,7 +13,25 @@ public static class ExceptionHandlingExtensions
             exceptionApp.Run(async context =>
             {
                 var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
-                if (exception is BadHttpRequestException { InnerException: JsonException })
+                if (exception is SharedServiceConfigurationException)
+                {
+                    context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+
+                    await Results.Problem(
+                        statusCode: StatusCodes.Status503ServiceUnavailable,
+                        title: "The shared service is not configured"
+                    ).ExecuteAsync(context);
+                }
+                else if (exception is SharedServiceException or HttpRequestException or JsonException)
+                {
+                    context.Response.StatusCode = StatusCodes.Status502BadGateway;
+
+                    await Results.Problem(
+                        statusCode: StatusCodes.Status502BadGateway,
+                        title: "The shared service request failed"
+                    ).ExecuteAsync(context);
+                }
+                else if (exception is BadHttpRequestException { InnerException: JsonException })
                 {
                     context.Response.StatusCode = StatusCodes.Status400BadRequest;
 

@@ -3,6 +3,7 @@ using System;
 using Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260824121624_AddCanvasSyncMetadata")]
+    partial class AddCanvasSyncMetadata
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
@@ -36,7 +39,7 @@ namespace Api.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("LastCanvasSyncAt")
+                    b.Property<DateTimeOffset?>("LastCanvasSyncAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
@@ -66,7 +69,7 @@ namespace Api.Migrations
                     b.Property<string>("CanvasSubmissionState")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("CanvasUpdatedAt")
+                    b.Property<DateTimeOffset?>("CanvasUpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CanvasWorkflowState")
@@ -75,13 +78,13 @@ namespace Api.Migrations
                     b.Property<Guid?>("CourseId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("DueDate")
+                    b.Property<DateTimeOffset?>("DueDate")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("ParentTaskId")
@@ -99,7 +102,7 @@ namespace Api.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("UpdatedAt")
+                    b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

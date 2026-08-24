@@ -1,0 +1,23 @@
+Feature: Shared Services
+
+The shared area contains cross-cutting infrastructure used by the student
+microservices:
+
+- Canvas backend: own Canvas authentication using CANVAS_BASE_URL and
+  CANVAS_API_TOKEN, fetch active courses and assignments, follow Canvas
+  pagination, and expose normalized HTTP endpoints for other services.
+- Data ownership: fetch Canvas domain data live rather than caching courses or
+  assignments. The shared SQLite database stores request audit records only,
+  with DateTime timestamps normalized to UTC.
+- Service boundaries: consumers call the shared backend over HTTP and never
+  access its Entity Framework context or database directly. Docker Compose
+  provides service discovery for cross-service calls.
+- Shared frontend: provide the dashboard shell and nginx entry point used to
+  reach feature frontends and APIs.
+- UI kit: provide reusable Vue components, design tokens, primitives, and
+  theme support so feature frontends share a consistent visual system.
+
+Out of scope for the current Canvas integration: per-account Canvas tokens,
+authentication/authorization between microservices, assignment caching, and
+business-domain task persistence. Authentication is planned separately; the
+task-tracker service owns imported tasks.

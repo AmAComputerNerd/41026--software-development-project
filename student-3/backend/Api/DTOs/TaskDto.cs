@@ -10,5 +10,10 @@ public record TaskDto(
     Guid? CourseId,
     string? CourseName,
     Guid? ParentTaskId,
-    string? ParentTaskTitle
+    string? ParentTaskTitle,
+    long? CanvasAssignmentId,
+    DateTimeOffset? CanvasUpdatedAt,
+    string? CanvasWorkflowState,
+    string? CanvasSubmissionState,
+    bool? CanvasIsActive
 );
