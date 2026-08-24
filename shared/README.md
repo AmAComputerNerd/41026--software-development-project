@@ -3,10 +3,27 @@
 The shell (`shared/frontend`) is a dashboard at `/` with a tile per feature. Wiring your
 frontend in takes 4 steps.
 
-## 1. Use the design tokens
+## 1. Depend on @better-canvas/ui-kit
 
-Import `shared/frontend/src/styles/tokens.css` in your app and use its custom
+Once your app is on Vue, don't copy CSS files around — depend on the shared
+`@better-canvas/ui-kit` workspace package (`shared/ui-kit`) instead. Add it to
+your frontend's `package.json`:
+
+```json
+"dependencies": {
+    "@better-canvas/ui-kit": "*"
+}
+```
+
+Since it's an npm workspace package, `npm install` at the repo root links it in.
+Import its stylesheets once in your app entrypoint, and use its custom
 properties instead of hardcoding colours, borders, or shadows:
+
+```ts
+// main.ts
+import '@better-canvas/ui-kit/styles/tokens.css'
+import '@better-canvas/ui-kit/styles/primitives.css'
+```
 
 ```css
 background: var(--color-surface);
@@ -14,7 +31,10 @@ border: var(--border-width-md) solid var(--border-color);
 box-shadow: var(--shadow-offset-md) var(--shadow-offset-md) 0 var(--shadow-color);
 ```
 
-See the file for the full list (colours, border widths, shadow offsets, fonts, spacing scale).
+See `shared/ui-kit/src/styles/tokens.css` for the full list (colours, border
+widths, shadow offsets, fonts, spacing scale). `student-1/frontend` is the
+reference implementation for consuming the kit — check its `package.json` and
+`src/main.ts` for the wiring.
 
 ## 2. Add your nginx route
 
