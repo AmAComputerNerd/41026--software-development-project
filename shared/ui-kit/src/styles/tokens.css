@@ -44,3 +44,11 @@
   --nb-space-8: 32px;
   --nb-space-16: 64px;
 }
+
+/* Dark mode: swap ink/bg roles, keep accents punchy on the near-black base. */
+:root[data-theme='dark'] {
+  --nb-color-bg: #111111;
+  --nb-color-ink: #EDEBE6;
+  --nb-color-white: #1B1B1B;
+  --nb-color-muted: #9A9A9A;
+}

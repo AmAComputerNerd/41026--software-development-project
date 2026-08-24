@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { Navbar, SERVICES } from '@better-canvas/ui-kit'
 import NotificationCentre from '@/components/notifications/NotificationCentre.vue'
 
 const route = useRoute()
@@ -13,14 +14,11 @@ const navLinks = [
 
 <template>
   <div class="nb-app">
-    <header class="nb-topbar">
-      <div class="nb-topbar__brand">
-        <span class="nb-topbar__logo">B</span>
-        <span class="nb-topbar__name">BETTER CANVAS</span>
-        <span class="nb-topbar__badge nb-mono">STUDENT DASHBOARD</span>
-      </div>
-      <NotificationCentre />
-    </header>
+    <Navbar :services="SERVICES">
+      <template #actions>
+        <NotificationCentre />
+      </template>
+    </Navbar>
 
     <nav class="nb-tabstrip">
       <RouterLink
@@ -43,46 +41,6 @@ const navLinks = [
 <style scoped>
 .nb-app {
   min-height: 100vh;
-}
-
-.nb-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 68px;
-  padding: 0 24px;
-  border-bottom: var(--nb-border-width-lg) solid var(--nb-color-ink);
-}
-
-.nb-topbar__brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.nb-topbar__logo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: var(--nb-color-ink);
-  color: var(--nb-color-bg);
-  font-weight: 700;
-  font-size: 15px;
-}
-
-.nb-topbar__name {
-  font-weight: 700;
-  font-size: 18px;
-  letter-spacing: 0.5px;
-}
-
-.nb-topbar__badge {
-  border: var(--nb-border-width-sm) solid var(--nb-color-ink);
-  padding: 2px 8px;
-  font-size: 11px;
-  letter-spacing: 0.5px;
 }
 
 .nb-tabstrip {

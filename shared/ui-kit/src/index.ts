@@ -1,1 +1,7 @@
 export { default as ChannelToggle } from './components/ChannelToggle.vue'
+export { default as Navbar } from './components/Navbar.vue'
+export { default as ThemeToggle } from './components/ThemeToggle.vue'
+export { useTheme } from './composables/useTheme'
+export type { Theme } from './composables/useTheme'
+export { SERVICES } from './services'
+export type { Service, ServiceId } from './services'
