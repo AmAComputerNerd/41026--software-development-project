@@ -29,4 +29,14 @@ public static class DtoExtensions
             UpdatedAtUtc: preference.UpdatedAtUtc
         );
     }
+
+    public static AiDigestDto ToDto(this AiDigest digest)
+    {
+        return new AiDigestDto(
+            Id: digest.Id,
+            StudentId: digest.StudentId,
+            Summary: digest.Summary,
+            GeneratedAtUtc: digest.GeneratedAtUtc
+        );
+    }
 }

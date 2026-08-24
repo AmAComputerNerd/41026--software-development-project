@@ -1,9 +1,13 @@
 using Api.Data;
 using Api.Endpoints;
 using Api.Extensions;
+using Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration["OpenRouter:ApiKey"] =
+    Environment.GetEnvironmentVariable("OPENROUTER_API_KEY") ?? builder.Configuration["OpenRouter:ApiKey"];
 
 // Services
 builder.Services.AddOpenApi();
@@ -19,6 +23,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             return Task.CompletedTask;
         });
 });
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IAiDigestService, OpenRouterDigestService>();
 
 var app = builder.Build();
 
@@ -38,5 +44,6 @@ await app.InitialiseDatabaseAsync();
 // Endpoints
 app.MapNotificationEndpoints();
 app.MapPreferenceEndpoints();
+app.MapAiDigestEndpoints();
 
 app.Run();
