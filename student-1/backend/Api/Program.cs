@@ -35,9 +35,7 @@ var app = builder.Build();
 
 if (string.IsNullOrWhiteSpace(builder.Configuration["AiGateway:BaseUrl"]))
 {
-    app.Logger.LogWarning(
-        "AiGateway:BaseUrl is not set. AI digest generation will fail until you set it " +
-        "(see student-1/backend/README.md).");
+    Log.AiGatewayBaseUrlNotSet(app.Logger);
 }
 
 // Configure the HTTP request pipeline.
@@ -62,3 +60,11 @@ app.UseHttpsRedirection();
 await app.InitialiseDatabaseAsync();
 
 app.Run();
+
+internal static partial class Log
+{
+    [LoggerMessage(Level = LogLevel.Warning, Message =
+        "AiGateway:BaseUrl is not set. AI digest generation will fail until you set it " +
+        "(see student-1/backend/README.md).")]
+    public static partial void AiGatewayBaseUrlNotSet(ILogger logger);
+}
