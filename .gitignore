@@ -13,6 +13,9 @@
 # Local development configuration
 **/appsettings.Development.json
 
+# Lint cache
+**/.eslintcache
+
 # User-specific files
 *.rsuser
 *.suo
