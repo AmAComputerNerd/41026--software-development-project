@@ -28,6 +28,13 @@ services:
             context: .
             dockerfile: student-1/frontend/Dockerfile
 
+    ai-mode:
+        build:
+            context: ./ai-services/ai-mode
+            dockerfile: Api/Dockerfile
+        environment:
+            OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+
     shared-shell:
         build:
             context: .
