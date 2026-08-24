@@ -37,5 +37,6 @@ await app.InitialiseDatabaseAsync();
 
 // Endpoints
 app.MapNotificationEndpoints();
+app.MapPreferenceEndpoints();
 
 app.Run();

@@ -17,4 +17,16 @@ public static class DtoExtensions
             CreatedAtUtc: notification.CreatedAtUtc
         );
     }
+
+    public static NotificationPreferenceDto ToDto(this NotificationPreference preference)
+    {
+        return new NotificationPreferenceDto(
+            Id: preference.Id,
+            StudentId: preference.StudentId,
+            Type: preference.Type.ToString(),
+            Channel: preference.Channel.ToString(),
+            Enabled: preference.Enabled,
+            UpdatedAtUtc: preference.UpdatedAtUtc
+        );
+    }
 }
