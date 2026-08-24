@@ -1,4 +1,5 @@
 using Api.Data;
+using Api.Endpoints;
 using Api.Extensions;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,5 +34,8 @@ if (app.Environment.IsDevelopment())
 // Infrastructure
 app.UseHttpsRedirection();
 await app.InitialiseDatabaseAsync();
+
+// Endpoints
+app.MapNotificationEndpoints();
 
 app.Run();

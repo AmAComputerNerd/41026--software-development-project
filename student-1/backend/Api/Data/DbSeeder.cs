@@ -22,17 +22,17 @@ public static class DbSeeder
             var now = DateTime.UtcNow;
 
             notifications.AddRange(
-                new Notification { StudentId = Student1Id, Type = NotificationType.Deadline, SourceMicroservice = "deadline-tracker", IsRead = false, CreatedAtUtc = now.AddHours(-1) },
-                new Notification { StudentId = Student1Id, Type = NotificationType.Grade, SourceMicroservice = "grading-service", IsRead = false, CreatedAtUtc = now.AddHours(-2) },
-                new Notification { StudentId = Student1Id, Type = NotificationType.Automation, SourceMicroservice = "automation-engine", IsRead = true, CreatedAtUtc = now.AddHours(-3) },
-                new Notification { StudentId = Student1Id, Type = NotificationType.Account, SourceMicroservice = "identity-service", IsRead = true, CreatedAtUtc = now.AddHours(-4) },
-                new Notification { StudentId = Student1Id, Type = NotificationType.AI, SourceMicroservice = "ai-digest-service", IsRead = false, CreatedAtUtc = now.AddHours(-5) },
-                new Notification { StudentId = Student1Id, Type = NotificationType.Deadline, SourceMicroservice = "deadline-tracker", IsRead = false, CreatedAtUtc = now.AddHours(-6) },
-                new Notification { StudentId = Student2Id, Type = NotificationType.Grade, SourceMicroservice = "grading-service", IsRead = false, CreatedAtUtc = now.AddHours(-1) },
-                new Notification { StudentId = Student2Id, Type = NotificationType.Automation, SourceMicroservice = "automation-engine", IsRead = false, CreatedAtUtc = now.AddHours(-2) },
-                new Notification { StudentId = Student2Id, Type = NotificationType.Account, SourceMicroservice = "identity-service", IsRead = true, CreatedAtUtc = now.AddHours(-3) },
-                new Notification { StudentId = Student2Id, Type = NotificationType.AI, SourceMicroservice = "ai-digest-service", IsRead = true, CreatedAtUtc = now.AddHours(-4) },
-                new Notification { StudentId = Student2Id, Type = NotificationType.Deadline, SourceMicroservice = "deadline-tracker", IsRead = false, CreatedAtUtc = now.AddHours(-5) }
+                new Notification { StudentId = Student1Id, Type = NotificationType.Deadline, SourceMicroservice = "deadline-tracker", Message = "Your assignment is due soon.", IsRead = false, CreatedAtUtc = now.AddHours(-1) },
+                new Notification { StudentId = Student1Id, Type = NotificationType.Grade, SourceMicroservice = "grading-service", Message = "A new grade has been posted.", IsRead = false, CreatedAtUtc = now.AddHours(-2) },
+                new Notification { StudentId = Student1Id, Type = NotificationType.Automation, SourceMicroservice = "automation-engine", Message = "Automation run completed successfully.", IsRead = true, CreatedAtUtc = now.AddHours(-3) },
+                new Notification { StudentId = Student1Id, Type = NotificationType.Account, SourceMicroservice = "identity-service", Message = "Your account settings were updated.", IsRead = true, CreatedAtUtc = now.AddHours(-4) },
+                new Notification { StudentId = Student1Id, Type = NotificationType.AI, SourceMicroservice = "ai-digest-service", Message = "Your weekly AI digest is ready.", IsRead = false, CreatedAtUtc = now.AddHours(-5) },
+                new Notification { StudentId = Student1Id, Type = NotificationType.Deadline, SourceMicroservice = "deadline-tracker", Message = "A task deadline is approaching.", IsRead = false, CreatedAtUtc = now.AddHours(-6) },
+                new Notification { StudentId = Student2Id, Type = NotificationType.Grade, SourceMicroservice = "grading-service", Message = "A new grade has been posted.", IsRead = false, CreatedAtUtc = now.AddHours(-1) },
+                new Notification { StudentId = Student2Id, Type = NotificationType.Automation, SourceMicroservice = "automation-engine", Message = "Automation flagged a task for follow-up.", IsRead = false, CreatedAtUtc = now.AddHours(-2) },
+                new Notification { StudentId = Student2Id, Type = NotificationType.Account, SourceMicroservice = "identity-service", Message = "Your account settings were updated.", IsRead = true, CreatedAtUtc = now.AddHours(-3) },
+                new Notification { StudentId = Student2Id, Type = NotificationType.AI, SourceMicroservice = "ai-digest-service", Message = "Your weekly AI digest is ready.", IsRead = true, CreatedAtUtc = now.AddHours(-4) },
+                new Notification { StudentId = Student2Id, Type = NotificationType.Deadline, SourceMicroservice = "deadline-tracker", Message = "A task deadline is approaching.", IsRead = false, CreatedAtUtc = now.AddHours(-5) }
             );
 
             db.SaveChanges();

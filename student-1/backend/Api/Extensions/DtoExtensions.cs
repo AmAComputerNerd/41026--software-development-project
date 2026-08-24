@@ -1,0 +1,20 @@
+using Api.DTOs;
+using Api.Models;
+
+namespace Api.Extensions;
+
+public static class DtoExtensions
+{
+    public static NotificationDto ToDto(this Notification notification)
+    {
+        return new NotificationDto(
+            Id: notification.Id,
+            StudentId: notification.StudentId,
+            Type: notification.Type.ToString(),
+            SourceMicroservice: notification.SourceMicroservice,
+            Message: notification.Message,
+            IsRead: notification.IsRead,
+            CreatedAtUtc: notification.CreatedAtUtc
+        );
+    }
+}
