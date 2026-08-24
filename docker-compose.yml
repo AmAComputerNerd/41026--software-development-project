@@ -25,13 +25,13 @@ services:
 
     student-1-frontend:
         build:
-            context: ./student-1/frontend
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: student-1/frontend/Dockerfile
 
     shared-shell:
         build:
-            context: ./shared/frontend
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: shared/frontend/Dockerfile
         ports:
             - "8080:80"
         depends_on:
