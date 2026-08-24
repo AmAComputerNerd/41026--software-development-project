@@ -7,7 +7,7 @@ public record ModifyTaskRequestDto(
     string? NewTitle,
     bool UpdateDescription,
     string? NewDescription,
-    DateTimeOffset? NewDueDate,
+    DateTime? NewDueDate,
     string? NewPriority,
     string? NewStatus
 );

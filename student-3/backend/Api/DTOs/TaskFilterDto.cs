@@ -8,5 +8,6 @@ public record TaskFilterDto(
     string? Priority,
     Guid? CourseId,
     Guid? ParentTaskId,
-    bool? Overdue
+    bool? Overdue,
+    bool? IncludeInactiveCanvas
 );

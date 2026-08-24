@@ -1,6 +1,8 @@
+using Api.Configuration;
 using Api.Data;
 using Api.Endpoints;
 using Api.Extensions;
+using Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Services
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
+builder.Services.Configure<SharedServiceOptions>(
+    builder.Configuration.GetSection(SharedServiceOptions.SectionName));
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options
@@ -19,6 +23,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             return Task.CompletedTask;
         });
 });
+builder.Services.AddHttpClient<ISharedCanvasClient, SharedCanvasClient>();
+builder.Services.AddScoped<CanvasTaskSyncService>();
 
 var app = builder.Build();
 
@@ -34,6 +40,7 @@ if (app.Environment.IsDevelopment())
 // API
 app.MapCourseEndpoints();
 app.MapTaskEndpoints();
+app.MapCanvasSyncEndpoints();
 
 // Infrastructure
 app.UseApiExceptionHandling();

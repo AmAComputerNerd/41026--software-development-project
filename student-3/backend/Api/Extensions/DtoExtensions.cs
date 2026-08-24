@@ -17,7 +17,12 @@ public static class DtoExtensions
             CourseId: task.CourseId,
             CourseName: task.Course?.Name,
             ParentTaskId: task.ParentTaskId,
-            ParentTaskTitle: task.ParentTask?.Title
+            ParentTaskTitle: task.ParentTask?.Title,
+            CanvasAssignmentId: task.CanvasAssignmentId,
+            CanvasUpdatedAt: task.CanvasUpdatedAt,
+            CanvasWorkflowState: task.CanvasWorkflowState,
+            CanvasSubmissionState: task.CanvasSubmissionState,
+            CanvasIsActive: task.CanvasIsActive
         );
     }
 
@@ -27,7 +32,11 @@ public static class DtoExtensions
         return new CourseDto(
             Id: course.Id,
             Code: course.Code,
-            Name: course.Name
+            Name: course.Name,
+            CanvasCourseId: course.CanvasCourseId,
+            CanvasWorkflowState: course.CanvasWorkflowState,
+            CanvasIsActive: course.CanvasIsActive,
+            LastCanvasSyncAt: course.LastCanvasSyncAt
         );
     }
 }

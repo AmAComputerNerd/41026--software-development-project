@@ -29,6 +29,11 @@ public static class TaskEndpoints
             .Include(t => t.ParentTask)
             .AsQueryable();
 
+        if (filter.IncludeInactiveCanvas != true)
+        {
+            query = query.Where(t => t.CanvasIsActive != false);
+        }
+
         if (!string.IsNullOrEmpty(filter.Status))
         {
             query = query.Where(t => t.Status.ToString() == filter.Status);
@@ -51,7 +56,7 @@ public static class TaskEndpoints
 
         if (filter.Overdue.HasValue)
         {
-            var now = DateTimeOffset.UtcNow;
+            var now = DateTime.UtcNow;
             if (filter.Overdue == true)
             {
                 query = query.Where(t => t.DueDate < now && t.Status != TaskStatus.Completed);
@@ -116,8 +121,8 @@ public static class TaskEndpoints
             Status = TaskStatus.Todo,
             CourseId = requestDto.CourseId,
             ParentTaskId = requestDto.ParentTaskId,
-            CreatedAt = DateTimeOffset.UtcNow,
-            UpdatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         db.Tasks.Add(task);
@@ -151,7 +156,7 @@ public static class TaskEndpoints
         task.DueDate = requestDto.NewDueDate ?? task.DueDate;
         task.Priority = hasNewPriority ? newPriority : task.Priority;
         task.Status = hasNewStatus ? newStatus : task.Status;
-        task.UpdatedAt = DateTimeOffset.UtcNow;
+        task.UpdatedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync();
 

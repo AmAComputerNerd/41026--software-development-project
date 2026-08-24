@@ -88,9 +88,9 @@ public static class DbSeeder
                 CourseId = courses.FirstOrDefault(c => c.Code == "43034")?.Id,
                 Priority = TaskPriority.High,
                 Status = TaskStatus.Todo,
-                DueDate = DateTimeOffset.UtcNow,
-                CreatedAt = DateTimeOffset.UtcNow,
-                UpdatedAt = DateTimeOffset.UtcNow
+                DueDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
 
             tasks.AddRange(
@@ -101,9 +101,9 @@ public static class DbSeeder
                     CourseId = courses.FirstOrDefault(c => c.Code == "41026")?.Id,
                     Priority = TaskPriority.High,
                     Status = TaskStatus.InProgress,
-                    DueDate = DateTimeOffset.UtcNow,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    UpdatedAt = DateTimeOffset.UtcNow
+                    DueDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 },
                 new TaskEntity
                 {
@@ -112,9 +112,9 @@ public static class DbSeeder
                     CourseId = courses.FirstOrDefault(c => c.Code == "41026")?.Id,
                     Priority = TaskPriority.Medium,
                     Status = TaskStatus.Todo,
-                    DueDate = DateTimeOffset.UtcNow,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    UpdatedAt = DateTimeOffset.UtcNow
+                    DueDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 },
                 new TaskEntity
                 {
@@ -123,9 +123,9 @@ public static class DbSeeder
                     CourseId = courses.FirstOrDefault(c => c.Code == "41026")?.Id,
                     Priority = TaskPriority.Low,
                     Status = TaskStatus.InProgress,
-                    DueDate = DateTimeOffset.UtcNow,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    UpdatedAt = DateTimeOffset.UtcNow
+                    DueDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 },
                 new TaskEntity
                 {
@@ -133,9 +133,9 @@ public static class DbSeeder
                     Description = "Generic task without a course",
                     Priority = TaskPriority.Low,
                     Status = TaskStatus.Completed,
-                    DueDate = DateTimeOffset.UtcNow,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    UpdatedAt = DateTimeOffset.UtcNow
+                    DueDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 },
                 new TaskEntity
                 {
@@ -144,9 +144,9 @@ public static class DbSeeder
                     CourseId = courses.FirstOrDefault(c => c.Code == "31005")?.Id,
                     Priority = TaskPriority.High,
                     Status = TaskStatus.Completed,
-                    DueDate = DateTimeOffset.UtcNow,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    UpdatedAt = DateTimeOffset.UtcNow
+                    DueDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 },
                 parentTask,
                 new TaskEntity
@@ -156,9 +156,9 @@ public static class DbSeeder
                     CourseId = courses.FirstOrDefault(c => c.Code == "31005")?.Id,
                     Priority = TaskPriority.High,
                     Status = TaskStatus.Completed,
-                    DueDate = DateTimeOffset.UtcNow,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    UpdatedAt = DateTimeOffset.UtcNow,
+                    DueDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
                     ParentTask = parentTask
                 },
                 new TaskEntity
@@ -168,9 +168,9 @@ public static class DbSeeder
                     CourseId = courses.FirstOrDefault(c => c.Code == "31005")?.Id,
                     Priority = TaskPriority.Medium,
                     Status = TaskStatus.InProgress,
-                    DueDate = DateTimeOffset.UtcNow,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    UpdatedAt = DateTimeOffset.UtcNow,
+                    DueDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
                     ParentTask = parentTask
                 },
                 new TaskEntity
@@ -180,9 +180,9 @@ public static class DbSeeder
                     CourseId = courses.FirstOrDefault(c => c.Code == "31005")?.Id,
                     Priority = TaskPriority.Low,
                     Status = TaskStatus.Completed,
-                    DueDate = DateTimeOffset.UtcNow,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    UpdatedAt = DateTimeOffset.UtcNow,
+                    DueDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
                     ParentTask = parentTask
                 },
                 new TaskEntity
@@ -192,9 +192,9 @@ public static class DbSeeder
                     CourseId = courses.FirstOrDefault(c => c.Code == "31005")?.Id,
                     Priority = TaskPriority.High,
                     Status = TaskStatus.Completed,
-                    DueDate = DateTimeOffset.UtcNow,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                    UpdatedAt = DateTimeOffset.UtcNow
+                    DueDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 }
             );
 

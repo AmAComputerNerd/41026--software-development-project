@@ -16,7 +16,11 @@ TODO: Short summary of microservice, other info
 
 **Student 3: Jonathon Thomson (25488154).**  
 Working directory: `student-3/`  
-TODO: Short summary of microservice, other info
+Deadline and task-tracker service: manages courses and coursework tasks,
+including priorities, completion states, due dates, subtasks, filtering, and
+Canvas assignment imports through the shared backend. Canvas sync keeps one
+primary task per assignment and updates it on later imports without storing a
+separate assessment table.
 
 **Student 4: Tristan Huang (STUDENT-NUM).**  
 Working directory: `student-4/`  
@@ -28,10 +32,11 @@ TODO: Short summary of microservice, other info
 
 ## Setup
 
-Copy `.env.example` to `.env` and set `OPENROUTER_API_KEY` (get one at
-https://openrouter.ai/keys). Every microservice's AI features (digests,
-agentic loop, etc.) read this same key via `docker-compose.yml`, which
-injects it into each service's container as `OPENROUTER_API_KEY`.
+Copy `.env.example` to `.env`. Set `OPENROUTER_API_KEY` (get one at
+https://openrouter.ai/keys), `CANVAS_BASE_URL` to the root URL of your Canvas
+instance, and `CANVAS_API_TOKEN` to a personal Canvas access token.
+`docker-compose.yml` injects these values into the services that own each
+integration.
 
 ```bash
 cp .env.example .env
@@ -39,10 +44,43 @@ cp .env.example .env
 docker compose up
 ```
 
-Running a service outside Docker (e.g. `dotnet run` directly)? See that
-service's own README for how to set the key locally.
+Individual services can run standalone for local development. Cross-service
+features are intentionally supported only through Docker Compose; see each
+service's README for its standalone limitations.
+
+## Service communication
+
+Microservices communicate over HTTP and own separate databases. They must not
+query another service's Entity Framework database.
+
+The shared backend owns Canvas authentication and API pagination. The deadline
+and task-tracker backend receives `SharedService:BaseUrl` through standard
+ASP.NET configuration. Docker Compose supplies `http://shared-backend:8080`,
+where `shared-backend` is resolved by Compose's internal DNS. Cross-service
+integration is intentionally available only through Docker Compose; standalone
+services do not receive addresses for other services.
+
+To import Canvas data, start the services and call:
+
+```http
+POST http://localhost:5103/api/canvas-sync
+```
+
+The sync fetches active courses and their assignments, then transactionally
+upserts one task per stable Canvas assignment ID. Removed assignments are
+marked inactive rather than deleted. Canvas data remains live in the shared
+service; only the source IDs and fields needed by courses/tasks are persisted
+by the task tracker. A submitted or graded assignment marks its task as
+completed; other Canvas submission states do not overwrite the task's local
+status.
+
+The shared Canvas and task-tracker databases persist timestamps as `DateTime`
+normalized to UTC.
 
 ## Release 0: Summary
 Working branch: `main`  
 Feature set:  
-- TBD
+- Shared dashboard shell and UI kit.
+- Notification preferences, notification management, and AI digests.
+- Deadline/task CRUD, course linkage, filtering, and Canvas synchronization.
+- Shared Canvas API gateway, audit database, Docker image, and CI workflow.

@@ -1,0 +1,105 @@
+name: Shared backend - CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "shared/backend/**"
+      - ".github/workflows/shared-backend-ci.yml"
+  pull_request:
+    paths:
+      - "shared/backend/**"
+      - ".github/workflows/shared-backend-ci.yml"
+
+concurrency:
+  group: shared-backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  WORKING_DIR: shared/backend
+
+jobs:
+  build-and-analyze:
+    name: Build, analyze & format check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('shared/backend/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore SharedBackend.sln
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Build
+        run: dotnet build SharedBackend.sln --configuration Release --no-restore -warnaserror
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Verify code formatting
+        run: dotnet format SharedBackend.sln --verify-no-changes --severity warn --no-restore
+        working-directory: ${{ env.WORKING_DIR }}
+
+  ef-core-migrations-check:
+    name: EF Core migrations drift check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore Api/Api.csproj
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Install dotnet-ef
+        run: dotnet tool install --global dotnet-ef --version 10.0.11
+
+      - name: Check for pending model changes
+        run: dotnet ef migrations has-pending-model-changes --project Api/Api.csproj
+        working-directory: ${{ env.WORKING_DIR }}
+
+  vulnerability-scan:
+    name: NuGet vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore SharedBackend.sln
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Scan for known-vulnerable packages
+        shell: bash
+        run: |
+          set -o pipefail
+          dotnet list SharedBackend.sln package --vulnerable --include-transitive | tee vuln-report.txt
+          if grep -qi "has the following vulnerable packages" vuln-report.txt; then
+            echo "::error::Vulnerable NuGet packages detected. See log above."
+            exit 1
+          fi
+        working-directory: ${{ env.WORKING_DIR }}

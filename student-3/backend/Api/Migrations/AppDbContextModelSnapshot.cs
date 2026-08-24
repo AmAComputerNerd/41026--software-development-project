@@ -23,8 +23,20 @@ namespace Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<long?>("CanvasCourseId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool?>("CanvasIsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CanvasWorkflowState")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Code")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastCanvasSyncAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
@@ -32,6 +44,9 @@ namespace Api.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CanvasCourseId")
+                        .IsUnique();
 
                     b.ToTable("Courses");
                 });
@@ -42,16 +57,31 @@ namespace Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<long?>("CanvasAssignmentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool?>("CanvasIsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CanvasSubmissionState")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("CanvasUpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CanvasWorkflowState")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid?>("CourseId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("DueDate")
+                    b.Property<DateTime?>("DueDate")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("ParentTaskId")
@@ -69,10 +99,13 @@ namespace Api.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CanvasAssignmentId")
+                        .IsUnique();
 
                     b.HasIndex("CourseId");
 

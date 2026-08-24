@@ -5,7 +5,7 @@ namespace Api.DTOs;
 public record CreateTaskRequestDto(
     string Title,
     string? Description,
-    DateTimeOffset? DueDate,
+    DateTime? DueDate,
     string Priority,
     Guid? CourseId,
     Guid? ParentTaskId

@@ -1,9 +1,35 @@
-# Plugging into the shared shell
+# Shared services
+
+## Shared backend
+
+The shared backend owns third-party API integrations. Other microservices call
+its HTTP API and must not read its database directly.
+
+### Local setup
+
+Set these values in the repository root `.env` file:
+
+```dotenv
+CANVAS_BASE_URL=https://your-institution.instructure.com
+CANVAS_API_TOKEN=your-token
+```
+
+The service searches parent directories for `.env` when run outside Docker:
+
+```powershell
+dotnet run --project shared\backend\Api
+```
+
+Canvas endpoints are available under `/api/canvas`. The SQLite database stores
+request audit records only; Canvas courses and assignments are fetched live and
+are not cached.
+
+## Plugging into the shared shell
 
 The shell (`shared/frontend`) is a dashboard at `/` with a tile per feature. Wiring your
 frontend in takes 4 steps.
 
-## 1. Depend on @better-canvas/ui-kit
+### 1. Depend on @better-canvas/ui-kit
 
 Once your app is on Vue, don't copy CSS files around — depend on the shared
 `@better-canvas/ui-kit` workspace package (`shared/ui-kit`) instead. Add it to
@@ -36,7 +62,7 @@ widths, shadow offsets, fonts, spacing scale). `student-1/frontend` is the
 reference implementation for consuming the kit — check its `package.json` and
 `src/main.ts` for the wiring.
 
-## 2. Add your nginx route
+### 2. Add your nginx route
 
 In `shared/frontend/nginx.conf`, uncomment/add your `location` block(s), pointing
 `proxy_pass` at your docker-compose service name(s). Example already stubbed for grades:
@@ -62,7 +88,7 @@ location /api/grades/ {
 Route prefix must match your tile's `route` in `tiles.ts` (step 4) and your API prefix
 must match what your frontend calls.
 
-## 3. Add your service to docker-compose.yml
+### 3. Add your service to docker-compose.yml
 
 Follow the `student-1-frontend` pattern at repo root `docker-compose.yml`:
 
@@ -75,7 +101,7 @@ student-2-frontend:
 
 Add your container name to `shared-shell`'s `depends_on` so it starts before the shell.
 
-## 4. Flip your tile live
+### 4. Flip your tile live
 
 In `shared/frontend/src/data/tiles.ts`, find your tile and set:
 

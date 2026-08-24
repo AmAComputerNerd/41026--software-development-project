@@ -4,11 +4,16 @@ public record TaskDto(
     Guid Id,
     string Title,
     string? Description,
-    DateTimeOffset? DueDate,
+    DateTime? DueDate,
     string Priority,
     string Status,
     Guid? CourseId,
     string? CourseName,
     Guid? ParentTaskId,
-    string? ParentTaskTitle
+    string? ParentTaskTitle,
+    long? CanvasAssignmentId,
+    DateTime? CanvasUpdatedAt,
+    string? CanvasWorkflowState,
+    string? CanvasSubmissionState,
+    bool? CanvasIsActive
 );

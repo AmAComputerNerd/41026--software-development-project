@@ -3,15 +3,30 @@ Feature: Deadlines and Task Tracker
 This service lets a student track coursework tasks against their courses so
 nothing gets missed. Core functionality:
 
-- Courses: create/list courses (Code, Name) that tasks can be linked to.
+- Courses: list/read courses (Code, Name) that tasks can be linked to. Courses
+  can be seeded locally or imported from Canvas.
 - Tasks: create/read/update/delete tasks with a Title, optional
   Description, DueDate, Priority (Low/Medium/High), Status
-  (Todo/InProgress/Done), and optional links to a Course and/or a parent
+  (Todo/InProgress/Completed), and optional links to a Course and/or a parent
   Task (for subtasks/checklists).
 - Filtering: list tasks filtered by Status, Priority, Course, and an
-  "overdue" flag (DueDate in the past and Status != Done).
+  "overdue" flag (DueDate in the past and Status != Completed).
 - Data integrity: deleting a Course should not delete its Tasks (just
   unlink them); deleting a parent Task should cascade to its subtasks.
+- Canvas sync: call the shared backend over HTTP to fetch active courses and
+  their assignments, then transactionally upsert one primary Task per stable
+  Canvas assignment ID. Do not persist assessments in a separate table.
+  Missing Canvas records are retained but marked inactive, and normal list
+  endpoints hide them by default.
+- Completion convention: submitted or graded Canvas assignments set the
+  linked Task to Completed. Other Canvas submission states must not change an
+  existing Task's local Status.
+- Time convention: database and API timestamps use DateTime normalized to UTC,
+  not DateTimeOffset.
+- Service communication: SharedService:BaseUrl is supplied only by Docker
+  Compose. The task tracker may run standalone, but Canvas sync is then
+  intentionally unavailable.
 
 Out of scope for this service: authentication/user accounts, notifications
-or reminders, and any UI - this is a backend-only API for now.
+or reminders, direct Canvas authentication, direct access to the shared
+service's database, and any UI - this is a backend-only API for now.

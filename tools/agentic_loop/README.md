@@ -34,7 +34,7 @@ repo's multi-student microservices project.
   `collectors/` if their stack differs.
 - **Docker Compose review** parses the real `docker-compose.yml` at the
   repo root - services, ports, volumes, `depends_on`, networks - and works
-  automatically as more services (including a future shared one) are added.
+  automatically as more services are added.
 
 ## Structure
 
@@ -70,8 +70,10 @@ tools/
     │   │   ├── compose_task_prompt.txt
     │   │   ├── review_system_prompt.txt
     │   │   └── review_task_prompt.txt
-    │   └── owners/                # student-authored feature context, one folder per owner
-    │       └── student-3/context_prompt.txt
+    │   └── owners/                # owner-specific feature context
+    │       ├── student-1/context_prompt.txt
+    │       ├── student-3/context_prompt.txt
+    │       └── shared/context_prompt.txt
     └── requirements.txt
 ```
 
