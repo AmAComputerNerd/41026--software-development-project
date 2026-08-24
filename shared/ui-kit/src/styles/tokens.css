@@ -1,0 +1,44 @@
+/*
+ * Neobrutalist design tokens, extracted from student-1/frontend
+ * (source: claude.ai/design project 5afc3379-890a-4fb9-8e8d-516a388c619a,
+ * Notifications.dc.html). Every component in this kit pulls from these
+ * tokens rather than hardcoding colours/borders/shadows locally.
+ */
+
+:root {
+  /* Colour palette */
+  --nb-color-bg: #EDEBE6; /* off-white / concrete background */
+  --nb-color-ink: #111111; /* near-black, used for borders, text, high-contrast fills */
+  --nb-color-accent-orange: #FF5A1F; /* safety-orange accent (primary CTA, unread indicators) */
+  --nb-color-accent-yellow: #F2C94C; /* hazard-yellow accent (secondary tag, e.g. GRADE) */
+  --nb-color-white: #FFFFFF; /* pure white, used for unread row backgrounds / AI tag */
+  --nb-color-muted: #555555; /* secondary/meta text (timestamps, captions) */
+
+  /* Borders (solid ink, no radius) */
+  --nb-border-width-sm: 2px;
+  --nb-border-width-md: 3px;
+  --nb-border-width-lg: 4px;
+  --nb-border-radius: 0;
+
+  /* Shadows: hard offset, no blur/spread */
+  --nb-shadow-offset: 6px;
+  --nb-shadow: var(--nb-shadow-offset) var(--nb-shadow-offset) 0 var(--nb-color-ink);
+
+  /* Typography */
+  --nb-font-display: 'Space Grotesk', system-ui, sans-serif;
+  --nb-font-mono: 'JetBrains Mono', monospace;
+  --nb-font-weight-regular: 400;
+  --nb-font-weight-medium: 500;
+  --nb-font-weight-semibold: 600;
+  --nb-font-weight-bold: 700;
+
+  /* Spacing scale */
+  --nb-space-1: 4px;
+  --nb-space-2: 8px;
+  --nb-space-3: 12px;
+  --nb-space-4: 16px;
+  --nb-space-5: 20px;
+  --nb-space-6: 24px;
+  --nb-space-8: 32px;
+  --nb-space-16: 64px;
+}

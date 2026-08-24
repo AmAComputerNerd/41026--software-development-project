@@ -1,0 +1,133 @@
+/*
+ * Neobrutalist base resets and generic style primitives, extracted from
+ * student-1/frontend/src/styles/neobrutalism.scss. Feature-specific classes
+ * (notification tags/rows, preferences table, digest inset, etc.) stay in
+ * the app that owns them — only the generic, reusable building blocks live
+ * here. Requires tokens.css to be imported first.
+ */
+
+body {
+  margin: 0;
+  background: var(--nb-color-bg);
+  font-family: var(--nb-font-display);
+  color: var(--nb-color-ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: var(--nb-color-ink);
+}
+
+a:hover {
+  color: var(--nb-color-accent-orange);
+}
+
+::selection {
+  background: var(--nb-color-accent-orange);
+  color: var(--nb-color-ink);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Hard-shadow card/panel: solid border + offset shadow, no blur. */
+.nb-panel {
+  border: var(--nb-border-width-lg) solid var(--nb-color-ink);
+  background: var(--nb-color-bg);
+  box-shadow: var(--nb-shadow);
+}
+
+.nb-mono {
+  font-family: var(--nb-font-mono);
+  letter-spacing: 0.5px;
+}
+
+/* Solid ink-filled call-to-action button, with outline/accent variants. */
+.nb-btn {
+  border: var(--nb-border-width-md) solid var(--nb-color-ink);
+  background: var(--nb-color-ink);
+  color: var(--nb-color-bg);
+  font-family: var(--nb-font-mono);
+  font-weight: var(--nb-font-weight-bold);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: var(--nb-space-2) var(--nb-space-4);
+  transition: none;
+}
+
+.nb-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.nb-btn--outline {
+  background: var(--nb-color-bg);
+  color: var(--nb-color-ink);
+}
+
+.nb-btn--accent {
+  background: var(--nb-color-accent-orange);
+  color: var(--nb-color-ink);
+}
+
+.nb-chip {
+  border: var(--nb-border-width-sm) solid var(--nb-color-ink);
+  background: var(--nb-color-bg);
+  color: var(--nb-color-ink);
+  font-family: var(--nb-font-mono);
+  font-size: 12px;
+  font-weight: var(--nb-font-weight-semibold);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: var(--nb-space-1) var(--nb-space-3);
+}
+
+.nb-chip--active {
+  background: var(--nb-color-ink);
+  color: var(--nb-color-bg);
+}
+
+/* Segmented ON/OFF control: bordered two-cell button group, active cell filled orange. */
+.nb-toggle {
+  display: inline-flex;
+  border: var(--nb-border-width-md) solid var(--nb-color-ink);
+}
+
+.nb-toggle__cell {
+  border: none;
+  background: var(--nb-color-bg);
+  color: var(--nb-color-ink);
+  font-family: var(--nb-font-mono);
+  font-size: 11px;
+  font-weight: var(--nb-font-weight-bold);
+  letter-spacing: 0.5px;
+  padding: var(--nb-space-1) var(--nb-space-3);
+}
+
+.nb-toggle__cell:not(:last-child) {
+  border-right: var(--nb-border-width-md) solid var(--nb-color-ink);
+}
+
+.nb-toggle__cell--active {
+  background: var(--nb-color-accent-orange);
+}
+
+.nb-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: var(--nb-border-width-sm) solid var(--nb-color-ink);
+  background: var(--nb-color-accent-orange);
+  color: var(--nb-color-ink);
+  font-family: var(--nb-font-mono);
+  font-size: 11px;
+  font-weight: var(--nb-font-weight-bold);
+}
