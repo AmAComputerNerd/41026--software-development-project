@@ -5,8 +5,8 @@ public record CanvasAssignmentDto(
     long CourseId,
     string Name,
     string? Description,
-    DateTimeOffset? DueAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime? DueAt,
+    DateTime? UpdatedAt,
     string WorkflowState,
     bool Published,
     CanvasSubmissionDto? Submission
@@ -14,7 +14,7 @@ public record CanvasAssignmentDto(
 
 public record CanvasSubmissionDto(
     string WorkflowState,
-    DateTimeOffset? SubmittedAt,
+    DateTime? SubmittedAt,
     bool Late,
     bool Missing
 );

@@ -35,7 +35,7 @@ public sealed class CanvasFacade(
         var log = new CanvasRequestLog
         {
             Operation = operation,
-            StartedAt = DateTimeOffset.UtcNow
+            StartedAt = DateTime.UtcNow
         };
 
         try
@@ -59,7 +59,7 @@ public sealed class CanvasFacade(
         }
         finally
         {
-            log.CompletedAt = DateTimeOffset.UtcNow;
+            log.CompletedAt = DateTime.UtcNow;
             db.CanvasRequestLogs.Add(log);
             await db.SaveChangesAsync(CancellationToken.None);
         }

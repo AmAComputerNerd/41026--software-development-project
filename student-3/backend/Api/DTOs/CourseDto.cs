@@ -7,5 +7,5 @@ public record CourseDto(
     long? CanvasCourseId,
     string? CanvasWorkflowState,
     bool? CanvasIsActive,
-    DateTimeOffset? LastCanvasSyncAt
+    DateTime? LastCanvasSyncAt
 );

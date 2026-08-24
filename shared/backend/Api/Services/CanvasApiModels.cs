@@ -14,8 +14,8 @@ internal sealed record CanvasAssignmentResponse(
     [property: JsonPropertyName("course_id")] long CourseId,
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("description")] string? Description,
-    [property: JsonPropertyName("due_at")] DateTimeOffset? DueAt,
-    [property: JsonPropertyName("updated_at")] DateTimeOffset? UpdatedAt,
+    [property: JsonPropertyName("due_at")] DateTime? DueAt,
+    [property: JsonPropertyName("updated_at")] DateTime? UpdatedAt,
     [property: JsonPropertyName("workflow_state")] string WorkflowState,
     [property: JsonPropertyName("published")] bool Published,
     [property: JsonPropertyName("submission")] CanvasSubmissionResponse? Submission
@@ -23,7 +23,7 @@ internal sealed record CanvasAssignmentResponse(
 
 internal sealed record CanvasSubmissionResponse(
     [property: JsonPropertyName("workflow_state")] string WorkflowState,
-    [property: JsonPropertyName("submitted_at")] DateTimeOffset? SubmittedAt,
+    [property: JsonPropertyName("submitted_at")] DateTime? SubmittedAt,
     [property: JsonPropertyName("late")] bool Late,
     [property: JsonPropertyName("missing")] bool Missing
 );

@@ -68,7 +68,7 @@ public sealed class CanvasTaskSyncService(
         }
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-        var now = DateTimeOffset.UtcNow;
+        var now = DateTime.UtcNow;
         var existingCourses = await db.Courses
             .Where(course => course.CanvasCourseId != null)
             .ToDictionaryAsync(

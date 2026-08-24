@@ -21,8 +21,8 @@ public record SharedCanvasAssignmentDto(
     long CourseId,
     string Name,
     string? Description,
-    DateTimeOffset? DueAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime? DueAt,
+    DateTime? UpdatedAt,
     string WorkflowState,
     bool Published,
     SharedCanvasSubmissionDto? Submission
@@ -30,7 +30,7 @@ public record SharedCanvasAssignmentDto(
 
 public record SharedCanvasSubmissionDto(
     string WorkflowState,
-    DateTimeOffset? SubmittedAt,
+    DateTime? SubmittedAt,
     bool Late,
     bool Missing
 );

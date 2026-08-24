@@ -5,13 +5,13 @@ public class TaskEntity
     public Guid Id { get; }
     public required string Title { get; set; }
     public string? Description { get; set; }
-    public DateTimeOffset? DueDate { get; set; }
+    public DateTime? DueDate { get; set; }
     public TaskPriority Priority { get; set; }
     public TaskStatus Status { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
     public long? CanvasAssignmentId { get; set; }
-    public DateTimeOffset? CanvasUpdatedAt { get; set; }
+    public DateTime? CanvasUpdatedAt { get; set; }
     public string? CanvasWorkflowState { get; set; }
     public string? CanvasSubmissionState { get; set; }
     public bool? CanvasIsActive { get; set; }

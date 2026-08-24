@@ -23,7 +23,7 @@ namespace Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("CompletedAt")
+                    b.Property<DateTime>("CompletedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("ItemCount")
@@ -34,7 +34,7 @@ namespace Api.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("StartedAt")
+                    b.Property<DateTime>("StartedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("Succeeded")
