@@ -23,6 +23,21 @@ services:
         environment:
             ASPNETCORE_ENVIRONMENT: Development
 
+    student-1-frontend:
+        build:
+            context: ./student-1/frontend
+            dockerfile: Dockerfile
+
+    shared-shell:
+        build:
+            context: ./shared/frontend
+            dockerfile: Dockerfile
+        ports:
+            - "8080:80"
+        depends_on:
+            - student-1-frontend
+            - student-1-backend
+
 volumes:
     student-1-db:
     student-3-db:
