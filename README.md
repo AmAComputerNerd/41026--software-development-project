@@ -26,6 +26,22 @@ TODO: Short summary of microservice, other info
 Working directory: `student-5/`  
 TODO: Short summary of microservice, other info
 
+## Setup
+
+Copy `.env.example` to `.env` and set `OPENROUTER_API_KEY` (get one at
+https://openrouter.ai/keys). Every microservice's AI features (digests,
+agentic loop, etc.) read this same key via `docker-compose.yml`, which
+injects it into each service's container as `OPENROUTER_API_KEY`.
+
+```bash
+cp .env.example .env
+# edit .env and paste your key
+docker compose up
+```
+
+Running a service outside Docker (e.g. `dotnet run` directly)? See that
+service's own README for how to set the key locally.
+
 ## Release 0: Summary
 Working branch: `main`  
 Feature set:  
