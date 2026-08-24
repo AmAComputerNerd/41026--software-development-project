@@ -1,0 +1,23 @@
+Feature: Notifications
+
+This service manages a student's notifications, their delivery
+preferences, and AI-generated digests of that activity. Core
+functionality:
+
+- Notifications: create/read notifications with a StudentId, Type
+  (Deadline/Grade/Automation/Account/AI), SourceMicroservice, Message,
+  IsRead flag, and CreatedAtUtc; list/filter, mark a single notification
+  or all notifications as read, delete a notification, and push new
+  notifications in from other services.
+- NotificationPreferences: create/read/update/delete a per-student
+  preference keyed by NotificationType and NotificationChannel
+  (InApp/Email), with an Enabled flag and UpdatedAtUtc, controlling
+  whether/how a student receives notifications of that type.
+- AiDigests: generate and list AI-produced summaries (Summary,
+  GeneratedAtUtc) of a student's recent notifications, keyed by
+  StudentId.
+
+Out of scope for Release 0: authentication/user accounts, any UI,
+cross-service or shared-database context (the service only knows about
+notifications pushed to it, not the originating domain data), and any
+MCP integration - digest generation calls an LLM directly, not via MCP.

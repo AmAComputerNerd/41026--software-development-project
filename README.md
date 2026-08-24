@@ -2,9 +2,13 @@
 An LLM-enhanced web application utilising the Canvas Infrastructure API.
 
 ## Students
-**Student 1: Bryan Lee (STUDENT-NUM).**  
+**Student 1: Bryan Lee (25495108).**  
 Working directory: `student-1/`  
-TODO: Short summary of microservice, other info
+Notifications service: manages student notifications (deadlines, grades,
+automation, account, and AI-sourced) with read/unread state, per-student
+delivery preferences by notification type and channel (in-app or email),
+and AI-generated digests summarising a student's recent notification
+activity.
 
 **Student 2: Isaac Thomas (STUDENT-NUM).**  
 Working directory: `student-2/`  
