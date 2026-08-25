@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import {
+  deleteNotification as deleteNotificationRequest,
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
@@ -41,12 +42,21 @@ const activeFilters = ref<Record<string, boolean>>(
   Object.fromEntries(NOTIFICATION_TYPES.map((t) => [t.value, true])),
 )
 
+export type SortOrder = 'newest' | 'oldest'
+
+const sortOrder = ref<SortOrder>('newest')
+
 export function useNotifications() {
   const unreadCount = computed(() => notifications.value.filter((n) => !n.isRead).length)
 
-  const filteredNotifications = computed(() =>
-    notifications.value.filter((n) => activeFilters.value[n.type]),
-  )
+  const filteredNotifications = computed(() => {
+    const filtered = notifications.value.filter((n) => activeFilters.value[n.type])
+    const direction = sortOrder.value === 'newest' ? -1 : 1
+    return [...filtered].sort(
+      (a, b) =>
+        direction * (new Date(a.createdAtUtc).getTime() - new Date(b.createdAtUtc).getTime()),
+    )
+  })
 
   async function fetchNotifications() {
     loading.value = true
@@ -66,6 +76,10 @@ export function useNotifications() {
 
   function setAllFilters(value: boolean) {
     NOTIFICATION_TYPES.forEach((t) => (activeFilters.value[t.value] = value))
+  }
+
+  function setSortOrder(value: SortOrder) {
+    sortOrder.value = value
   }
 
   async function markAsRead(id: string) {
@@ -107,18 +121,34 @@ export function useNotifications() {
     }
   }
 
+  async function deleteNotification(id: string) {
+    const index = notifications.value.findIndex((n) => n.id === id)
+    if (index === -1) return
+
+    const [removed] = notifications.value.splice(index, 1)
+    try {
+      await deleteNotificationRequest(id)
+    } catch (err) {
+      notifications.value.splice(index, 0, removed)
+      error.value = err instanceof Error ? err.message : 'Failed to delete notification'
+    }
+  }
+
   return {
     notifications,
     loading,
     error,
     activeFilters,
+    sortOrder,
     unreadCount,
     filteredNotifications,
     fetchNotifications,
     toggleFilter,
     setAllFilters,
+    setSortOrder,
     markAsRead,
     markAsUnread,
     markAllAsRead,
+    deleteNotification,
   }
 }

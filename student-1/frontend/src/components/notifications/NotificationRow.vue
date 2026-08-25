@@ -9,7 +9,11 @@ const props = defineProps<{
   variant?: 'dropdown' | 'list'
 }>()
 
-const emit = defineEmits<{ 'mark-read': [id: string]; 'mark-unread': [id: string] }>()
+const emit = defineEmits<{
+  'mark-read': [id: string]
+  'mark-unread': [id: string]
+  delete: [id: string]
+}>()
 
 const variant = computed(() => props.variant ?? 'dropdown')
 const time = computed(() => formatRelativeTime(props.notification.createdAtUtc))
@@ -47,6 +51,14 @@ const time = computed(() => formatRelativeTime(props.notification.createdAtUtc))
         @click="emit('mark-unread', notification.id)"
       >
         &check; READ &mdash; UNMARK
+      </button>
+      <button
+        type="button"
+        class="nb-btn nb-btn--outline"
+        aria-label="Delete notification"
+        @click="emit('delete', notification.id)"
+      >
+        DELETE
       </button>
     </template>
   </div>

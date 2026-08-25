@@ -8,12 +8,15 @@ const {
   loading,
   error,
   activeFilters,
+  sortOrder,
   filteredNotifications,
   fetchNotifications,
   toggleFilter,
   setAllFilters,
+  setSortOrder,
   markAsRead,
   markAsUnread,
+  deleteNotification,
 } = useNotifications()
 
 onMounted(fetchNotifications)
@@ -26,11 +29,32 @@ onMounted(fetchNotifications)
       <span class="nb-mono nb-list__count">{{ filteredNotifications.length }} SHOWN</span>
     </div>
 
-    <NotificationFilterChips
-      :active-filters="activeFilters"
-      @toggle="toggleFilter"
-      @toggle-all="setAllFilters"
-    />
+    <div class="nb-list__controls">
+      <NotificationFilterChips
+        :active-filters="activeFilters"
+        @toggle="toggleFilter"
+        @toggle-all="setAllFilters"
+      />
+
+      <div class="nb-chips nb-list__sort">
+        <button
+          type="button"
+          class="nb-chip"
+          :class="{ 'nb-chip--active': sortOrder === 'newest' }"
+          @click="setSortOrder('newest')"
+        >
+          NEWEST FIRST
+        </button>
+        <button
+          type="button"
+          class="nb-chip"
+          :class="{ 'nb-chip--active': sortOrder === 'oldest' }"
+          @click="setSortOrder('oldest')"
+        >
+          OLDEST FIRST
+        </button>
+      </div>
+    </div>
 
     <p v-if="error" class="nb-list__error nb-mono">{{ error }}</p>
     <p v-else-if="loading" class="nb-mono">LOADING...</p>
@@ -46,6 +70,7 @@ onMounted(fetchNotifications)
         variant="list"
         @mark-read="markAsRead"
         @mark-unread="markAsUnread"
+        @delete="deleteNotification"
       />
     </div>
   </div>
@@ -70,6 +95,18 @@ onMounted(fetchNotifications)
 
 .nb-list__panel {
   margin-top: 16px;
+}
+
+.nb-list__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.nb-list__sort {
+  flex-shrink: 0;
 }
 
 .nb-list__empty,
