@@ -1,40 +1,64 @@
 using Api.Data;
 using Api.DTOs;
 using Api.Models;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Api.Services;
 
 public sealed class CanvasFacade(
     ICanvasApiClient canvasApiClient,
-    AppDbContext db)
+    AppDbContext db,
+    IMemoryCache cache)
 {
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(3);
+
     public Task<IReadOnlyList<CanvasCourseDto>> GetCoursesAsync(
         CancellationToken cancellationToken)
     {
-        return ExecuteLoggedAsync(
-            "GetCourses",
-            canvasApiClient.GetCoursesAsync,
-            cancellationToken);
+        return GetOrAddAsync(
+            "canvas:courses",
+            () => ExecuteLoggedAsync(
+                "GetCourses",
+                canvasApiClient.GetCoursesAsync,
+                cancellationToken));
     }
 
     public Task<IReadOnlyList<CanvasAssignmentDto>> GetAssignmentsAsync(
         long courseId,
         CancellationToken cancellationToken)
     {
-        return ExecuteLoggedAsync(
-            $"GetAssignments:{courseId}",
-            token => canvasApiClient.GetAssignmentsAsync(courseId, token),
-            cancellationToken);
+        return GetOrAddAsync(
+            $"canvas:assignments:{courseId}",
+            () => ExecuteLoggedAsync(
+                $"GetAssignments:{courseId}",
+                token => canvasApiClient.GetAssignmentsAsync(courseId, token),
+                cancellationToken));
     }
 
     public Task<IReadOnlyList<CanvasUserDto>> GetUsersForCourseAsync(
         long courseId,
         CancellationToken cancellationToken)
     {
-        return ExecuteLoggedAsync(
-            $"GetUsersForCourse:{courseId}",
-            token => canvasApiClient.GetUsersForCourseAsync(courseId, token),
-            cancellationToken);
+        return GetOrAddAsync(
+            $"canvas:users:{courseId}",
+            () => ExecuteLoggedAsync(
+                $"GetUsersForCourse:{courseId}",
+                token => canvasApiClient.GetUsersForCourseAsync(courseId, token),
+                cancellationToken));
+    }
+
+    private async Task<IReadOnlyList<T>> GetOrAddAsync<T>(
+        string cacheKey,
+        Func<Task<IReadOnlyList<T>>> action)
+    {
+        if (cache.TryGetValue(cacheKey, out IReadOnlyList<T>? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var result = await action();
+        cache.Set(cacheKey, result, CacheTtl);
+        return result;
     }
 
     private async Task<IReadOnlyList<T>> ExecuteLoggedAsync<T>(

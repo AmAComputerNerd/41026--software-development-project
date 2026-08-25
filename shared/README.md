@@ -21,8 +21,14 @@ dotnet run --project shared\backend\Api
 ```
 
 Canvas endpoints are available under `/api/canvas`. The SQLite database stores
-request audit records only; Canvas courses and assignments are fetched live and
-are not cached.
+request audit records only, it is not used for caching Canvas data.
+
+`CanvasFacade` holds an in-memory cache (`IMemoryCache`, in-process only, not
+persisted anywhere) for courses, assignments, and enrolled users, each keyed
+by request parameters (e.g. course ID) with a 3 minute TTL. This means
+responses may be up to 3 minutes stale rather than always live, and cuts
+down on repeated identical Canvas API calls across the multiple backends
+that call this service.
 
 ## Plugging into the shared shell
 
