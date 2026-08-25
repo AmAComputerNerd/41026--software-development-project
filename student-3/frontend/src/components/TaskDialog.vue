@@ -31,6 +31,7 @@ const form = reactive({
 })
 
 const editing = computed(() => Boolean(props.task))
+const isCanvasTask = computed(() => props.task?.canvasAssignmentId != null)
 const title = computed(() => {
   if (editing.value) return 'Edit task'
   if (props.parentTask) return `Add sub-task to ${props.parentTask.title}`
@@ -71,11 +72,11 @@ async function submit() {
   try {
     const saved = props.task
       ? await update(props.task.id, {
-          newTitle: form.title.trim(),
-          updateDescription: true,
-          newDescription: form.description.trim() || null,
-          updateDueDate: true,
-          newDueDate: toUtcIso(form.dueDate),
+          newTitle: isCanvasTask.value ? null : form.title.trim(),
+          updateDescription: !isCanvasTask.value,
+          newDescription: isCanvasTask.value ? null : form.description.trim() || null,
+          updateDueDate: !isCanvasTask.value,
+          newDueDate: isCanvasTask.value ? null : toUtcIso(form.dueDate),
           newPriority: form.priority,
           newStatus: form.status,
         })
@@ -113,11 +114,27 @@ async function submit() {
         <h2>{{ title }}</h2>
         <v-alert v-if="error" type="error" variant="outlined" class="mb-4">{{ error }}</v-alert>
 
-        <v-text-field v-model="form.title" label="Task title" autofocus @keyup.enter="submit" />
-        <v-textarea v-model="form.description" label="Notes" rows="3" />
+        <v-text-field
+          v-model="form.title"
+          label="Task title"
+          :autofocus="!isCanvasTask"
+          :readonly="isCanvasTask"
+          @keyup.enter="submit"
+        />
+        <v-textarea
+          v-model="form.description"
+          label="Description"
+          rows="3"
+          :readonly="isCanvasTask"
+        />
 
         <div class="nb-form-grid">
-          <v-text-field v-model="form.dueDate" label="Due date" type="datetime-local" />
+          <v-text-field
+            v-model="form.dueDate"
+            label="Due date"
+            type="datetime-local"
+            :readonly="isCanvasTask"
+          />
           <v-select v-model="form.priority" label="Priority" :items="priorities" />
           <v-select
             v-model="form.courseId"
@@ -136,8 +153,8 @@ async function submit() {
           />
         </div>
 
-        <p v-if="editing && task?.canvasAssignmentId" class="nb-helper nb-mono">
-          CANVAS ASSIGNMENT DETAILS ARE READ-ONLY. YOUR PRIORITY, STATUS AND NOTES REMAIN EDITABLE.
+        <p v-if="isCanvasTask" class="nb-helper nb-mono">
+          CANVAS ASSIGNMENT DETAILS ARE READ-ONLY. YOUR PRIORITY AND STATUS REMAIN EDITABLE.
         </p>
       </v-card-text>
 

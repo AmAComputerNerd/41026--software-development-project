@@ -153,6 +153,15 @@ public static class TaskEndpoints
             return Results.NotFound();
         }
 
+        if (task.CanvasAssignmentId.HasValue &&
+            (requestDto.NewTitle is not null ||
+             requestDto.UpdateDescription ||
+             requestDto.UpdateDueDate))
+        {
+            return Results.BadRequest(
+                "Canvas-synced task titles, descriptions, and due dates cannot be updated.");
+        }
+
         var hasNewPriority = Enum.TryParse(requestDto.NewPriority, out TaskPriority newPriority);
         var hasNewStatus = Enum.TryParse(requestDto.NewStatus, out TaskStatus newStatus);
 

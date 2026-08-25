@@ -379,6 +379,29 @@
   background: var(--nb-color-accent-yellow);
 }
 
+.nb-calendar-task--overdue {
+  display: flex;
+  align-items: center;
+  gap: var(--nb-space-1);
+  background: var(--nb-color-accent-orange);
+  box-shadow: inset 5px 0 0 var(--nb-color-ink);
+  padding-left: var(--nb-space-3);
+}
+
+.nb-calendar-task__overdue {
+  flex: 0 0 auto;
+  border: 1px solid var(--nb-color-ink);
+  background: var(--nb-color-ink);
+  color: var(--nb-color-bg);
+  padding: 0 3px;
+  font-size: 7px;
+}
+
+.nb-calendar-task__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .nb-calendar__more {
   font-size: 9px;
   font-weight: var(--nb-font-weight-bold);

@@ -44,10 +44,11 @@ const days = computed<CalendarDay[]>(() => {
 const tasksByDay = computed(() => {
   const result = new Map<string, TaskItem[]>()
   for (const task of tasks.value) {
-    if (!task.dueDate) continue
+    if (!task.dueDate || task.status === 'Completed') continue
     const key = localDateKey(new Date(task.dueDate))
     const dayTasks = result.get(key) ?? []
     dayTasks.push(task)
+    dayTasks.sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
     result.set(key, dayTasks)
   }
   return result
@@ -64,6 +65,10 @@ function localDateKey(date: Date) {
 
 function moveMonth(offset: number) {
   cursor.value = new Date(cursor.value.getFullYear(), cursor.value.getMonth() + offset, 1)
+}
+
+function isOverdue(task: TaskItem) {
+  return task.dueDate !== null && new Date(task.dueDate).getTime() < Date.now()
 }
 
 function openCreate(day: CalendarDay) {
@@ -119,11 +124,16 @@ function openEdit(task: TaskItem) {
           v-for="task in tasksByDay.get(day.key)?.slice(0, 3)"
           :key="task.id"
           class="nb-calendar-task"
-          :class="`nb-calendar-task--${task.priority.toLowerCase()}`"
+          :class="[
+            `nb-calendar-task--${task.priority.toLowerCase()}`,
+            { 'nb-calendar-task--overdue': isOverdue(task) },
+          ]"
           type="button"
+          :title="isOverdue(task) ? `${task.title} (overdue)` : task.title"
           @click.stop="openEdit(task)"
         >
-          {{ task.title }}
+          <span v-if="isOverdue(task)" class="nb-calendar-task__overdue nb-mono">OVERDUE</span>
+          <span class="nb-calendar-task__title">{{ task.title }}</span>
         </button>
         <span v-if="(tasksByDay.get(day.key)?.length ?? 0) > 3" class="nb-calendar__more nb-mono">
           +{{ (tasksByDay.get(day.key)?.length ?? 0) - 3 }} MORE
