@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { TILES } from '@/data/tiles'
 import TileIcon from '@/components/TileIcon.vue'
+import UpcomingTasksWidget from '@/components/UpcomingTasksWidget.vue'
 
 const liveCount = computed(() => TILES.filter((t) => t.live).length)
 </script>
@@ -12,6 +13,7 @@ const liveCount = computed(() => TILES.filter((t) => t.live).length)
     <p class="nb-dashboard__subtitle">
       {{ TILES.length }} modules. {{ liveCount }} {{ liveCount === 1 ? 'is' : 'are' }} built. Pick one below.
     </p>
+    <UpcomingTasksWidget />
     <div class="nb-dashboard__grid">
       <a
         v-for="tile in TILES.filter((t) => t.live)"
