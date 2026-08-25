@@ -27,6 +27,16 @@ public sealed class CanvasFacade(
             cancellationToken);
     }
 
+    public Task<IReadOnlyList<CanvasUserDto>> GetUsersForCourseAsync(
+        long courseId,
+        CancellationToken cancellationToken)
+    {
+        return ExecuteLoggedAsync(
+            $"GetUsersForCourse:{courseId}",
+            token => canvasApiClient.GetUsersForCourseAsync(courseId, token),
+            cancellationToken);
+    }
+
     private async Task<IReadOnlyList<T>> ExecuteLoggedAsync<T>(
         string operation,
         Func<CancellationToken, Task<IReadOnlyList<T>>> action,

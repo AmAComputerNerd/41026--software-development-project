@@ -58,6 +58,24 @@ public sealed class CanvasApiClient(
             .ToList();
     }
 
+    public async Task<IReadOnlyList<CanvasUserDto>> GetUsersForCourseAsync(
+        long courseId,
+        CancellationToken cancellationToken)
+    {
+        var users = await GetAllPagesAsync<CanvasUserResponse>(
+            $"api/v1/courses/{courseId}/users?per_page=100",
+            cancellationToken);
+
+        return users
+            .Select(user => new CanvasUserDto(
+                user.Id,
+                user.Name,
+                user.Email,
+                user.SisUserId,
+                user.LoginId))
+            .ToList();
+    }
+
     private async Task<IReadOnlyList<T>> GetAllPagesAsync<T>(
         string relativeUrl,
         CancellationToken cancellationToken)
