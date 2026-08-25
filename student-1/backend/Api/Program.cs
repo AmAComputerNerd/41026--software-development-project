@@ -58,6 +58,7 @@ app.UseCors();
 app.MapNotificationEndpoints();
 app.MapPreferenceEndpoints();
 app.MapAiDigestEndpoints();
+app.MapCanvasSyncEndpoints();
 
 // Infrastructure
 app.UseApiExceptionHandling();
