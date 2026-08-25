@@ -68,7 +68,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
         @click="markAsRead(n.id)"
       />
 
-      <RouterLink to="/notifications" class="nb-btn nb-centre__footer" @click="open = false">
+      <RouterLink to="/" class="nb-btn nb-centre__footer" @click="open = false">
         VIEW ALL NOTIFICATIONS &rarr;
       </RouterLink>
     </div>

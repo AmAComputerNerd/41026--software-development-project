@@ -23,6 +23,11 @@ services:
             - student-1-db:/app/Data
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+            Cors__AllowedOrigins__0: http://localhost:3000
+            Cors__AllowedOrigins__1: http://localhost:8080
+            Cors__AllowedOrigins__2: http://localhost:5173
+            Cors__AllowedOrigins__3: http://localhost:5174
+            Cors__AllowedOrigins__4: http://localhost:5199
 
     student-3-backend:
         build:
