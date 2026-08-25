@@ -9,4 +9,8 @@ public interface ICanvasApiClient
     Task<IReadOnlyList<CanvasAssignmentDto>> GetAssignmentsAsync(
         long courseId,
         CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<CanvasUserDto>> GetUsersForCourseAsync(
+        long courseId,
+        CancellationToken cancellationToken);
 }

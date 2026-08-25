@@ -23,6 +23,7 @@ builder.Services.Configure<CanvasOptions>(
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHttpClient<ICanvasApiClient, CanvasApiClient>();
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<CanvasFacade>();
 
 var app = builder.Build();
