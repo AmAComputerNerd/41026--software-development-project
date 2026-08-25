@@ -6,8 +6,9 @@ import { useTasks } from '@/composables/useTasks'
 import { dueLabel, formatDueDate } from '@/utils/dates'
 import type { CanvasSyncResult, TaskItem } from '@/types/task'
 
-const { tasks, loading, error, load, sync } = useTasks()
+const { tasks, courses, loading, error, load, sync } = useTasks()
 const selectedAssignment = ref<TaskItem | null>(null)
+const selectedCourseId = ref<string | 'All'>('All')
 const breakdownOpen = ref(false)
 const subtaskOpen = ref(false)
 const syncing = ref(false)
@@ -18,6 +19,17 @@ const assignments = computed(() =>
   tasks.value
     .filter((task) => task.canvasAssignmentId !== null && !task.parentTaskId)
     .sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? '')),
+)
+
+const courseOptions = computed(() => [
+  { id: 'All', name: 'All courses' },
+  ...[...courses.value].sort((a, b) => a.name.localeCompare(b.name)),
+])
+
+const filteredAssignments = computed(() =>
+  selectedCourseId.value === 'All'
+    ? assignments.value
+    : assignments.value.filter((assignment) => assignment.courseId === selectedCourseId.value),
 )
 
 function childrenFor(assignment: TaskItem) {
@@ -74,6 +86,17 @@ async function syncAssignments() {
       </button>
     </header>
 
+    <div class="nb-panel nb-assignment-filter">
+      <v-select
+        v-model="selectedCourseId"
+        label="Course"
+        :items="courseOptions"
+        item-title="name"
+        item-value="id"
+        hide-details
+      />
+    </div>
+
     <v-alert v-if="error || actionError" type="error" variant="outlined" class="mb-5">
       {{ actionError || error }}
     </v-alert>
@@ -86,8 +109,16 @@ async function syncAssignments() {
       <strong>No active Canvas assignments yet.</strong>
       <span>Use “Sync Canvas” to import assignments through the shared Canvas service.</span>
     </div>
+    <div v-else-if="!filteredAssignments.length" class="nb-panel nb-empty">
+      <strong>No assignments for this course.</strong>
+      <span>Select another course or choose “All courses”.</span>
+    </div>
     <div v-else class="nb-assignment-grid">
-      <article v-for="assignment in assignments" :key="assignment.id" class="nb-panel nb-assignment">
+      <article
+        v-for="assignment in filteredAssignments"
+        :key="assignment.id"
+        class="nb-panel nb-assignment"
+      >
         <div class="nb-assignment__topline">
           <span class="nb-tag nb-tag--canvas">Canvas</span>
           <span class="nb-tag" :class="`nb-tag--${assignment.priority.toLowerCase()}`">

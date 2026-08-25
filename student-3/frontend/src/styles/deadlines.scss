@@ -413,6 +413,13 @@
   gap: var(--nb-space-6);
 }
 
+.nb-assignment-filter {
+  max-width: 380px;
+  margin-bottom: var(--nb-space-6);
+  padding: var(--nb-space-3);
+  box-shadow: 4px 4px 0 var(--nb-color-ink);
+}
+
 .nb-assignment {
   display: flex;
   flex-direction: column;
