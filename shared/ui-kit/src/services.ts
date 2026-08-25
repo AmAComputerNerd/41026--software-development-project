@@ -24,8 +24,8 @@ export const SERVICES: Service[] = [
   {
     id: 'deadlines-tasks',
     name: 'Deadlines & Tasks',
-    route: null,
-    live: false,
+    route: '/deadlines/',
+    live: true,
   },
   {
     id: 'grades-progress',

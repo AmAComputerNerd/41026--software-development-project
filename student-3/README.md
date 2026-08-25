@@ -1,8 +1,11 @@
 # Deadline and task-tracker service
 
-The backend manages courses, tasks, subtasks, priorities, completion states,
-due dates, and task filtering. Persisted timestamps use `DateTime` normalized
-to UTC.
+The service manages courses, tasks, subtasks, priorities, completion states,
+due dates, and task filtering. Its Vue/Vuetify frontend provides task-list,
+monthly calendar, upcoming-task, and Canvas assignment planning views using
+the shared Better Canvas UI kit. Persisted timestamps use `DateTime` normalized
+to UTC. Due dates can be changed or removed explicitly; completing a parent
+task also completes all of its descendants.
 
 ## Standalone development
 
@@ -12,7 +15,15 @@ The task and course APIs can run without other services:
 dotnet run --project student-3\backend\Api
 ```
 
-Cross-service features are intentionally unavailable in standalone mode.
+In a second terminal, run the frontend at
+`http://localhost:3003/deadlines/`:
+
+```powershell
+npm run dev --workspace=student-3-frontend
+```
+
+The frontend calls the published standalone API on port 5103. Canvas sync is
+unavailable unless the shared backend is also configured.
 
 ## Canvas sync
 
@@ -26,6 +37,11 @@ Start the integrated services and trigger a sync:
 ```powershell
 docker compose up --build
 ```
+
+The shared shell is then available at `http://localhost:8080/`, the task
+tracker at `http://localhost:8080/deadlines/`, and its proxied API under
+`/api/deadlines/`. The shell dashboard also shows the next five incomplete
+tasks by due date and priority.
 
 ```http
 POST /api/canvas-sync

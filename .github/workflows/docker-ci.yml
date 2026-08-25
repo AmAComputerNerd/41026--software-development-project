@@ -1,0 +1,56 @@
+name: Docker - CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ai-services/**"
+      - "shared/**"
+      - "student-1/**"
+      - "student-2/**"
+      - "student-3/**"
+      - "student-4/**"
+      - "student-5/**"
+      - "docker-compose.yml"
+      - "package.json"
+      - "package-lock.json"
+      - ".env.example"
+      - ".github/workflows/docker-ci.yml"
+  pull_request:
+    paths:
+      - "ai-services/**"
+      - "shared/**"
+      - "student-1/**"
+      - "student-2/**"
+      - "student-3/**"
+      - "student-4/**"
+      - "student-5/**"
+      - "docker-compose.yml"
+      - "package.json"
+      - "package-lock.json"
+      - ".env.example"
+      - ".github/workflows/docker-ci.yml"
+
+concurrency:
+  group: docker-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  OPENROUTER_API_KEY: ci-placeholder
+  CANVAS_BASE_URL: https://canvas.example.invalid
+  CANVAS_API_TOKEN: ci-placeholder
+
+jobs:
+  compose-validation:
+    name: Validate Compose & build images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build all service images
+        run: docker compose build

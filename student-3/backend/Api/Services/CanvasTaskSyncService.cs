@@ -9,7 +9,8 @@ namespace Api.Services;
 
 public sealed class CanvasTaskSyncService(
     ISharedCanvasClient canvasClient,
-    AppDbContext db)
+    AppDbContext db,
+    TaskHierarchyService taskHierarchy)
 {
     private static readonly SemaphoreSlim SyncLock = new(1, 1);
 
@@ -175,7 +176,14 @@ public sealed class CanvasTaskSyncService(
                 }
                 else
                 {
-                    MarkCompletedIfSubmitted(task, assignment.Submission);
+                    if (IsSubmitted(assignment.Submission))
+                    {
+                        task.Status = TaskStatus.Completed;
+                        await taskHierarchy.CompleteDescendantsAsync(
+                            task.Id,
+                            now,
+                            cancellationToken);
+                    }
                     task.Title = assignment.Name;
                     task.Description = assignment.Description;
                     task.DueDate = assignment.DueAt;
@@ -220,16 +228,6 @@ public sealed class CanvasTaskSyncService(
             tasksCreated,
             tasksUpdated,
             tasksDeactivated);
-    }
-
-    private static void MarkCompletedIfSubmitted(
-        TaskEntity task,
-        SharedCanvasSubmissionDto? submission)
-    {
-        if (IsSubmitted(submission))
-        {
-            task.Status = TaskStatus.Completed;
-        }
     }
 
     private static bool IsSubmitted(SharedCanvasSubmissionDto? submission)
