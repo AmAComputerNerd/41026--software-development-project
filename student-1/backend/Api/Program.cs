@@ -21,7 +21,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         });
 });
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient<ISharedCanvasClient, SharedCanvasClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["SharedService:BaseUrl"]!);
+});
 builder.Services.AddScoped<IAiDigestService, OpenRouterDigestService>();
+builder.Services.AddScoped<CanvasNotificationSyncService>();
+builder.Services.AddHostedService<CanvasSyncBackgroundService>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy => policy
@@ -53,6 +59,7 @@ app.UseCors();
 app.MapNotificationEndpoints();
 app.MapPreferenceEndpoints();
 app.MapAiDigestEndpoints();
+app.MapCanvasSyncEndpoints();
 
 // Infrastructure
 app.UseApiExceptionHandling();

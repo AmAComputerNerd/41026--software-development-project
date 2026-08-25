@@ -28,6 +28,10 @@ services:
             Cors__AllowedOrigins__2: http://localhost:5173
             Cors__AllowedOrigins__3: http://localhost:5174
             Cors__AllowedOrigins__4: http://localhost:5199
+            SharedService__BaseUrl: http://shared-backend:8080
+            CanvasSync__IntervalMinutes: "2"
+        depends_on:
+            - shared-backend
 
     student-3-backend:
         build:
