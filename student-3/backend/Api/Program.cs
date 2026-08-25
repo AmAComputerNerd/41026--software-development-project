@@ -24,6 +24,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         });
 });
 builder.Services.AddHttpClient<ISharedCanvasClient, SharedCanvasClient>();
+builder.Services.AddHttpClient<INotificationClient, NotificationClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Notifications:BaseUrl"]!);
+});
 builder.Services.AddScoped<CanvasTaskSyncService>();
 builder.Services.AddScoped<TaskHierarchyService>();
 builder.Services.AddCors(options =>
