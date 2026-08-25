@@ -40,8 +40,10 @@ services:
         environment:
             ASPNETCORE_ENVIRONMENT: Development
             SharedService__BaseUrl: http://shared-backend:8080
+            Notifications__BaseUrl: http://student-1-backend:8080
         depends_on:
             - shared-backend
+            - student-1-backend
 
     student-1-frontend:
         build:
