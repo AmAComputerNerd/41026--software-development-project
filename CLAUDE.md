@@ -1,9 +1,21 @@
 # Project notes for AI agents
 
+This is a 5-student microservices project (ASD unit, Release 0).
+`docs/architecture/overview.md` doesn't exist yet — if you write it, keep
+it up to date with what's actually built and reference it here.
+
+## Service boundaries
+
+Each student's `student-N/backend` owns its own SQLite database. No
+service reads another service's database directly, cross-service data
+goes through HTTP APIs only. `shared/backend` owns Canvas API integration
+specifically (courses, assignments, users), everything else calls it
+over HTTP rather than hitting Canvas directly.
+
 ## OpenRouter API key
 
-All AI features across microservices (digest generation, agentic loop, etc.)
-use one shared key: `OPENROUTER_API_KEY`.
+All AI features across microservices (digest generation, agentic loop,
+etc.) use one shared key: `OPENROUTER_API_KEY`.
 
 - Root `.env` (gitignored, copy from `.env.example`) holds the real key.
 - `docker-compose.yml` reads root `.env` and injects it into each service
@@ -15,3 +27,29 @@ use one shared key: `OPENROUTER_API_KEY`.
   skips it and the key will silently appear unset.
 
 If an AI feature returns 500 with no obvious cause, check this first.
+
+## AI-mode
+
+Don't call OpenRouter directly from a new backend. Call the shared
+`ai-mode` gateway service instead (`http://ai-mode:8080/v1/chat/completions`
+inside Docker), it holds the only OpenRouter key any service needs.
+
+## Adding a new frontend microservice
+
+No playbook doc exists yet (`docs/playbooks/new-frontend-microservice.md`
+doesn't exist) — write one if you do this and reference it here.
+
+Short version: Vue 3, no Vuetify, plain SCSS. Depend on
+`@better-canvas/ui-kit` (workspace package) for tokens, fonts, and shared
+components (TopNav, etc.) instead of writing your own. Add an nginx
+proxy block in `shared/frontend/nginx.conf` (commented-out stubs already
+exist for students 2/4/5). Add your service to the root
+`docker-compose.yml`. Add your tile to `shared/frontend/src/components/DashboardGrid.vue`.
+
+## Git conventions used throughout this repo
+
+- Branch off `main` per feature, don't stack feature branches on other
+  open feature branches.
+- Commit after each logical step, not one giant commit at the end, push
+  as you go.
+- Open a PR into `main` when done, don't push directly to main.
