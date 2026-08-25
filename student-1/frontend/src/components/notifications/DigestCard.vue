@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AiDigestDto } from '@/composables/useAiDigest'
+import MarkdownContent from './MarkdownContent.vue'
 
 defineProps<{ latestDigest: AiDigestDto | null; generating: boolean }>()
 const emit = defineEmits<{ generate: [] }>()
@@ -22,7 +23,7 @@ const emit = defineEmits<{ generate: [] }>()
 
     <div v-if="latestDigest" class="nb-inset">
       <div class="nb-inset__header">AI-GENERATED CONTENT — VERIFY BEFORE ACTING</div>
-      <p class="nb-inset__body">{{ latestDigest.summary }}</p>
+      <MarkdownContent class="nb-inset__body" :source="latestDigest.summary" />
     </div>
   </div>
 </template>
