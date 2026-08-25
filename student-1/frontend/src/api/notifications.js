@@ -20,3 +20,7 @@ export function markAllNotificationsRead(studentId) {
   const query = buildQuery({ studentId })
   return request(`/notifications/read-all${query}`, { method: 'PUT' })
 }
+
+export function deleteNotification(id) {
+  return request(`/notifications/${id}`, { method: 'DELETE' })
+}

@@ -55,7 +55,7 @@ public class OpenRouterDigestService : IAiDigestService
 
         foreach (var notification in unreadNotifications)
         {
-            sb.AppendLine(CultureInfo.InvariantCulture, $"- [{notification.Type}] from {notification.SourceMicroservice} at {notification.CreatedAtUtc:O}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"- [{notification.Type}] {notification.Message} (from {notification.SourceMicroservice} at {notification.CreatedAtUtc:O})");
         }
 
         sb.AppendLine();
