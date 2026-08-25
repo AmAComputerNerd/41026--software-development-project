@@ -10,9 +10,14 @@ namespace Api.Services;
 public sealed class CanvasTaskSyncService(
     ISharedCanvasClient canvasClient,
     AppDbContext db,
-    TaskHierarchyService taskHierarchy)
+    TaskHierarchyService taskHierarchy,
+    INotificationClient notificationClient,
+    ILogger<CanvasTaskSyncService> logger)
 {
     private static readonly SemaphoreSlim SyncLock = new(1, 1);
+
+    private static readonly Guid DemoStudentId =
+        Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     public async Task<CanvasSyncResultDto> SyncAsync(CancellationToken cancellationToken)
     {
@@ -92,6 +97,7 @@ public sealed class CanvasTaskSyncService(
         var tasksCreated = 0;
         var tasksUpdated = 0;
         var tasksDeactivated = 0;
+        var notifications = new List<NotificationPushDto>();
 
         foreach (var snapshot in snapshots)
         {
@@ -173,9 +179,18 @@ public sealed class CanvasTaskSyncService(
                     db.Tasks.Add(task);
                     existingTasks.Add(assignment.Id, task);
                     tasksCreated++;
+
+                    notifications.Add(new NotificationPushDto(
+                        DemoStudentId,
+                        "Deadline",
+                        "deadline-tracker",
+                        $"New assignment \"{assignment.Name}\" is due {FormatDueDate(assignment.DueAt)}."));
                 }
                 else
                 {
+                    var wasSubmitted = task.Status == TaskStatus.Completed;
+                    var oldDueDate = task.DueDate;
+
                     if (IsSubmitted(assignment.Submission))
                     {
                         task.Status = TaskStatus.Completed;
@@ -194,6 +209,25 @@ public sealed class CanvasTaskSyncService(
                     task.CanvasIsActive = true;
                     task.UpdatedAt = now;
                     tasksUpdated++;
+
+                    if (oldDueDate != task.DueDate)
+                    {
+                        notifications.Add(new NotificationPushDto(
+                            DemoStudentId,
+                            "Deadline",
+                            "deadline-tracker",
+                            $"Due date for \"{task.Title}\" changed from " +
+                            $"{FormatDueDate(oldDueDate)} to {FormatDueDate(task.DueDate)}."));
+                    }
+
+                    if (!wasSubmitted && IsSubmitted(assignment.Submission))
+                    {
+                        notifications.Add(new NotificationPushDto(
+                            DemoStudentId,
+                            "Grade",
+                            "deadline-tracker",
+                            $"\"{task.Title}\" has been graded."));
+                    }
                 }
             }
         }
@@ -221,6 +255,22 @@ public sealed class CanvasTaskSyncService(
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
+        foreach (var notification in notifications)
+        {
+            try
+            {
+                await notificationClient.PushAsync(notification, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Failed to push {Type} notification for student {StudentId}.",
+                    notification.Type,
+                    notification.StudentId);
+            }
+        }
+
         return new CanvasSyncResultDto(
             coursesCreated,
             coursesUpdated,
@@ -233,6 +283,13 @@ public sealed class CanvasTaskSyncService(
     private static bool IsSubmitted(SharedCanvasSubmissionDto? submission)
     {
         return submission?.WorkflowState is "submitted" or "graded";
+    }
+
+    private static string FormatDueDate(DateTime? dueDate)
+    {
+        return dueDate is null
+            ? "no date"
+            : dueDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
 
     private sealed record CourseSnapshot(
