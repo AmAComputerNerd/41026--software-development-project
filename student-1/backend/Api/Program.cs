@@ -26,6 +26,7 @@ builder.Services.AddHttpClient<ISharedCanvasClient, SharedCanvasClient>(client =
     client.BaseAddress = new Uri(builder.Configuration["SharedService:BaseUrl"]!);
 });
 builder.Services.AddScoped<IAiDigestService, OpenRouterDigestService>();
+builder.Services.AddScoped<CanvasNotificationSyncService>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy => policy
