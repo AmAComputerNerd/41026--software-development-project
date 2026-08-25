@@ -12,7 +12,7 @@ const navLinks = [
 
 <template>
   <v-app class="nb-app">
-    <Navbar :services="SERVICES" badge="DEADLINES + TASKS" />
+    <Navbar :services="SERVICES" />
 
     <nav class="nb-tabstrip" aria-label="Deadline tracker sections">
       <RouterLink

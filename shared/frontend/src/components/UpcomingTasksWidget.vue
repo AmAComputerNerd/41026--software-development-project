@@ -73,7 +73,8 @@ function relativeDueDate(value: string) {
         v-for="task in upcoming"
         :key="task.id"
         class="nb-upcoming__row"
-        href="/deadlines/"
+        :href="`/deadlines/?edit=${encodeURIComponent(task.id)}`"
+        :aria-label="`Edit ${task.title}`"
       >
         <span class="nb-upcoming__priority" :class="`nb-upcoming__priority--${task.priority.toLowerCase()}`" />
         <span class="nb-upcoming__task">

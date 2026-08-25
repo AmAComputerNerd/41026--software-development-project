@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import TaskDialog from '@/components/TaskDialog.vue'
 import TaskRow from '@/components/TaskRow.vue'
 import { useTasks } from '@/composables/useTasks'
 import type { TaskItem, TaskPriority, TaskStatus } from '@/types/task'
 
 const { tasks, courses, loading, error, load, update, remove } = useTasks()
+const route = useRoute()
+const router = useRouter()
 const search = ref('')
 const status = ref<TaskStatus | 'Active' | 'All'>('Active')
 const priority = ref<TaskPriority | 'All'>('All')
@@ -60,7 +63,24 @@ const roots = computed(() => {
     })
 })
 
-onMounted(() => load().catch(() => undefined))
+onMounted(async () => {
+  try {
+    await load()
+  } catch {
+    return
+  }
+
+  const editQuery = route.query.edit
+  const taskId = Array.isArray(editQuery) ? editQuery[0] : editQuery
+  if (!taskId) return
+
+  const task = tasks.value.find((item) => item.id === taskId)
+  if (task) openEdit(task)
+
+  const query = { ...route.query }
+  delete query.edit
+  await router.replace({ query })
+})
 
 function openCreate(parent: TaskItem | null = null) {
   selectedTask.value = null
