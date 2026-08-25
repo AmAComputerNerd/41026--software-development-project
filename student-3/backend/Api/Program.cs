@@ -25,6 +25,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 builder.Services.AddHttpClient<ISharedCanvasClient, SharedCanvasClient>();
 builder.Services.AddScoped<CanvasTaskSyncService>();
+builder.Services.AddScoped<TaskHierarchyService>();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy => policy
+        .WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+            ?? ["http://localhost:3000", "http://localhost:3003", "http://localhost:8080"])
+        .AllowAnyHeader()
+        .AllowAnyMethod());
+});
 
 var app = builder.Build();
 
@@ -36,6 +45,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors();
 
 // API
 app.MapCourseEndpoints();

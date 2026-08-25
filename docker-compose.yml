@@ -43,6 +43,11 @@ services:
             context: .
             dockerfile: student-1/frontend/Dockerfile
 
+    student-3-frontend:
+        build:
+            context: .
+            dockerfile: student-3/frontend/Dockerfile
+
     ai-mode:
         build:
             context: ./ai-services/ai-mode
@@ -59,6 +64,8 @@ services:
         depends_on:
             - student-1-frontend
             - student-1-backend
+            - student-3-frontend
+            - student-3-backend
 
 volumes:
     shared-db:

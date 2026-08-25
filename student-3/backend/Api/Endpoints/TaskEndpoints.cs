@@ -2,6 +2,7 @@ using Api.Data;
 using Api.DTOs;
 using Api.Extensions;
 using Api.Models;
+using Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskStatus = Api.Models.TaskStatus;
@@ -138,7 +139,11 @@ public static class TaskEndpoints
         );
     }
 
-    private static async Task<IResult> UpdateTask([FromRoute] Guid id, ModifyTaskRequestDto requestDto, AppDbContext db)
+    private static async Task<IResult> UpdateTask(
+        [FromRoute] Guid id,
+        ModifyTaskRequestDto requestDto,
+        AppDbContext db,
+        TaskHierarchyService taskHierarchy)
     {
         var task = await db.Tasks
             .FindAsync(id);
@@ -153,10 +158,16 @@ public static class TaskEndpoints
 
         task.Title = requestDto.NewTitle ?? task.Title;
         task.Description = requestDto.UpdateDescription ? requestDto.NewDescription : task.Description;
-        task.DueDate = requestDto.NewDueDate ?? task.DueDate;
+        task.DueDate = requestDto.UpdateDueDate ? requestDto.NewDueDate : task.DueDate;
         task.Priority = hasNewPriority ? newPriority : task.Priority;
         task.Status = hasNewStatus ? newStatus : task.Status;
-        task.UpdatedAt = DateTime.UtcNow;
+        var updatedAt = DateTime.UtcNow;
+        task.UpdatedAt = updatedAt;
+
+        if (hasNewStatus && newStatus == TaskStatus.Completed)
+        {
+            await taskHierarchy.CompleteDescendantsAsync(id, updatedAt);
+        }
 
         await db.SaveChangesAsync();
 

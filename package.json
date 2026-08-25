@@ -3,6 +3,7 @@
   "workspaces": [
     "shared/frontend",
     "shared/ui-kit",
-    "student-1/frontend"
+    "student-1/frontend",
+    "student-3/frontend"
   ]
 }

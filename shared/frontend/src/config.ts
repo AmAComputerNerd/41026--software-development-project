@@ -5,3 +5,6 @@ export const CURRENT_STUDENT_ID =
 
 export const NOTIFICATIONS_API_BASE_URL =
   import.meta.env.VITE_NOTIFICATIONS_API_BASE_URL || 'http://localhost:5101'
+
+export const DEADLINES_API_BASE_URL =
+  import.meta.env.VITE_DEADLINES_API_BASE_URL || 'http://localhost:5103/api'
