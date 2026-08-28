@@ -4,6 +4,8 @@ import type {
   CanvasSyncResult,
   Course,
   CreateTaskInput,
+  GenerateTaskBreakdownInput,
+  GenerateTaskDescriptionInput,
   TaskItem,
   UpdateTaskInput,
 } from '@/types/task'
@@ -107,5 +109,29 @@ export function useTasks() {
     return result
   }
 
-  return { tasks, courses, upcoming, loading, error, load, add, update, remove, sync }
+  async function generateBreakdown(id: string, input: GenerateTaskBreakdownInput) {
+    const created = await taskApi.generateTaskBreakdown(id, input)
+    tasks.value.push(...created)
+    return created
+  }
+
+  async function generateDescription(input: GenerateTaskDescriptionInput) {
+    const result = await taskApi.generateTaskDescription(input)
+    return result.description
+  }
+
+  return {
+    tasks,
+    courses,
+    upcoming,
+    loading,
+    error,
+    load,
+    add,
+    update,
+    remove,
+    sync,
+    generateBreakdown,
+    generateDescription,
+  }
 }

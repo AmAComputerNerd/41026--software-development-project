@@ -40,8 +40,10 @@ services:
         environment:
             ASPNETCORE_ENVIRONMENT: Development
             SharedService__BaseUrl: http://shared-backend:8080
+            AiGateway__BaseUrl: http://ai-mode:8080
         depends_on:
             - shared-backend
+            - ai-mode
 
     student-1-frontend:
         build:

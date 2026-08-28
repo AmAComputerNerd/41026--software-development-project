@@ -54,3 +54,18 @@ export interface CanvasSyncResult {
   tasksCreated: number
   tasksUpdated: number
 }
+
+export interface GenerateTaskBreakdownInput {
+  prompt: string
+  priority: TaskPriority
+}
+
+export interface GenerateTaskDescriptionInput {
+  title: string
+  courseId: string | null
+  parentTaskId: string | null
+}
+
+export interface GeneratedTaskDescription {
+  description: string
+}

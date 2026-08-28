@@ -43,7 +43,7 @@ public sealed class CanvasApiClient(
                 assignment.Id,
                 assignment.CourseId,
                 assignment.Name,
-                assignment.Description,
+                CanvasHtmlTextConverter.ToPlainText(assignment.Description),
                 assignment.DueAt,
                 assignment.UpdatedAt,
                 assignment.WorkflowState,

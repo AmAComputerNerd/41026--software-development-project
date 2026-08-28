@@ -17,7 +17,12 @@ const actionError = ref('')
 
 const assignments = computed(() =>
   tasks.value
-    .filter((task) => task.canvasAssignmentId !== null && !task.parentTaskId)
+    .filter(
+      (task) =>
+        task.canvasAssignmentId !== null &&
+        !task.parentTaskId &&
+        task.status !== 'Completed',
+    )
     .sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? '')),
 )
 
@@ -79,7 +84,7 @@ async function syncAssignments() {
       <div>
         <p class="nb-eyebrow nb-mono">CANVAS → ACTION PLAN</p>
         <h1>Assignments</h1>
-        <p>Turn synced Canvas assignments into reusable, practical sub-task plans.</p>
+        <p>Turn synced Canvas assignments into tailored, AI-generated sub-task plans.</p>
       </div>
       <button class="nb-btn nb-btn--accent" type="button" :disabled="syncing" @click="syncAssignments">
         {{ syncing ? 'Syncing...' : '↻ Sync Canvas' }}
@@ -87,22 +92,22 @@ async function syncAssignments() {
     </header>
 
     <div class="nb-panel nb-assignment-filter">
-      <v-select
-        v-model="selectedCourseId"
-        label="Course"
-        :items="courseOptions"
-        item-title="name"
-        item-value="id"
-        hide-details
-      />
+      <label class="nb-field">
+        <span>Course</span>
+        <select v-model="selectedCourseId">
+          <option v-for="course in courseOptions" :key="course.id" :value="course.id">
+            {{ course.name }}
+          </option>
+        </select>
+      </label>
     </div>
 
-    <v-alert v-if="error || actionError" type="error" variant="outlined" class="mb-5">
+    <div v-if="error || actionError" class="nb-alert nb-alert--error" role="alert">
       {{ actionError || error }}
-    </v-alert>
-    <v-alert v-if="syncMessage" type="success" variant="outlined" class="mb-5">
+    </div>
+    <div v-if="syncMessage" class="nb-alert nb-alert--success" role="status">
       {{ syncMessage }}
-    </v-alert>
+    </div>
 
     <div v-if="loading" class="nb-panel nb-empty">Loading assignments...</div>
     <div v-else-if="!assignments.length" class="nb-panel nb-empty">
@@ -143,7 +148,7 @@ async function syncAssignments() {
         </div>
         <div class="nb-assignment__actions">
           <button class="nb-btn nb-btn--accent" type="button" @click="openBreakdown(assignment)">
-            Use template
+            AI breakdown
           </button>
           <button class="nb-btn nb-btn--outline" type="button" @click="openSubtask(assignment)">
             + One sub-task

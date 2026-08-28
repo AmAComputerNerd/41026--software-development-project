@@ -12,8 +12,8 @@ anyone (or any AI agent) new to the repo.
 | shared-backend | shared/backend | ASP.NET Core + SQLite | 5110 | Canvas API integration (courses, assignments, users), caching | — |
 | ai-mode | ai-services/ai-mode | ASP.NET Core | (internal only) | OpenRouter proxy, shared LLM access | — |
 | student-1-frontend | student-1/frontend | Vue 3 | (internal only, proxied at /notifications) | Notifications UI | student-1-backend |
-| student-1-backend | student-1/backend | ASP.NET Core + SQLite | 5101 | Notifications, preferences, AI digest | ai-mode (planned) |
-| student-3-backend | student-3/backend | ASP.NET Core + SQLite | 5103 | Deadlines & task tracker, Canvas assignment sync | shared-backend |
+| student-1-backend | student-1/backend | ASP.NET Core + SQLite | 5101 | Notifications, preferences, AI digest | ai-mode |
+| student-3-backend | student-3/backend | ASP.NET Core + SQLite | 5103 | Deadlines & task tracker, Canvas assignment sync, AI task planning | shared-backend, ai-mode |
 
 Students 2, 4, 5 (Grades, Automations, Account) have no code yet — just
 `backend/` and `frontend/` placeholder directories.
@@ -29,6 +29,10 @@ Owned by student-1 (Bryan), per team assignment:
 Owned by student-3 (Jonathon), used by the whole team:
 - `shared/backend` — Canvas API integration, other services call its
   HTTP API and don't read its database directly
+
+Canvas assignment descriptions are treated as untrusted HTML. The shared
+backend parses them into compact plain text before returning its API DTOs, so
+downstream services neither render raw Canvas markup nor send it to AI models.
 
 ## Reverse proxy routing
 
@@ -46,6 +50,11 @@ Using OpenRouter (`nvidia/nemotron-3-ultra-550b-a55b:free`), approved by
 the tutor as a substitute for the spec's suggested Ollama runtime. One
 shared API key held only by the `ai-mode` gateway service, other backends
 call the gateway rather than OpenRouter directly.
+
+The deadline tracker uses its backend as the AI boundary. It resolves course
+and assignment context from its own database, submits bounded prompts to
+`ai-mode`, validates structured responses, and persists generated subtasks
+atomically. The browser never calls `ai-mode` directly.
 
 ## Database boundary
 
