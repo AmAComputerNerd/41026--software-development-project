@@ -139,27 +139,38 @@ async function removeTask(task: TaskItem) {
     </header>
 
     <div class="nb-panel nb-filterbar">
-      <v-text-field v-model="search" label="Search tasks" prepend-inner-icon="mdi-magnify" hide-details />
-      <v-select
-        v-model="status"
-        label="Status"
-        :items="['Active', 'All', 'Todo', 'InProgress', 'Completed']"
-        hide-details
-      />
-      <v-select v-model="priority" label="Priority" :items="['All', 'Low', 'Medium', 'High']" hide-details />
-      <v-select
-        v-model="courseId"
-        label="Course"
-        :items="[{ id: 'All', name: 'All courses' }, ...courses]"
-        item-title="name"
-        item-value="id"
-        hide-details
-      />
+      <label class="nb-field">
+        <span>Search tasks</span>
+        <input v-model="search" type="search" placeholder="Title, description or course" />
+      </label>
+      <label class="nb-field">
+        <span>Status</span>
+        <select v-model="status">
+          <option v-for="item in ['Active', 'All', 'Todo', 'InProgress', 'Completed']" :key="item">
+            {{ item }}
+          </option>
+        </select>
+      </label>
+      <label class="nb-field">
+        <span>Priority</span>
+        <select v-model="priority">
+          <option v-for="item in ['All', 'Low', 'Medium', 'High']" :key="item">{{ item }}</option>
+        </select>
+      </label>
+      <label class="nb-field">
+        <span>Course</span>
+        <select v-model="courseId">
+          <option value="All">All courses</option>
+          <option v-for="course in courses" :key="course.id" :value="course.id">
+            {{ course.name }}
+          </option>
+        </select>
+      </label>
     </div>
 
-    <v-alert v-if="error || actionError" type="error" variant="outlined" class="mb-5">
+    <div v-if="error || actionError" class="nb-alert nb-alert--error" role="alert">
       {{ actionError || error }}
-    </v-alert>
+    </div>
 
     <div v-if="loading" class="nb-panel nb-empty">Loading tasks...</div>
     <div v-else-if="!roots.length" class="nb-panel nb-empty">

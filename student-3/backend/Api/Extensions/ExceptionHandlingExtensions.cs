@@ -22,6 +22,24 @@ public static class ExceptionHandlingExtensions
                         title: "The shared service is not configured"
                     ).ExecuteAsync(context);
                 }
+                else if (exception is AiGatewayConfigurationException)
+                {
+                    context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+
+                    await Results.Problem(
+                        statusCode: StatusCodes.Status503ServiceUnavailable,
+                        title: "The AI gateway is not configured"
+                    ).ExecuteAsync(context);
+                }
+                else if (exception is AiGatewayException)
+                {
+                    context.Response.StatusCode = StatusCodes.Status502BadGateway;
+
+                    await Results.Problem(
+                        statusCode: StatusCodes.Status502BadGateway,
+                        title: "The AI generation request failed"
+                    ).ExecuteAsync(context);
+                }
                 else if (exception is SharedServiceException or HttpRequestException or JsonException)
                 {
                     context.Response.StatusCode = StatusCodes.Status502BadGateway;

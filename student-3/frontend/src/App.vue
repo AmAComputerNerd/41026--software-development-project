@@ -11,7 +11,7 @@ const navLinks = [
 </script>
 
 <template>
-  <v-app class="nb-app">
+  <div class="nb-app">
     <Navbar :services="SERVICES" />
 
     <nav class="nb-tabstrip" aria-label="Deadline tracker sections">
@@ -26,10 +26,8 @@ const navLinks = [
       </RouterLink>
     </nav>
 
-    <v-main>
-      <main class="nb-main">
-        <RouterView />
-      </main>
-    </v-main>
-  </v-app>
+    <main class="nb-main">
+      <RouterView />
+    </main>
+  </div>
 </template>

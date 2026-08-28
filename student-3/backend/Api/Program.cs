@@ -12,6 +12,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 builder.Services.Configure<SharedServiceOptions>(
     builder.Configuration.GetSection(SharedServiceOptions.SectionName));
+builder.Services.Configure<AiGatewayOptions>(
+    builder.Configuration.GetSection(AiGatewayOptions.SectionName));
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options
@@ -24,6 +26,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         });
 });
 builder.Services.AddHttpClient<ISharedCanvasClient, SharedCanvasClient>();
+builder.Services.AddHttpClient<IAiTaskService, AiTaskService>();
 builder.Services.AddScoped<CanvasTaskSyncService>();
 builder.Services.AddScoped<TaskHierarchyService>();
 builder.Services.AddCors(options =>

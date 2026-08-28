@@ -99,7 +99,7 @@ function openEdit(task: TaskItem) {
       </div>
     </header>
 
-    <v-alert v-if="error" type="error" variant="outlined" class="mb-5">{{ error }}</v-alert>
+    <div v-if="error" class="nb-alert nb-alert--error" role="alert">{{ error }}</div>
     <div v-if="loading" class="nb-panel nb-empty">Loading calendar...</div>
     <div v-else class="nb-calendar nb-panel">
       <div v-for="weekday in weekdays" :key="weekday" class="nb-calendar__weekday nb-mono">

@@ -22,7 +22,10 @@ Same request shape as OpenAI's chat completions API:
 }
 ```
 
-Response is the raw OpenRouter response, passed through as-is.
+The response body is passed through unchanged. If a provider embeds an
+`error` object inside an HTTP 200 response, the gateway converts its error
+code into the HTTP response status so callers can handle and retry it
+correctly.
 
 ## Model
 
