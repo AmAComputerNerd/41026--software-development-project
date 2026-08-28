@@ -15,6 +15,7 @@
   --nb-color-accent-yellow: #F2C94C; /* hazard-yellow accent (secondary tag, e.g. GRADE) */
   --nb-color-white: #FFFFFF; /* pure white, used for unread row backgrounds / AI tag */
   --nb-color-muted: #555555; /* secondary/meta text (timestamps, captions) */
+  --nb-color-shadow: var(--nb-color-ink); /* hard-shadow colour, independent of ink so dark mode shadows stay dark */
 
   /* Borders (solid ink, no radius) */
   --nb-border-width-sm: 2px;
@@ -24,7 +25,7 @@
 
   /* Shadows: hard offset, no blur/spread */
   --nb-shadow-offset: 6px;
-  --nb-shadow: var(--nb-shadow-offset) var(--nb-shadow-offset) 0 var(--nb-color-ink);
+  --nb-shadow: var(--nb-shadow-offset) var(--nb-shadow-offset) 0 var(--nb-color-shadow);
 
   /* Typography */
   --nb-font-display: 'Space Grotesk', system-ui, sans-serif;
@@ -45,10 +46,14 @@
   --nb-space-16: 64px;
 }
 
-/* Dark mode: swap ink/bg roles, keep accents punchy on the near-black base. */
+/* Dark mode: softened warm-neutral palette from the Notifications-Dark
+ * design (claude.ai/design project 5afc3379-890a-4fb9-8e8d-516a388c619a),
+ * swapping the stark near-black/near-white pairing for warm charcoal/bone
+ * tones. Accents stay punchy. */
 :root[data-theme='dark'] {
-  --nb-color-bg: #111111;
-  --nb-color-ink: #EDEBE6;
-  --nb-color-white: #1B1B1B;
-  --nb-color-muted: #9A9A9A;
+  --nb-color-bg: #161513;
+  --nb-color-ink: #C9C4B4;
+  --nb-color-white: #1E1C18;
+  --nb-color-muted: #85807A;
+  --nb-color-shadow: #050403;
 }
