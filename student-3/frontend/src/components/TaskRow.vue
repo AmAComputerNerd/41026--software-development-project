@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { dueLabel, formatDueDate } from '@/utils/dates'
 import type { TaskItem, TaskStatus } from '@/types/task'
 
 defineOptions({ name: 'TaskRow' })
+
+const MaxDescriptionPreviewLength = 240
 
 const props = withDefaults(
   defineProps<{
@@ -35,6 +37,32 @@ const nextStatus = computed<TaskStatus>(() => {
 
 const completedChildren = computed(
   () => children.value.filter((child) => child.status === 'Completed').length,
+)
+
+const descriptionExpanded = ref(false)
+const fullDescription = computed(() => props.task.description?.trim() ?? '')
+const normalizedDescription = computed(() => fullDescription.value.replace(/\s+/g, ' '))
+const descriptionIsTruncated = computed(
+  () => normalizedDescription.value.length > MaxDescriptionPreviewLength,
+)
+
+const descriptionPreview = computed(() => {
+  const description = normalizedDescription.value
+  if (!description || description.length <= MaxDescriptionPreviewLength) {
+    return description
+  }
+
+  const maximumContentLength = MaxDescriptionPreviewLength - 1
+  const wordBoundary = description.lastIndexOf(' ', maximumContentLength)
+  const cutoff = wordBoundary >= maximumContentLength * 0.75
+    ? wordBoundary
+    : maximumContentLength
+
+  return `${description.slice(0, cutoff).trimEnd()}…`
+})
+
+const displayedDescription = computed(() =>
+  descriptionExpanded.value ? fullDescription.value : descriptionPreview.value,
 )
 </script>
 
@@ -69,7 +97,24 @@ const completedChildren = computed(
           {{ task.priority }}
         </span>
       </div>
-      <p v-if="task.description" class="nb-task-row__description">{{ task.description }}</p>
+      <p
+        v-if="displayedDescription"
+        :id="`task-description-${task.id}`"
+        class="nb-task-row__description"
+        :class="{ 'nb-task-row__description--expanded': descriptionExpanded }"
+      >
+        {{ displayedDescription }}
+      </p>
+      <button
+        v-if="descriptionIsTruncated"
+        class="nb-text-btn nb-description-toggle"
+        type="button"
+        :aria-controls="`task-description-${task.id}`"
+        :aria-expanded="descriptionExpanded"
+        @click="descriptionExpanded = !descriptionExpanded"
+      >
+        {{ descriptionExpanded ? 'Show less' : 'Show more' }}
+      </button>
       <div class="nb-task-row__meta nb-mono">
         <span>{{ task.courseName ?? 'Personal' }}</span>
         <span :class="{ 'nb-overdue': dueLabel(task.dueDate).includes('OVERDUE') }">

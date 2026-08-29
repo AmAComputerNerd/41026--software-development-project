@@ -157,7 +157,14 @@
   color: var(--nb-color-muted);
   font-size: 13px;
   overflow-wrap: anywhere;
+}
+
+.nb-task-row__description--expanded {
   white-space: pre-line;
+}
+
+.nb-description-toggle {
+  margin-bottom: var(--nb-space-1);
 }
 
 .nb-task-row__meta {
