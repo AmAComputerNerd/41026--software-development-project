@@ -82,9 +82,10 @@ async function syncAssignments() {
   <section class="nb-page">
     <header class="nb-page-header">
       <div>
-        <p class="nb-eyebrow nb-mono">CANVAS → ACTION PLAN</p>
-        <h1>Assignments</h1>
-        <p>Turn synced Canvas assignments into tailored, AI-generated sub-task plans.</p>
+        <h1>ASSIGNMENTS</h1>
+        <p class="nb-page-subtitle">
+          Turn synced Canvas assignments into tailored, AI-generated sub-task plans.
+        </p>
       </div>
       <button class="nb-btn nb-btn--accent" type="button" :disabled="syncing" @click="syncAssignments">
         {{ syncing ? 'Syncing...' : '↻ Sync Canvas' }}
@@ -118,7 +119,7 @@ async function syncAssignments() {
       <strong>No assignments for this course.</strong>
       <span>Select another course or choose “All courses”.</span>
     </div>
-    <div v-else class="nb-assignment-grid">
+    <TransitionGroup v-else appear tag="div" name="assignment" class="nb-assignment-grid">
       <article
         v-for="assignment in filteredAssignments"
         :key="assignment.id"
@@ -155,7 +156,7 @@ async function syncAssignments() {
           </button>
         </div>
       </article>
-    </div>
+    </TransitionGroup>
 
     <AssignmentBreakdownDialog
       v-model="breakdownOpen"

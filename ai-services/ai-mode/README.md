@@ -34,4 +34,6 @@ you omit `model`. Override by setting `model` in request body.
 
 ## docker-compose
 
-Add `depends_on: ai-mode` to your backend service.
+Add a health check and use `depends_on: condition: service_healthy` for
+`ai-mode`. Its `/health/live` endpoint reports process liveness and
+`/health/ready` verifies that the OpenRouter key is configured.

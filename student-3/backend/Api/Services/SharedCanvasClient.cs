@@ -1,17 +1,14 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using Api.Configuration;
 using Api.DTOs;
-using Microsoft.Extensions.Options;
+using Polly.CircuitBreaker;
+using Polly.Timeout;
 
 namespace Api.Services;
 
-public sealed class SharedCanvasClient(
-    HttpClient httpClient,
-    IOptions<SharedServiceOptions> options) : ISharedCanvasClient
+public sealed class SharedCanvasClient(HttpClient httpClient) : ISharedCanvasClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly SharedServiceOptions _options = options.Value;
 
     public Task<IReadOnlyList<SharedCanvasCourseDto>> GetCoursesAsync(
         CancellationToken cancellationToken)
@@ -34,9 +31,7 @@ public sealed class SharedCanvasClient(
         string relativeUrl,
         CancellationToken cancellationToken)
     {
-        ConfigureClient();
-
-        using var response = await httpClient.GetAsync(relativeUrl, cancellationToken);
+        using var response = await SendAsync(relativeUrl, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
             throw new SharedServiceException(
@@ -45,19 +40,36 @@ public sealed class SharedCanvasClient(
 
         return await response.Content.ReadFromJsonAsync<List<T>>(
             JsonOptions,
-            cancellationToken) ?? [];
+            cancellationToken) ??
+            throw new SharedServiceException(
+                "The shared service returned an empty response.");
     }
 
-    private void ConfigureClient()
+    private async Task<HttpResponseMessage> SendAsync(
+        string relativeUrl,
+        CancellationToken cancellationToken)
     {
-        if (!Uri.TryCreate(_options.BaseUrl, UriKind.Absolute, out var baseUri) ||
-            (baseUri.Scheme != Uri.UriSchemeHttps && baseUri.Scheme != Uri.UriSchemeHttp))
+        try
         {
-            throw new SharedServiceConfigurationException(
-                "SharedService:BaseUrl must be an absolute HTTP or HTTPS URL.");
+            return await httpClient.GetAsync(relativeUrl, cancellationToken);
         }
-
-        httpClient.BaseAddress ??= new Uri(
-            baseUri.AbsoluteUri.EndsWith('/') ? baseUri.AbsoluteUri : $"{baseUri.AbsoluteUri}/");
+        catch (HttpRequestException exception)
+        {
+            throw new SharedServiceException(
+                "The shared service could not be reached after retrying.",
+                exception);
+        }
+        catch (TimeoutRejectedException exception)
+        {
+            throw new SharedServiceException(
+                "The shared service request timed out after retrying.",
+                exception);
+        }
+        catch (BrokenCircuitException exception)
+        {
+            throw new SharedServiceException(
+                "The shared service is temporarily unavailable.",
+                exception);
+        }
     }
 }

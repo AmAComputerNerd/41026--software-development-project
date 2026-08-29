@@ -126,8 +126,9 @@ jobs:
           trap cleanup EXIT
 
           for _ in {1..30}; do
-            if curl --fail --silent \
-              http://127.0.0.1:5103/api/courses/ > courses.json; then
+            if curl --fail --silent http://127.0.0.1:5103/health/live > /dev/null &&
+              curl --fail --silent \
+                http://127.0.0.1:5103/api/courses/ > courses.json; then
               break
             fi
             if ! kill -0 "$api_pid" 2>/dev/null; then
@@ -137,6 +138,13 @@ jobs:
             sleep 1
           done
           test -s courses.json
+
+          # The process is live, but required microservices are unavailable in this job.
+          readiness_status=$(
+            curl --silent --output /dev/null --write-out "%{http_code}" \
+              http://127.0.0.1:5103/health/ready
+          )
+          test "$readiness_status" = "503"
 
           created=$(
             curl --fail --silent \

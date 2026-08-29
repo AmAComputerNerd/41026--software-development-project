@@ -12,6 +12,13 @@ services:
             ASPNETCORE_ENVIRONMENT: Development
             CANVAS_BASE_URL: ${CANVAS_BASE_URL}
             CANVAS_API_TOKEN: ${CANVAS_API_TOKEN}
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+            start_period: 15s
 
     student-1-backend:
         build:
@@ -30,8 +37,16 @@ services:
             Cors__AllowedOrigins__4: http://localhost:5199
             SharedService__BaseUrl: http://shared-backend:8080
             CanvasSync__IntervalMinutes: "2"
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/live"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+            start_period: 15s
         depends_on:
-            - shared-backend
+            shared-backend:
+                condition: service_healthy
 
     student-3-backend:
         build:
@@ -45,9 +60,18 @@ services:
             ASPNETCORE_ENVIRONMENT: Development
             SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__BaseUrl: http://ai-mode:8080
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 15s
         depends_on:
-            - shared-backend
-            - ai-mode
+            shared-backend:
+                condition: service_healthy
+            ai-mode:
+                condition: service_healthy
 
     student-1-frontend:
         build:
@@ -65,6 +89,13 @@ services:
             dockerfile: Api/Dockerfile
         environment:
             OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+            start_period: 10s
 
     shared-shell:
         build:
@@ -73,10 +104,14 @@ services:
         ports:
             - "8080:80"
         depends_on:
-            - student-1-frontend
-            - student-1-backend
-            - student-3-frontend
-            - student-3-backend
+            student-1-frontend:
+                condition: service_started
+            student-1-backend:
+                condition: service_healthy
+            student-3-frontend:
+                condition: service_started
+            student-3-backend:
+                condition: service_healthy
 
 volumes:
     shared-db:

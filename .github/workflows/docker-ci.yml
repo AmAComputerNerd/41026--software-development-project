@@ -54,3 +54,50 @@ jobs:
 
       - name: Build all service images
         run: docker compose build
+
+      - name: Verify dependency health and startup ordering
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker compose up --detach shared-backend ai-mode student-1-backend student-3-backend
+
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5101/health/live > /dev/null &&
+              curl --fail --silent http://127.0.0.1:5103/health/ready > /dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl --fail --silent http://127.0.0.1:5101/health/live > /dev/null
+          curl --fail --silent http://127.0.0.1:5103/health/ready > /dev/null
+
+          docker compose stop ai-mode
+          for _ in {1..10}; do
+            status=$(
+              curl --silent --output /dev/null --write-out "%{http_code}" \
+                http://127.0.0.1:5103/health/ready
+            )
+            if [[ "$status" == "503" ]]; then
+              break
+            fi
+            sleep 1
+          done
+          test "$status" = "503"
+
+          docker compose start ai-mode
+          for _ in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:5103/health/ready > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          docker compose ps
+          docker compose logs shared-backend ai-mode student-1-backend student-3-backend
+          exit 1
+
+      - name: Stop smoke-test services
+        if: always()
+        run: docker compose down --volumes

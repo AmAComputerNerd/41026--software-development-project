@@ -1,4 +1,6 @@
 using Api.Endpoints;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +10,18 @@ builder.Configuration["OpenRouter:ApiKey"] =
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
+builder.Services
+    .AddHealthChecks()
+    .AddCheck(
+        "self",
+        () => HealthCheckResult.Healthy(),
+        tags: ["live"])
+    .AddCheck(
+        "openrouter-configuration",
+        () => string.IsNullOrWhiteSpace(builder.Configuration["OpenRouter:ApiKey"])
+            ? HealthCheckResult.Unhealthy("The OpenRouter API key is not configured.")
+            : HealthCheckResult.Healthy("OpenRouter is configured."),
+        tags: ["ready"]);
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy => policy
@@ -32,5 +46,23 @@ app.UseCors();
 app.UseHttpsRedirection();
 
 app.MapChatEndpoints();
+app.MapHealthChecks(
+    "/health/live",
+    new HealthCheckOptions
+    {
+        Predicate = registration => registration.Tags.Contains("live")
+    });
+app.MapHealthChecks(
+    "/health",
+    new HealthCheckOptions
+    {
+        Predicate = registration => registration.Tags.Contains("live")
+    });
+app.MapHealthChecks(
+    "/health/ready",
+    new HealthCheckOptions
+    {
+        Predicate = registration => registration.Tags.Contains("ready")
+    });
 
 app.Run();

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { Navbar, SERVICES } from '@better-canvas/ui-kit'
+import NotificationButton from '@/components/NotificationButton.vue'
 
 const route = useRoute()
 const navLinks = [
@@ -12,7 +13,11 @@ const navLinks = [
 
 <template>
   <div class="nb-app">
-    <Navbar :services="SERVICES" />
+    <Navbar :services="SERVICES">
+      <template #actions>
+        <NotificationButton />
+      </template>
+    </Navbar>
 
     <nav class="nb-tabstrip" aria-label="Deadline tracker sections">
       <RouterLink
@@ -27,7 +32,11 @@ const navLinks = [
     </nav>
 
     <main class="nb-main">
-      <RouterView />
+      <RouterView v-slot="{ Component, route: currentRoute }">
+        <Transition name="page" mode="out-in" appear>
+          <component :is="Component" :key="currentRoute.name" />
+        </Transition>
+      </RouterView>
     </main>
   </div>
 </template>
