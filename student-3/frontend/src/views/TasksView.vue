@@ -131,9 +131,10 @@ async function removeTask(task: TaskItem) {
   <section class="nb-page">
     <header class="nb-page-header">
       <div>
-        <p class="nb-eyebrow nb-mono">DEADLINE CONTROL</p>
-        <h1>Tasks</h1>
-        <p>Plan coursework, track priorities and turn big assignments into achievable steps.</p>
+        <h1>TASKS</h1>
+        <p class="nb-page-subtitle">
+          Plan coursework, track priorities and turn big assignments into achievable steps.
+        </p>
       </div>
       <button class="nb-btn nb-btn--accent" type="button" @click="openCreate()">+ New task</button>
     </header>

@@ -82,9 +82,10 @@ async function syncAssignments() {
   <section class="nb-page">
     <header class="nb-page-header">
       <div>
-        <p class="nb-eyebrow nb-mono">CANVAS → ACTION PLAN</p>
-        <h1>Assignments</h1>
-        <p>Turn synced Canvas assignments into tailored, AI-generated sub-task plans.</p>
+        <h1>ASSIGNMENTS</h1>
+        <p class="nb-page-subtitle">
+          Turn synced Canvas assignments into tailored, AI-generated sub-task plans.
+        </p>
       </div>
       <button class="nb-btn nb-btn--accent" type="button" :disabled="syncing" @click="syncAssignments">
         {{ syncing ? 'Syncing...' : '↻ Sync Canvas' }}
