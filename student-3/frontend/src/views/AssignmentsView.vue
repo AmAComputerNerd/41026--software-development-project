@@ -119,7 +119,7 @@ async function syncAssignments() {
       <strong>No assignments for this course.</strong>
       <span>Select another course or choose “All courses”.</span>
     </div>
-    <div v-else class="nb-assignment-grid">
+    <TransitionGroup v-else appear tag="div" name="assignment" class="nb-assignment-grid">
       <article
         v-for="assignment in filteredAssignments"
         :key="assignment.id"
@@ -156,7 +156,7 @@ async function syncAssignments() {
           </button>
         </div>
       </article>
-    </div>
+    </TransitionGroup>
 
     <AssignmentBreakdownDialog
       v-model="breakdownOpen"

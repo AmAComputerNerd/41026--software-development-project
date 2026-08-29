@@ -32,7 +32,11 @@ const navLinks = [
     </nav>
 
     <main class="nb-main">
-      <RouterView />
+      <RouterView v-slot="{ Component, route: currentRoute }">
+        <Transition name="page" mode="out-in" appear>
+          <component :is="Component" :key="currentRoute.name" />
+        </Transition>
+      </RouterView>
     </main>
   </div>
 </template>

@@ -97,14 +97,17 @@ const displayedDescription = computed(() =>
           {{ task.priority }}
         </span>
       </div>
-      <p
-        v-if="displayedDescription"
-        :id="`task-description-${task.id}`"
-        class="nb-task-row__description"
-        :class="{ 'nb-task-row__description--expanded': descriptionExpanded }"
-      >
-        {{ displayedDescription }}
-      </p>
+      <Transition name="description" mode="out-in">
+        <p
+          v-if="displayedDescription"
+          :id="`task-description-${task.id}`"
+          :key="descriptionExpanded ? 'expanded' : 'preview'"
+          class="nb-task-row__description"
+          :class="{ 'nb-task-row__description--expanded': descriptionExpanded }"
+        >
+          {{ displayedDescription }}
+        </p>
+      </Transition>
       <button
         v-if="descriptionIsTruncated"
         class="nb-text-btn nb-description-toggle"

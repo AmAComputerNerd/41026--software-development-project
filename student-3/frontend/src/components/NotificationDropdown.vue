@@ -35,12 +35,19 @@ function formatRelativeTime(isoDate: string) {
       NO NOTIFICATIONS YET
     </div>
 
-    <ul v-else class="nb-notif-dropdown__list">
+    <TransitionGroup
+      v-else
+      appear
+      tag="ul"
+      name="notification-item"
+      class="nb-notif-dropdown__list"
+    >
       <li
-        v-for="notification in notifications"
+        v-for="(notification, index) in notifications"
         :key="notification.id"
         class="nb-notif-dropdown__item"
         :class="{ 'nb-notif-dropdown__item--unread': !notification.isRead }"
+        :style="{ transitionDelay: `${Math.min(index, 7) * 30}ms` }"
       >
         <p class="nb-notif-dropdown__message">{{ notification.message }}</p>
         <div class="nb-notif-dropdown__meta nb-mono">
@@ -48,7 +55,7 @@ function formatRelativeTime(isoDate: string) {
           <span>{{ formatRelativeTime(notification.createdAtUtc) }}</span>
         </div>
       </li>
-    </ul>
+    </TransitionGroup>
 
     <a href="/notifications/" class="nb-btn nb-notif-dropdown__footer">
       VIEW ALL &rarr;
@@ -114,5 +121,22 @@ function formatRelativeTime(isoDate: string) {
   margin-top: 12px;
   text-align: center;
   text-decoration: none;
+}
+
+.notification-item-enter-active {
+  transition:
+    opacity 180ms ease-out,
+    transform 220ms ease-out;
+}
+
+.notification-item-enter-from {
+  opacity: 0;
+  transform: translateX(10px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-item-enter-active {
+    transition: none;
+  }
 }
 </style>

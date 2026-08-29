@@ -71,6 +71,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
   <div ref="root" class="nb-notifications">
     <button
       class="nb-btn nb-btn--outline nb-notifications__button"
+      :class="{ 'nb-notifications__button--open': open }"
       type="button"
       aria-label="Notifications"
       aria-controls="deadline-notifications-panel"
@@ -94,13 +95,15 @@ onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
       </span>
     </button>
 
-    <NotificationDropdown
-      v-if="open"
-      id="deadline-notifications-panel"
-      :notifications="recentNotifications"
-      :loading="loading"
-      :error="error || null"
-    />
+    <Transition name="notification-dropdown">
+      <NotificationDropdown
+        v-if="open"
+        id="deadline-notifications-panel"
+        :notifications="recentNotifications"
+        :loading="loading"
+        :error="error || null"
+      />
+    </Transition>
   </div>
 </template>
 
@@ -119,10 +122,85 @@ onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
   padding: 0;
 }
 
+.nb-notifications__button svg {
+  transition: transform 160ms ease;
+}
+
+.nb-notifications__button:hover svg {
+  transform: translateY(-2px);
+}
+
+.nb-notifications__button--open svg {
+  animation: notification-bell-ring 420ms ease-out;
+}
+
 .nb-notifications__badge {
   position: absolute;
   top: -8px;
   right: -8px;
+  animation: notification-badge-pop 240ms ease-out;
 }
 
+.notification-dropdown-enter-active {
+  transition:
+    opacity 180ms ease-out,
+    transform 240ms cubic-bezier(0.2, 0.9, 0.25, 1.2);
+  transform-origin: top right;
+}
+
+.notification-dropdown-leave-active {
+  transition:
+    opacity 120ms ease-in,
+    transform 120ms ease-in;
+  transform-origin: top right;
+}
+
+.notification-dropdown-enter-from,
+.notification-dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.96);
+}
+
+@keyframes notification-bell-ring {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(14deg);
+  }
+  50% {
+    transform: rotate(-12deg);
+  }
+  75% {
+    transform: rotate(6deg);
+  }
+}
+
+@keyframes notification-badge-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  70% {
+    transform: scale(1.15);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-notifications__button svg,
+  .notification-dropdown-enter-active,
+  .notification-dropdown-leave-active {
+    transition: none;
+  }
+
+  .nb-notifications__button--open svg,
+  .nb-notifications__badge {
+    animation: none;
+  }
+}
 </style>
