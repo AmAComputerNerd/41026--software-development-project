@@ -2,14 +2,13 @@ using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Api.Configuration;
-using Microsoft.Extensions.Options;
+using Polly.CircuitBreaker;
+using Polly.Timeout;
 
 namespace Api.Services;
 
 public sealed partial class AiTaskService(
     HttpClient httpClient,
-    IOptions<AiGatewayOptions> options,
     ILogger<AiTaskService> logger) : IAiTaskService
 {
     private const int MinimumSubtasks = 2;
@@ -17,7 +16,6 @@ public sealed partial class AiTaskService(
     private const int MaximumCompletionAttempts = 3;
     private const int MaximumContextDescriptionLength = 12000;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly AiGatewayOptions _options = options.Value;
 
     public async Task<IReadOnlyList<GeneratedSubtask>> GenerateSubtasksAsync(
         AiTaskContext context,
@@ -142,7 +140,7 @@ public sealed partial class AiTaskService(
                 }
 
                 throw new AiGatewayException(
-                    $"The AI gateway returned HTTP {statusCode}.");
+                    $"The AI gateway returned HTTP {statusCode} after retrying.");
             }
 
             ChatCompletionResponse? completion;
@@ -232,20 +230,25 @@ public sealed partial class AiTaskService(
                 "The AI gateway could not be reached.",
                 exception);
         }
+        catch (TimeoutRejectedException exception)
+        {
+            LogGatewayTransportError(logger, exception);
+            throw new AiGatewayException(
+                "The AI gateway timed out after retrying.",
+                exception);
+        }
+        catch (BrokenCircuitException exception)
+        {
+            LogGatewayTransportError(logger, exception);
+            throw new AiGatewayException(
+                "The AI gateway is temporarily unavailable.",
+                exception);
+        }
     }
 
     private Uri ResolveEndpoint()
     {
-        if (!Uri.TryCreate(_options.BaseUrl, UriKind.Absolute, out var baseUri) ||
-            (baseUri.Scheme != Uri.UriSchemeHttps && baseUri.Scheme != Uri.UriSchemeHttp))
-        {
-            throw new AiGatewayConfigurationException(
-                "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL.");
-        }
-
-        return new Uri(
-            $"{baseUri.AbsoluteUri.TrimEnd('/')}/v1/chat/completions",
-            UriKind.Absolute);
+        return new Uri(httpClient.BaseAddress!, "v1/chat/completions");
     }
 
     private static string RemoveCodeFence(string content)
@@ -356,6 +359,7 @@ public sealed partial class AiTaskService(
     {
         public string? Description { get; init; }
     }
+
 
     [LoggerMessage(
         Level = LogLevel.Warning,

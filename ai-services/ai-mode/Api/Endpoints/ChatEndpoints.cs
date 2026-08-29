@@ -11,7 +11,6 @@ public static partial class ChatEndpoints
     public static IEndpointRouteBuilder MapChatEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/v1/chat/completions", PostChatCompletions);
-        endpoints.MapGet("/health", () => Results.Ok(new { status = "ok" }));
         return endpoints;
     }
 
@@ -31,18 +30,24 @@ public static partial class ChatEndpoints
             return Results.Problem("OpenRouter:ApiKey configuration value is not set.", statusCode: StatusCodes.Status500InternalServerError);
         }
 
-        JsonNode? body;
+        JsonNode? parsedBody;
         try
         {
-            body = await JsonNode.ParseAsync(httpRequest.Body, cancellationToken: cancellationToken);
+            parsedBody = await JsonNode.ParseAsync(
+                httpRequest.Body,
+                cancellationToken: cancellationToken);
         }
         catch (System.Text.Json.JsonException)
         {
             return Results.BadRequest(new { error = "Request body must be valid JSON." });
         }
 
-        body ??= new JsonObject();
-        var model = body["model"]?.GetValue<string>();
+        if (parsedBody is not JsonObject body)
+        {
+            return Results.BadRequest(new { error = "Request body must be a JSON object." });
+        }
+
+        var model = body["model"]?.GetValue<string>()?.Trim();
         if (string.IsNullOrWhiteSpace(model))
         {
             model = DefaultModel;

@@ -15,6 +15,9 @@ RUN dotnet publish "./Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:Use
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /app/Data && chown -R $APP_UID:$APP_UID /app/Data
 USER $APP_UID
 ENTRYPOINT ["dotnet", "Api.dll"]

@@ -22,6 +22,9 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 RUN chown -R $APP_UID:$APP_UID /app
 
 USER $APP_UID

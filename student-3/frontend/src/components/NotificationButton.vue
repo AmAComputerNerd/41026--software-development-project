@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import NotificationDropdown from '@/components/NotificationDropdown.vue'
+import { resilientGet } from '@/api/resilientFetch'
 import type { NotificationItem } from '@/types/notification'
 
 const CurrentStudentId =
@@ -33,7 +34,9 @@ async function loadNotifications() {
   error.value = ''
   try {
     const query = new URLSearchParams({ studentId: CurrentStudentId })
-    const response = await fetch(`${NotificationsApiBaseUrl}/notifications?${query}`)
+    const response = await resilientGet(
+      `${NotificationsApiBaseUrl}/notifications?${query}`,
+    )
     if (!response.ok) {
       throw new Error(`Notification API request failed: ${response.status}`)
     }

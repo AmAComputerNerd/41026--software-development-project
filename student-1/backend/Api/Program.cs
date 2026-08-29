@@ -2,7 +2,9 @@ using Api.Data;
 using Api.Endpoints;
 using Api.Extensions;
 using Api.Services;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +30,12 @@ builder.Services.AddHttpClient<ISharedCanvasClient, SharedCanvasClient>(client =
 builder.Services.AddScoped<IAiDigestService, OpenRouterDigestService>();
 builder.Services.AddScoped<CanvasNotificationSyncService>();
 builder.Services.AddHostedService<CanvasSyncBackgroundService>();
+builder.Services
+    .AddHealthChecks()
+    .AddCheck(
+        "self",
+        () => HealthCheckResult.Healthy(),
+        tags: ["live"]);
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy => policy
@@ -60,6 +68,18 @@ app.MapNotificationEndpoints();
 app.MapPreferenceEndpoints();
 app.MapAiDigestEndpoints();
 app.MapCanvasSyncEndpoints();
+app.MapHealthChecks(
+    "/health/live",
+    new HealthCheckOptions
+    {
+        Predicate = registration => registration.Tags.Contains("live")
+    });
+app.MapHealthChecks(
+    "/health",
+    new HealthCheckOptions
+    {
+        Predicate = registration => registration.Tags.Contains("live")
+    });
 
 // Infrastructure
 app.UseApiExceptionHandling();

@@ -1,7 +1,7 @@
 # Deadline and task-tracker service
 
 The service manages courses, tasks, subtasks, priorities, completion states,
-due dates, and task filtering. Its Vue/Vuetify frontend provides task-list,
+due dates, and task filtering. Its Vue frontend provides task-list,
 monthly calendar, upcoming-task, and Canvas assignment planning views using
 the shared Better Canvas UI kit. Persisted timestamps use `DateTime` normalized
 to UTC. Due dates can be changed or removed explicitly; completing a parent
