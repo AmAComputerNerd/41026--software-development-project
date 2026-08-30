@@ -7,7 +7,7 @@
 
         public required string Name { get; set; }
 
-        public long? CanvasCourseID { get; set; }
+        public long? CanvasCourseId { get; set; }
 
         public bool? CanvasIsActive { get; set; }
 

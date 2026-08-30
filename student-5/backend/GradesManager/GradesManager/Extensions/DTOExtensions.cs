@@ -11,7 +11,7 @@ namespace GradesManager.Extensions
                 CourseId: course.CourseId,
                 Code: course.Code,
                 Name: course.Name,
-                CanvasCourseId: course.CanvasCourseID,
+                CanvasCourseId: course.CanvasCourseId,
                 CanvasIsActive: course.CanvasIsActive,
                 LastCanvasSyncAt: course.LastCanvasSyncAt
             );
@@ -20,7 +20,7 @@ namespace GradesManager.Extensions
         public static StudentDto ToDto(this Student student)
         {
             return new StudentDto(
-                StudentID: student.StudentID,
+                StudentId: student.StudentId,
                 Name: student.Name,
                 IdealMark: student.IdealMark
             );
@@ -29,15 +29,23 @@ namespace GradesManager.Extensions
         public static AssignmentDto ToDto(this Assignment assignment)
         {
             return new AssignmentDto(
-                AssignmentID: assignment.AssignmentID,
-                CourseID: assignment.CourseID,
+                AssignmentId: assignment.AssignmentId,
+                CourseId: assignment.CourseId,
                 Name: assignment.Name,
                 MaxMark: assignment.MaxMark,
                 Weight: assignment.Weight,
-                TempMark: assignment.TempMark,
-                FinalMark: assignment.FinalMark,
                 Completed: assignment.Completed
 
+            );
+        }
+
+        public static StudentAssignmentDto ToDto(this StudentAssignment studentAssignment)
+        {
+            return new StudentAssignmentDto(
+                StudentId: studentAssignment.StudentId,
+                AssignmentId: studentAssignment.AssignmentId,
+                TempMark: studentAssignment.TempMark,
+                FinalMark: studentAssignment.FinalMark
             );
         }
     }

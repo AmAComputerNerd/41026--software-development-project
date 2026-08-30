@@ -2,9 +2,9 @@
 {
     public class StudentCourse
     {
-        public Guid StudentID { get; }
+        public Guid StudentId { get; set; }
         public Student? Student { get; }
-        public Guid CourseID { get; }
+        public Guid CourseId { get; set; }
         public Course? Course { get; }
     }
 }

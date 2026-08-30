@@ -1,6 +1,9 @@
 ﻿namespace GradesManager.DTOs
 {
-    public class StudentDto
-    {
-    }
+    public record StudentDto
+    (
+        Guid StudentId,
+        String? Name,
+        double? IdealMark
+    );
 }
