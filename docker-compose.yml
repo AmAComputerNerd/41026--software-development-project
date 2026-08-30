@@ -73,6 +73,17 @@ services:
             ai-mode:
                 condition: service_healthy
 
+    student-5-backend:
+        build:
+            context: ./student-5/backend/GradesManager
+            dockerfile: GradesManager/Dockerfile
+        ports:
+            - "5105:8080"
+        volumes:
+            - student-5-db:/app/Data
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+
     student-1-frontend:
         build:
             context: .
@@ -117,3 +128,4 @@ volumes:
     shared-db:
     student-1-db:
     student-3-db:
+    student-5-db:
