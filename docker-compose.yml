@@ -48,6 +48,26 @@ services:
             shared-backend:
                 condition: service_healthy
 
+    student-2-backend:
+        build:
+            context: ./student-2/backend
+            dockerfile: Api/Dockerfile
+        ports:
+            - "5102:8080"
+        volumes:
+            - student-2-db:/app/Data
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+            Cors__AllowedOrigins__0: http://localhost:3002
+            Cors__AllowedOrigins__1: http://localhost:8080
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+            start_period: 15s
+
     student-3-backend:
         build:
             context: ./student-3/backend
@@ -89,6 +109,11 @@ services:
             context: .
             dockerfile: student-1/frontend/Dockerfile
 
+    student-2-frontend:
+        build:
+            context: .
+            dockerfile: student-2/frontend/Dockerfile
+
     student-3-frontend:
         build:
             context: .
@@ -119,6 +144,10 @@ services:
                 condition: service_started
             student-1-backend:
                 condition: service_healthy
+            student-2-frontend:
+                condition: service_started
+            student-2-backend:
+                condition: service_healthy
             student-3-frontend:
                 condition: service_started
             student-3-backend:
@@ -127,5 +156,6 @@ services:
 volumes:
     shared-db:
     student-1-db:
+    student-2-db:
     student-3-db:
     student-5-db:

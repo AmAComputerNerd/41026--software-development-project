@@ -10,9 +10,14 @@ delivery preferences by notification type and channel (in-app or email),
 and AI-generated digests summarising a student's recent notification
 activity.
 
-**Student 2: Isaac Thomas (STUDENT-NUM).**  
-Working directory: `student-2/`  
-TODO: Short summary of microservice, other info
+**Student 2: Isaac Thomas (25341708).**
+
+Working directory: `student-2/`
+
+Automations service: configures assignment extension and scheduled post
+automations, stores each type in its own Entity Framework table, and provides
+read-only records of previous runs. Release 0 stores configuration only and
+does not execute automations.
 
 **Student 3: Jonathon Thomson (25488154).**  
 Working directory: `student-3/`  
@@ -82,5 +87,6 @@ Working branch: `main`
 Feature set:  
 - Shared dashboard shell and UI kit.
 - Notification preferences, notification management, and AI digests.
+- Assignment extension and scheduled post automation configuration and run history.
 - Deadline/task CRUD, course linkage, filtering, and Canvas synchronization.
 - Shared Canvas API gateway, audit database, Docker image, and CI workflow.

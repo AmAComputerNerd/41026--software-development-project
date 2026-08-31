@@ -1,8 +1,7 @@
 # Project notes for AI agents
 
 This is a 5-student microservices project (ASD unit, Release 0).
-`docs/architecture/overview.md` doesn't exist yet — if you write it, keep
-it up to date with what's actually built and reference it here.
+Keep `docs/architecture/overview.md` up to date with what's actually built.
 
 ## Service boundaries
 
@@ -36,15 +35,13 @@ inside Docker), it holds the only OpenRouter key any service needs.
 
 ## Adding a new frontend microservice
 
-No playbook doc exists yet (`docs/playbooks/new-frontend-microservice.md`
-doesn't exist) — write one if you do this and reference it here.
+Follow `docs/playbooks/new-frontend-microservice.md`.
 
 Short version: Vue 3, no Vuetify, plain SCSS. Depend on
 `@better-canvas/ui-kit` (workspace package) for tokens, fonts, and shared
-components (TopNav, etc.) instead of writing your own. Add an nginx
-proxy block in `shared/frontend/nginx.conf` (commented-out stubs already
-exist for students 2/4/5). Add your service to the root
-`docker-compose.yml`. Add your tile to `shared/frontend/src/components/DashboardGrid.vue`.
+components (Navbar, etc.) instead of writing your own. Add an nginx
+proxy block in `shared/frontend/nginx.conf`, add your service to the root
+`docker-compose.yml`, and enable its tile in `shared/ui-kit/src/services.ts`.
 
 ## Git conventions used throughout this repo
 

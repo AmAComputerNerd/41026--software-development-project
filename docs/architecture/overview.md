@@ -8,14 +8,17 @@ anyone (or any AI agent) new to the repo.
 
 | Service | Path | Stack | Port (host) | Owns | Depends on |
 |---|---|---|---|---|---|
-| shared-shell | shared/frontend | Vue 3 + nginx | 8080 | Unified dashboard, routing to all features | student-1-frontend, student-1-backend |
+| shared-shell | shared/frontend | Vue 3 + nginx | 8080 | Unified dashboard, routing to all features | student-1, student-2, student-3 frontends and backends |
 | shared-backend | shared/backend | ASP.NET Core + SQLite | 5110 | Canvas API integration (courses, assignments, users), caching | — |
 | ai-mode | ai-services/ai-mode | ASP.NET Core | (internal only) | OpenRouter proxy, shared LLM access | — |
 | student-1-frontend | student-1/frontend | Vue 3 | (internal only, proxied at /notifications) | Notifications UI | student-1-backend |
 | student-1-backend | student-1/backend | ASP.NET Core + SQLite | 5101 | Notifications, preferences, AI digest | ai-mode |
+| student-2-frontend | student-2/frontend | Vue 3 + TypeScript | (internal only, proxied at /automations) | Automation configuration and run-history UI | student-2-backend |
+| student-2-backend | student-2/backend | ASP.NET Core + EF Core + SQLite | 5102 | Assignment extension and scheduled post configurations and run records | — |
+| student-3-frontend | student-3/frontend | Vue 3 + TypeScript | (internal only, proxied at /deadlines) | Deadline and task-tracker UI | student-3-backend |
 | student-3-backend | student-3/backend | ASP.NET Core + SQLite | 5103 | Deadlines & task tracker, Canvas assignment sync, AI task planning | shared-backend, ai-mode |
 
-Students 2, 4, 5 (Grades, Automations, Account) have no code yet — just
+Students 4 and 5 (Accounts and Settings, Grades and Progress) have no code yet — just
 `backend/` and `frontend/` placeholder directories.
 
 ## Shared infrastructure
@@ -40,9 +43,11 @@ downstream services neither render raw Canvas markup nor send it to AI models.
 - `/` — the dashboard itself
 - `/notifications/` → student-1-frontend
 - `/api/notifications/` → student-1-backend
-- `/deadlines` — not yet proxied (frontend doesn't exist), falls back to `/`
-- `/grades`, `/automations`, `/account` — stubbed but commented out,
-  waiting on students 2, 4, 5
+- `/automations/` → student-2-frontend
+- `/api/automations/` → student-2-backend
+- `/deadlines/` → student-3-frontend
+- `/api/deadlines/` → student-3-backend
+- `/grades`, `/account` — stubbed but commented out, waiting on students 5 and 4
 
 ## AI-mode
 

@@ -36,8 +36,8 @@ export const SERVICES: Service[] = [
   {
     id: 'automations',
     name: 'Automations',
-    route: null,
-    live: false,
+    route: '/automations/',
+    live: true,
   },
   {
     id: 'account-settings',

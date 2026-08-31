@@ -1,7 +1,7 @@
 # Playbook: adding a new student frontend
 
-Follow this when scaffolding student-2, student-4, or student-5's
-frontend, using student-1/frontend as the reference implementation.
+Follow this when scaffolding a student frontend, using student-1/frontend as
+the reference implementation.
 
 ## 1. Scaffold
 
@@ -72,8 +72,7 @@ shell).
 
 ## 6. Uncomment your route in shared/frontend/nginx.conf
 
-Commented-out stubs already exist for `/grades` (student-2),
-`/automations` (student-4), and `/account` (student-5). Uncomment yours,
+Commented-out stubs exist for unimplemented services. Uncomment yours,
 replace the placeholder container names (e.g. `student-2-frontend`,
 `student-2-backend`) with your actual service names from
 `docker-compose.yml`, and add `depends_on` entries for your
@@ -86,9 +85,7 @@ The dashboard tile grid is data-driven, not hardcoded per-tile in
 `DashboardGrid.vue`. The live/dead switch lives in the canonical service
 registry: `shared/ui-kit/src/services.ts`. Find your `ServiceId` entry in
 the `SERVICES` array and set `route` to your shared-shell path (e.g.
-`/grades/`) and `live: true` (student-1's `notifications` entry is the
-only one currently live; student-3's `deadlines-tasks` entry is still
-`route: null, live: false` as the placeholder pattern to follow until
-built). `shared/frontend/src/data/tiles.ts` merges each `SERVICES` entry
+`/grades/`) and `live: true`. `shared/frontend/src/data/tiles.ts` merges
+each `SERVICES` entry
 with a dashboard-specific icon and description — add/check yours there
 too if it's missing.
