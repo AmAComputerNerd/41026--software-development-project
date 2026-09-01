@@ -94,6 +94,11 @@ services:
             context: .
             dockerfile: student-3/frontend/Dockerfile
 
+    student-5-frontend:
+        build:
+            context: .
+            dockerfile: student-5/frontend/Dockerfile
+
     ai-mode:
         build:
             context: ./ai-services/ai-mode
@@ -123,6 +128,10 @@ services:
                 condition: service_started
             student-3-backend:
                 condition: service_healthy
+            student-5-frontend:
+                condition: service_started
+            student-5-backend:
+                condition: service_started
 
 volumes:
     shared-db:
