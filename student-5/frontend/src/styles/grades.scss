@@ -162,7 +162,7 @@ input {
 }
 
 .target-editor__input {
-  width: 150px;
+  width: 210px;
   border-width: 0 0 4px;
   background: transparent;
   font-size: 72px;
@@ -497,7 +497,7 @@ input {
 
 .temporary-mark__control {
   display: grid;
-  grid-template-columns: 70px auto 1fr;
+  grid-template-columns: 70px auto repeat(2, max-content);
   align-items: center;
   gap: var(--nb-space-2);
 }
@@ -508,6 +508,11 @@ input {
 
 .temporary-mark__control span {
   font-size: 10px;
+}
+
+.temporary-mark__remove {
+  background: var(--nb-color-accent-orange);
+  color: var(--nb-color-ink);
 }
 
 .temporary-mark__result {
@@ -602,6 +607,6 @@ input {
   }
 
   .temporary-mark__control {
-    grid-template-columns: 70px auto 1fr;
+    grid-template-columns: 70px auto repeat(2, max-content);
   }
 }

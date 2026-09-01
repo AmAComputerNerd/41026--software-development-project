@@ -14,6 +14,7 @@ const {
   error,
   ensureCourseAssignments,
   updateTemporaryMark,
+  deleteTemporaryMark,
   markFor,
   calculateCourseMark,
   courseStats,
@@ -33,6 +34,10 @@ const stats = computed(() => courseStats(props.courseId))
 
 async function saveTemporaryMark(assignmentId: string, value: number) {
   await updateTemporaryMark(assignmentId, value)
+}
+
+async function removeTemporaryMark(assignmentId: string) {
+  await deleteTemporaryMark(assignmentId)
 }
 
 onMounted(() => ensureCourseAssignments(props.courseId))
@@ -103,7 +108,8 @@ onMounted(() => ensureCourseAssignments(props.courseId))
           :key="assignment.assignmentId"
           :assignment="assignment"
           :mark="markFor(assignment.assignmentId)"
-          @save-temporary-mark="saveTemporaryMark"
+          :save-temporary-mark="saveTemporaryMark"
+          :remove-temporary-mark="removeTemporaryMark"
         />
       </div>
       <div v-else class="state-panel nb-panel nb-mono">NO ASSIGNMENTS FOUND FOR THIS COURSE.</div>

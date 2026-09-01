@@ -77,4 +77,8 @@ export const gradesApi = {
       method: exists ? 'PUT' : 'POST',
       body: JSON.stringify({ studentId, assignmentId, tempMark }),
     }),
+  deleteTemporaryMark: (studentId: string, assignmentId: string) =>
+    request<void>(`/api/assignment/marks/${studentId}/${assignmentId}`, {
+      method: 'DELETE',
+    }),
 }

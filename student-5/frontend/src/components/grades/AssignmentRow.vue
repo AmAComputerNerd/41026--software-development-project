@@ -5,10 +5,8 @@ import type { Assignment, StudentAssignment } from '@/api/grades'
 const props = defineProps<{
   assignment: Assignment
   mark?: StudentAssignment
-}>()
-
-const emit = defineEmits<{
-  saveTemporaryMark: [assignmentId: string, mark: number]
+  saveTemporaryMark: (assignmentId: string, mark: number) => Promise<void>
+  removeTemporaryMark: (assignmentId: string) => Promise<void>
 }>()
 
 const temporaryMark = ref<number | null>(props.mark?.tempMark ?? null)
@@ -35,8 +33,24 @@ async function save() {
   saving.value = true
   message.value = ''
   try {
-    emit('saveTemporaryMark', props.assignment.assignmentId, temporaryMark.value)
+    await props.saveTemporaryMark(props.assignment.assignmentId, temporaryMark.value)
     message.value = 'APPLIED'
+  } catch (error) {
+    message.value = error instanceof Error ? error.message : 'SAVE FAILED'
+  } finally {
+    saving.value = false
+  }
+}
+
+async function remove() {
+  saving.value = true
+  message.value = ''
+  try {
+    await props.removeTemporaryMark(props.assignment.assignmentId)
+    temporaryMark.value = null
+    message.value = 'REMOVED'
+  } catch (error) {
+    message.value = error instanceof Error ? error.message : 'REMOVE FAILED'
   } finally {
     saving.value = false
   }
@@ -86,9 +100,18 @@ async function save() {
         >
           APPLY
         </button>
+        <button
+          v-if="mark?.tempMark != null"
+          type="button"
+          class="nb-btn temporary-mark__remove"
+          :disabled="saving"
+          @click="remove"
+        >
+          REMOVE
+        </button>
       </div>
-      <span v-if="temporaryPercent != null" class="temporary-mark__result nb-mono">
-        {{ temporaryPercent.toFixed(1) }}% {{ message }}
+      <span v-if="temporaryPercent != null || message" class="temporary-mark__result nb-mono">
+        {{ temporaryPercent == null ? '' : `${temporaryPercent.toFixed(1)}%` }} {{ message }}
       </span>
     </form>
   </article>

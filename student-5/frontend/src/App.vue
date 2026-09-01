@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { Navbar, SERVICES } from '@better-canvas/ui-kit'
+import NotificationButton from '@/components/NotificationButton.vue'
 
 const route = useRoute()
 const services = SERVICES.map((service) =>
@@ -12,7 +13,11 @@ const services = SERVICES.map((service) =>
 
 <template>
   <div class="nb-app">
-    <Navbar :services="services" badge="GRADES TRACKER" />
+    <Navbar :services="services" badge="STUDENT DASHBOARD">
+      <template #actions>
+        <NotificationButton />
+      </template>
+    </Navbar>
 
     <nav class="nb-tabstrip" aria-label="Grades tracker sections">
       <RouterLink

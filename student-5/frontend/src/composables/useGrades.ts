@@ -144,6 +144,13 @@ export function useGrades() {
     else marks.value.push(updated)
   }
 
+  async function deleteTemporaryMark(assignmentId: string) {
+    if (!student.value) return
+    await gradesApi.deleteTemporaryMark(student.value.studentId, assignmentId)
+    const existing = markFor(assignmentId)
+    if (existing) existing.tempMark = null
+  }
+
   return {
     student,
     courses,
@@ -157,6 +164,7 @@ export function useGrades() {
     ensureCourseAssignments,
     updateIdealMark,
     updateTemporaryMark,
+    deleteTemporaryMark,
     markFor,
     calculateCourseMark,
     courseStats,
