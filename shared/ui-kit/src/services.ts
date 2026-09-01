@@ -30,8 +30,8 @@ export const SERVICES: Service[] = [
   {
     id: 'grades-progress',
     name: 'Grades & Progress',
-    route: null,
-    live: false,
+    route: '/grades/',
+    live: true,
   },
   {
     id: 'automations',
