@@ -16,6 +16,7 @@ const {
   setSortOrder,
   markAsRead,
   markAsUnread,
+  markTaskComplete,
   deleteNotification,
 } = useNotifications()
 
@@ -70,6 +71,7 @@ onMounted(fetchNotifications)
         variant="list"
         @mark-read="markAsRead"
         @mark-unread="markAsUnread"
+        @complete-task="markTaskComplete"
         @delete="deleteNotification"
       />
     </div>

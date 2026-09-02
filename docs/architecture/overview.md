@@ -14,7 +14,7 @@ anyone (or any AI agent) new to the repo.
 | student-1-frontend | student-1/frontend | Vue 3 | (proxied at /notifications/) | Notifications UI | student-1-backend |
 | student-1-backend | student-1/backend | ASP.NET Core + SQLite | 5101 | Notifications, preferences, AI digest | ai-mode |
 | student-3-frontend | student-3/frontend | Vue 3 | (proxied at /deadlines/) | Deadlines & tasks UI | student-3-backend |
-| student-3-backend | student-3/backend | ASP.NET Core + SQLite | 5103 | Deadlines & task tracker, Canvas assignment sync, AI task planning | shared-backend, ai-mode |
+| student-3-backend | student-3/backend | ASP.NET Core + SQLite | 5103 | Deadlines & task tracker, Canvas assignment sync, AI task planning | shared-backend, ai-mode, student-1-backend |
 | student-5-frontend | student-5/frontend | Vue 3 | (proxied at /grades/) | Grades & progress UI | student-5-backend |
 | student-5-backend | student-5/backend | ASP.NET Core + SQLite | 5105 | Grades & progress API | (no cross-service calls yet) |
 
@@ -82,6 +82,28 @@ Two concrete paths to know:
 The browser only talks to the shared shell, never directly to
 ai-mode or any backend.
 
+**Task due date → proactive reminder notification**
+
+1. student-3-backend's `DueSoonReminderBackgroundService` polls its
+   own tasks on a timer, looking for incomplete tasks (Canvas-synced
+   or manually created) due within a configurable window.
+2. For each unreminded task it calls `POST /notifications/push` on
+   student-1-backend with `RelatedEntityType: "Task"` and
+   `RelatedEntityId: <task id>`, then stamps the task with
+   `DueSoonReminderSentAtUtc` so it isn't reminded twice.
+3. This is the only place student-3 calls student-1 directly — always
+   one-way (student-3 → student-1 over HTTP), never a database read
+   in either direction. A shorter second threshold re-fires the
+   reminder once, closer to the due date, if the task is still open —
+   this is also what powers "snooze" on the notification (dismissing
+   it just lets this second tier resurface it later).
+4. Deadline notifications that carry a `relatedEntityId` render VIEW
+   TASK / MARK COMPLETE / SNOOZE actions on student-1's notifications
+   list page; student-1's frontend calls student-3's
+   `PUT /api/tasks/{id}` directly (same-origin via nginx) to complete
+   a task inline. Canvas-sync-triggered Deadline notifications don't
+   carry a `relatedEntityId` yet and render without these actions.
+
 ## AI-mode
 
 Using OpenRouter (`nvidia/nemotron-3-ultra-550b-a55b:free`), approved by
@@ -118,6 +140,11 @@ them. Per-service `environment:` blocks in compose set the rest.
 | `AiGateway__BaseUrl` | student-3-backend | URL of ai-mode, in compose's DNS: `http://ai-mode:8080`. |
 | `CanvasSync__IntervalMinutes` | student-1-backend | Polling cadence for Canvas-native notifications. |
 | `Cors__AllowedOrigins__*` | student-1-backend | Allow-list of dev origins. CORS is locked down; new dev URLs need an entry here. |
+| `NotificationService__BaseUrl` | student-3-backend | URL of student-1-backend, in compose's DNS: `http://student-1-backend:8080`. Used to push due-soon reminder notifications. |
+| `DueSoonReminder__IntervalMinutes` | student-3-backend | Polling cadence for the due-soon reminder job. |
+| `DueSoonReminder__HoursBeforeDue` | student-3-backend | First reminder window: hours before a task's due date. |
+| `DueSoonReminder__FinalHoursBeforeDue` | student-3-backend | Second, closer reminder window — also what resurfaces a snoozed notification. |
+| `VITE_DEADLINES_API_BASE_URL` | student-1-frontend (build-time) | Same-origin path to student-3-backend via nginx (`/api/deadlines`), used only for the inline "mark task complete" action on Deadline notifications. |
 
 Running a .NET backend outside Docker: set these as actual
 environment variables, or via `dotnet user-secrets set` in that

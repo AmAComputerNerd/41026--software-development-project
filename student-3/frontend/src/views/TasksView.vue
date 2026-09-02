@@ -70,7 +70,7 @@ onMounted(async () => {
     return
   }
 
-  const editQuery = route.query.edit
+  const editQuery = route.query.edit ?? route.query.taskId
   const taskId = Array.isArray(editQuery) ? editQuery[0] : editQuery
   if (!taskId) return
 
@@ -79,6 +79,7 @@ onMounted(async () => {
 
   const query = { ...route.query }
   delete query.edit
+  delete query.taskId
   await router.replace({ query })
 })
 

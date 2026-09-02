@@ -9,6 +9,8 @@ public class Notification
     public required string Message { get; set; }
     public bool IsRead { get; set; }
     public DateTime CreatedAtUtc { get; set; }
+    public string? RelatedEntityType { get; set; }
+    public Guid? RelatedEntityId { get; set; }
 }
 
 public enum NotificationType
