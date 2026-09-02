@@ -8,6 +8,8 @@ namespace Api.Migrations
     /// <inheritdoc />
     public partial class AddNotificationRelatedEntity : Migration
     {
+        private static readonly string[] RelatedEntityIndexColumns = { "RelatedEntityType", "RelatedEntityId" };
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -26,7 +28,7 @@ namespace Api.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Notifications_RelatedEntityType_RelatedEntityId",
                 table: "Notifications",
-                columns: new[] { "RelatedEntityType", "RelatedEntityId" });
+                columns: RelatedEntityIndexColumns);
         }
 
         /// <inheritdoc />
