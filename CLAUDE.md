@@ -1,8 +1,9 @@
 # Project notes for AI agents
 
-This is a 5-student microservices project (ASD unit, Release 0).
-`docs/architecture/overview.md` doesn't exist yet — if you write it, keep
-it up to date with what's actually built and reference it here.
+This is a 5-student microservices project (ASD unit, Release 0). The
+authoritative source for service layout, ports, AI-mode wiring, and DB
+boundaries is `docs/architecture/overview.md` — keep it in sync with
+what's actually built and treat it as the first place to look.
 
 ## Service boundaries
 
@@ -36,15 +37,20 @@ inside Docker), it holds the only OpenRouter key any service needs.
 
 ## Adding a new frontend microservice
 
-No playbook doc exists yet (`docs/playbooks/new-frontend-microservice.md`
-doesn't exist) — write one if you do this and reference it here.
+Follow `docs/playbooks/new-frontend-microservice.md` — it covers the
+workspace wiring, the `@better-canvas/ui-kit` dependency, the Dockerfile
+shape, the `docker-compose.yml` entry, the `shared/frontend/nginx.conf`
+route block, and the dashboard tile registry.
 
 Short version: Vue 3, no Vuetify, plain SCSS. Depend on
 `@better-canvas/ui-kit` (workspace package) for tokens, fonts, and shared
 components (TopNav, etc.) instead of writing your own. Add an nginx
 proxy block in `shared/frontend/nginx.conf` (commented-out stubs already
 exist for students 2/4/5). Add your service to the root
-`docker-compose.yml`. Add your tile to `shared/frontend/src/components/DashboardGrid.vue`.
+`docker-compose.yml`. Add your tile entry to
+`shared/ui-kit/src/services.ts` (the canonical service registry) and a
+matching icon + description in
+`shared/frontend/src/data/tiles.ts`.
 
 ## Git conventions used throughout this repo
 
