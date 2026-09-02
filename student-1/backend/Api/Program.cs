@@ -27,7 +27,13 @@ builder.Services.AddHttpClient<ISharedCanvasClient, SharedCanvasClient>(client =
 {
     client.BaseAddress = new Uri(builder.Configuration["SharedService:BaseUrl"]!);
 });
-builder.Services.AddScoped<IAiDigestService, OpenRouterDigestService>();
+var aiGatewayBaseUrl = builder.Configuration["AiGateway:BaseUrl"] ?? "http://ai-mode:8080";
+builder.Services.AddHttpClient<IAiDigestService, OpenRouterDigestService>(client =>
+{
+    client.BaseAddress = new Uri(aiGatewayBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+})
+.AddStandardResilienceHandler();
 builder.Services.AddScoped<CanvasNotificationSyncService>();
 builder.Services.AddHostedService<CanvasSyncBackgroundService>();
 builder.Services
