@@ -74,6 +74,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<TaskEntity>()
             .Property(task => task.CanvasUpdatedAt)
             .HasConversion(UtcNullableDateTimeConverter);
+
+        modelBuilder.Entity<TaskEntity>()
+            .Property(task => task.DueSoonReminderSentAtUtc)
+            .HasConversion(UtcNullableDateTimeConverter);
     }
 
     private static DateTime ToUtc(DateTime value)

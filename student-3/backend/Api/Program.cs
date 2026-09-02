@@ -28,6 +28,13 @@ builder.Services
         options => IsAbsoluteHttpUrl(options.BaseUrl),
         "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL.")
     .ValidateOnStart();
+builder.Services
+    .AddOptions<NotificationServiceOptions>()
+    .Bind(builder.Configuration.GetSection(NotificationServiceOptions.SectionName))
+    .Validate(
+        options => IsAbsoluteHttpUrl(options.BaseUrl),
+        "NotificationService:BaseUrl must be an absolute HTTP or HTTPS URL.")
+    .ValidateOnStart();
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options
@@ -65,6 +72,18 @@ builder.Services
         options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(120);
         options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(190);
     });
+builder.Services
+    .AddHttpClient<INotificationClient, NotificationClient>((services, client) =>
+        ConfigureClient(
+            client,
+            services.GetRequiredService<IOptions<NotificationServiceOptions>>().Value.BaseUrl))
+    .AddStandardResilienceHandler(options =>
+    {
+        options.Retry.MaxRetryAttempts = 2;
+        options.Retry.Delay = TimeSpan.FromMilliseconds(500);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(35);
+    });
 builder.Services.AddHttpClient(
     RemoteServiceHealthCheck.SharedServiceClientName,
     (services, client) =>
@@ -97,6 +116,8 @@ builder.Services
         tags: ["ready"]);
 builder.Services.AddScoped<CanvasTaskSyncService>();
 builder.Services.AddScoped<TaskHierarchyService>();
+builder.Services.AddScoped<DueSoonReminderService>();
+builder.Services.AddHostedService<DueSoonReminderBackgroundService>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy => policy

@@ -60,6 +60,10 @@ services:
             ASPNETCORE_ENVIRONMENT: Development
             SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__BaseUrl: http://ai-mode:8080
+            NotificationService__BaseUrl: http://student-1-backend:8080
+            DueSoonReminder__IntervalMinutes: "15"
+            DueSoonReminder__HoursBeforeDue: "24"
+            DueSoonReminder__FinalHoursBeforeDue: "3"
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -71,6 +75,8 @@ services:
             shared-backend:
                 condition: service_healthy
             ai-mode:
+                condition: service_healthy
+            student-1-backend:
                 condition: service_healthy
 
     student-5-backend:

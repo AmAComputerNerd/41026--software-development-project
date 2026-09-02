@@ -15,6 +15,7 @@ public class TaskEntity
     public string? CanvasWorkflowState { get; set; }
     public string? CanvasSubmissionState { get; set; }
     public bool? CanvasIsActive { get; set; }
+    public DateTime? DueSoonReminderSentAtUtc { get; set; }
 
     public Guid? CourseId { get; set; }
     public Course? Course { get; set; }
