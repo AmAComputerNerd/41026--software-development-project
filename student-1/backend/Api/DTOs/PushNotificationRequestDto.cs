@@ -6,5 +6,6 @@ public record PushNotificationRequestDto(
     string SourceMicroservice,
     string Message,
     string? RelatedEntityType = null,
-    Guid? RelatedEntityId = null
+    Guid? RelatedEntityId = null,
+    string? ActionPayload = null
 );

@@ -11,6 +11,7 @@ public class Notification
     public DateTime CreatedAtUtc { get; set; }
     public string? RelatedEntityType { get; set; }
     public Guid? RelatedEntityId { get; set; }
+    public string? ActionPayload { get; set; }
 }
 
 public enum NotificationType

@@ -13,6 +13,8 @@ const emit = defineEmits<{
   'mark-read': [id: string]
   'mark-unread': [id: string]
   'complete-task': [id: string]
+  'breakdown-task': [taskId: string, message: string]
+  'simulate-grade': [assignmentId: string | null, message: string]
   delete: [id: string]
 }>()
 
@@ -21,6 +23,7 @@ const time = computed(() => formatRelativeTime(props.notification.createdAtUtc))
 const isActionableDeadline = computed(
   () => props.notification.type === 'Deadline' && !!props.notification.relatedEntityId,
 )
+const isGradeNotification = computed(() => props.notification.type === 'Grade')
 const taskUrl = computed(() => `/deadlines/?taskId=${props.notification.relatedEntityId}`)
 </script>
 
@@ -65,6 +68,23 @@ const taskUrl = computed(() => `/deadlines/?taskId=${props.notification.relatedE
           @click="emit('complete-task', notification.id)"
         >
           MARK COMPLETE
+        </button>
+        <button
+          type="button"
+          class="nb-btn nb-btn--outline"
+          @click="emit('breakdown-task', notification.relatedEntityId!, notification.message)"
+        >
+          AI BREAK DOWN
+        </button>
+      </template>
+      <template v-else-if="isGradeNotification">
+        <a class="nb-btn nb-btn--outline" href="/grades/">VIEW GRADES</a>
+        <button
+          type="button"
+          class="nb-btn nb-btn--outline"
+          @click="emit('simulate-grade', notification.relatedEntityId, notification.message)"
+        >
+          GRADE IMPACT
         </button>
       </template>
       <button

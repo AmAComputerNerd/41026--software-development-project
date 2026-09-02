@@ -19,6 +19,7 @@ export interface NotificationDto {
   createdAtUtc: string
   relatedEntityType: string | null
   relatedEntityId: string | null
+  actionPayload?: string | null
 }
 
 // Matches the backend `NotificationType` enum names exactly — the API
@@ -149,6 +150,12 @@ export function useNotifications() {
     }
   }
 
+  function addRealtimeNotification(n: NotificationDto) {
+    if (!notifications.value.some((item) => item.id === n.id)) {
+      notifications.value = [n, ...notifications.value]
+    }
+  }
+
   return {
     notifications,
     loading,
@@ -166,5 +173,6 @@ export function useNotifications() {
     markAllAsRead,
     markTaskComplete,
     deleteNotification,
+    addRealtimeNotification,
   }
 }

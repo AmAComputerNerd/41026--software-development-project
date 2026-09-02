@@ -2,6 +2,7 @@
 import { computed, onMounted } from 'vue'
 import DigestCard from '@/components/notifications/DigestCard.vue'
 import DigestHistoryList from '@/components/notifications/DigestHistoryList.vue'
+import DigestChatPanel from '@/components/notifications/DigestChatPanel.vue'
 import { useAiDigest } from '@/composables/useAiDigest'
 
 const { digests, generating, error, fetchDigests, generate } = useAiDigest()
@@ -18,6 +19,8 @@ onMounted(fetchDigests)
     <p v-if="error" class="nb-digest__error nb-mono">{{ error }}</p>
 
     <DigestCard :latest-digest="latestDigest" :generating="generating" @generate="generate" />
+
+    <DigestChatPanel />
 
     <DigestHistoryList :digests="digests" />
   </div>

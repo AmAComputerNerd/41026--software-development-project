@@ -16,7 +16,8 @@ public static class DtoExtensions
             IsRead: notification.IsRead,
             CreatedAtUtc: notification.CreatedAtUtc,
             RelatedEntityType: notification.RelatedEntityType,
-            RelatedEntityId: notification.RelatedEntityId
+            RelatedEntityId: notification.RelatedEntityId,
+            ActionPayload: notification.ActionPayload
         );
     }
 

@@ -24,3 +24,18 @@ export async function completeTask(id) {
 
   return response.status === 404 ? null : response.json()
 }
+
+export async function breakdownTask(id, prompt = 'Break down this task into actionable subtasks', priority = 'Medium') {
+  const response = await fetch(`${DEADLINES_BASE_URL}/tasks/${id}/ai-breakdown`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, priority }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Task breakdown failed: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
+

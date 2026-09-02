@@ -9,5 +9,6 @@ public record NotificationDto(
     bool IsRead,
     DateTime CreatedAtUtc,
     string? RelatedEntityType,
-    Guid? RelatedEntityId
+    Guid? RelatedEntityId,
+    string? ActionPayload = null
 );
