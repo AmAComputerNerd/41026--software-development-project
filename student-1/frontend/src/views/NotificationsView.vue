@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import NotificationFilterChips from '@/components/notifications/NotificationFilterChips.vue'
 import NotificationRow from '@/components/notifications/NotificationRow.vue'
-import { useNotifications } from '@/composables/useNotifications'
+import NotificationToast from '@/components/notifications/NotificationToast.vue'
+import BreakdownDialog from '@/components/notifications/BreakdownDialog.vue'
+import GradeImpactDialog from '@/components/notifications/GradeImpactDialog.vue'
+import { useNotifications, type NotificationDto } from '@/composables/useNotifications'
+import { useNotificationStream } from '@/composables/useNotificationStream'
 
 const {
   loading,
@@ -18,7 +22,47 @@ const {
   markAsUnread,
   markTaskComplete,
   deleteNotification,
+  addRealtimeNotification,
 } = useNotifications()
+
+// Real-time toast state
+const toastNotification = ref<NotificationDto | null>(null)
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+
+function showToast(n: NotificationDto) {
+  if (toastTimer) clearTimeout(toastTimer)
+  toastNotification.value = n
+  toastTimer = setTimeout(() => {
+    toastNotification.value = null
+  }, 6000)
+}
+
+function dismissToast() {
+  if (toastTimer) clearTimeout(toastTimer)
+  toastNotification.value = null
+}
+
+// Connect SSE stream
+useNotificationStream((n) => {
+  addRealtimeNotification(n)
+  showToast(n)
+})
+
+// Dialog state
+const breakdownTaskId = ref<string | null>(null)
+const breakdownTaskTitle = ref<string | undefined>(undefined)
+const gradeAssignmentId = ref<string | null>(null)
+const gradeMessage = ref<string | undefined>(undefined)
+
+function handleBreakdownTask(taskId: string, message: string) {
+  breakdownTaskId.value = taskId
+  breakdownTaskTitle.value = message
+}
+
+function handleSimulateGrade(assignmentId: string | null, message: string) {
+  gradeAssignmentId.value = assignmentId
+  gradeMessage.value = message
+}
 
 onMounted(fetchNotifications)
 </script>
@@ -72,9 +116,34 @@ onMounted(fetchNotifications)
         @mark-read="markAsRead"
         @mark-unread="markAsUnread"
         @complete-task="markTaskComplete"
+        @breakdown-task="handleBreakdownTask"
+        @simulate-grade="handleSimulateGrade"
         @delete="deleteNotification"
       />
     </div>
+
+    <!-- AI Task Breakdown Dialog (Student-3) -->
+    <BreakdownDialog
+      v-if="breakdownTaskId"
+      :task-id="breakdownTaskId"
+      :task-title="breakdownTaskTitle"
+      @close="breakdownTaskId = null"
+    />
+
+    <!-- Grade Impact Simulator Dialog (Student-5) -->
+    <GradeImpactDialog
+      v-if="gradeAssignmentId !== null"
+      :assignment-id="gradeAssignmentId"
+      :message="gradeMessage"
+      @close="gradeAssignmentId = null"
+    />
+
+    <!-- Real-time SSE Notification Toast -->
+    <NotificationToast
+      :notification="toastNotification"
+      @dismiss="dismissToast"
+      @mark-read="(id) => { markAsRead(id); dismissToast(); }"
+    />
   </div>
 </template>
 

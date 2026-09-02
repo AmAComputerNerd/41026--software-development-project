@@ -2,6 +2,7 @@ using Api.Data;
 using Api.DTOs;
 using Api.Extensions;
 using Api.Models;
+using Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,7 @@ public static class NotificationEndpoints
     {
         var group = endpoints.MapGroup("/notifications");
         group.MapGet("/", GetNotifications);
+        group.MapGet("/stream", StreamNotifications);
         group.MapGet("/{id:guid}", GetNotification);
         group.MapPut("/{id:guid}/read", MarkAsRead);
         group.MapPut("/{id:guid}/unread", MarkAsUnread);
@@ -109,7 +111,64 @@ public static class NotificationEndpoints
         return Results.Ok();
     }
 
-    private static async Task<IResult> PushNotification(PushNotificationRequestDto requestDto, AppDbContext db)
+    private static readonly System.Text.Json.JsonSerializerOptions SseJsonOptions = new(System.Text.Json.JsonSerializerDefaults.Web);
+
+    private static async Task StreamNotifications(
+        [FromQuery] Guid studentId,
+        HttpContext httpContext,
+        INotificationStreamBroker broker,
+        CancellationToken cancellationToken)
+    {
+        httpContext.Response.Headers.ContentType = "text/event-stream";
+        httpContext.Response.Headers.CacheControl = "no-cache";
+        httpContext.Response.Headers.Connection = "keep-alive";
+        httpContext.Response.Headers["X-Accel-Buffering"] = "no";
+
+        var reader = broker.Subscribe(studentId, cancellationToken);
+
+        await httpContext.Response.WriteAsync("event: connected\ndata: {}\n\n", cancellationToken);
+        await httpContext.Response.Body.FlushAsync(cancellationToken);
+
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(15));
+        var pingTask = Task.Run(async () =>
+        {
+            try
+            {
+                while (await timer.WaitForNextTickAsync(cancellationToken))
+                {
+                    await httpContext.Response.WriteAsync(": ping\n\n", cancellationToken);
+                    await httpContext.Response.Body.FlushAsync(cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Ignored on disconnect
+            }
+        }, cancellationToken);
+
+        try
+        {
+            while (await reader.WaitToReadAsync(cancellationToken))
+            {
+                while (reader.TryRead(out var notification))
+                {
+                    var json = System.Text.Json.JsonSerializer.Serialize(notification, SseJsonOptions);
+                    await httpContext.Response.WriteAsync($"data: {json}\n\n", cancellationToken);
+                    await httpContext.Response.Body.FlushAsync(cancellationToken);
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected on client disconnect
+        }
+    }
+
+    private static async Task<IResult> PushNotification(
+        PushNotificationRequestDto requestDto,
+        AppDbContext db,
+        INotificationStreamBroker broker,
+        CancellationToken cancellationToken)
     {
         if (!Enum.TryParse(requestDto.Type, out NotificationType resolvedType))
         {
@@ -135,12 +194,16 @@ public static class NotificationEndpoints
             IsRead = false,
             CreatedAtUtc = DateTime.UtcNow,
             RelatedEntityType = requestDto.RelatedEntityType,
-            RelatedEntityId = requestDto.RelatedEntityId
+            RelatedEntityId = requestDto.RelatedEntityId,
+            ActionPayload = requestDto.ActionPayload
         };
 
         db.Notifications.Add(notification);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(cancellationToken);
 
-        return Results.Created($"/notifications/{notification.Id}", notification.ToDto());
+        var dto = notification.ToDto();
+        await broker.PublishAsync(dto, cancellationToken);
+
+        return Results.Created($"/notifications/{notification.Id}", dto);
     }
 }

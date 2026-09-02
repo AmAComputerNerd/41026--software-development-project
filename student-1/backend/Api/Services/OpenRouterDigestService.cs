@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Api.DTOs;
 using Api.Models;
 
 namespace Api.Services;
@@ -81,6 +82,107 @@ public sealed partial class OpenRouterDigestService(
         }
 
         throw new AiGatewayException("The AI gateway did not return a response.");
+    }
+
+    public async Task<string> AskAssistantAsync(
+        Guid studentId,
+        string prompt,
+        IReadOnlyList<ChatMessageDto>? history,
+        IReadOnlyList<Notification> unreadNotifications,
+        CancellationToken cancellationToken = default)
+    {
+        var messages = new List<ChatMessage>();
+        var systemPrompt = BuildAssistantSystemPrompt(studentId, unreadNotifications);
+        messages.Add(new ChatMessage { Role = "system", Content = systemPrompt });
+
+        if (history != null)
+        {
+            foreach (var item in history)
+            {
+                messages.Add(new ChatMessage
+                {
+                    Role = item.Role == "assistant" ? "assistant" : "user",
+                    Content = item.Content
+                });
+            }
+        }
+
+        messages.Add(new ChatMessage { Role = "user", Content = prompt });
+
+        var request = new ChatCompletionRequest
+        {
+            Model = Model,
+            Messages = messages,
+            MaxTokens = 800,
+            Temperature = 0.4,
+            Reasoning = new ReasoningOptions("low")
+        };
+
+        for (var attempt = 1; attempt <= MaxAttempts; attempt++)
+        {
+            using var response = await SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var statusCode = (int)response.StatusCode;
+                LogGatewayHttpError(logger, statusCode);
+                if (IsTransientStatusCode(statusCode) && attempt < MaxAttempts)
+                {
+                    await DelayBeforeRetryAsync(attempt, statusCode.ToString(CultureInfo.InvariantCulture), cancellationToken);
+                    continue;
+                }
+
+                throw new AiGatewayException($"The AI gateway returned HTTP {statusCode} after retrying.");
+            }
+
+            ChatCompletionResponse? completion;
+            try
+            {
+                completion = await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(JsonOptions, cancellationToken);
+            }
+            catch (JsonException exception)
+            {
+                LogInvalidDigestJson(logger, exception);
+                throw new AiGatewayException("The AI gateway returned an unreadable response.", exception);
+            }
+
+            var choice = completion?.Choices?.FirstOrDefault();
+            var content = choice?.Message?.Content;
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                LogEmptyDigestContent(
+                    logger,
+                    choice?.FinishReason ?? "missing",
+                    !string.IsNullOrWhiteSpace(choice?.Message?.Reasoning));
+                if (attempt < MaxAttempts)
+                {
+                    await DelayBeforeRetryAsync(attempt, "empty response", cancellationToken);
+                    continue;
+                }
+
+                throw new AiGatewayException("The AI gateway returned an empty response after retrying.");
+            }
+
+            return content.Trim();
+        }
+
+        throw new AiGatewayException("The AI gateway did not return a response.");
+    }
+
+    private static string BuildAssistantSystemPrompt(Guid studentId, IReadOnlyList<Notification> unreadNotifications)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("You are a helpful, proactive academic assistant for a university student.");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"Student ID: {studentId}");
+        sb.AppendLine("You have access to the student's active notifications and deadlines:");
+
+        foreach (var notification in unreadNotifications)
+        {
+            sb.AppendLine(CultureInfo.InvariantCulture, $"- [{notification.Type}] {notification.Message} (from {notification.SourceMicroservice} at {notification.CreatedAtUtc:O})");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("Answer the student's questions, help them prioritize, draft emails, or plan study tasks based on their notifications. Be concise, clear, and actionable.");
+        return sb.ToString();
     }
 
     private async Task<HttpResponseMessage> SendAsync(

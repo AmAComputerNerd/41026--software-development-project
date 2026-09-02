@@ -35,6 +35,7 @@ builder.Services.AddHttpClient<IAiDigestService, OpenRouterDigestService>(client
 })
 .AddStandardResilienceHandler();
 builder.Services.AddScoped<CanvasNotificationSyncService>();
+builder.Services.AddSingleton<INotificationStreamBroker, NotificationStreamBroker>();
 builder.Services.AddHostedService<CanvasSyncBackgroundService>();
 builder.Services
     .AddHealthChecks()
