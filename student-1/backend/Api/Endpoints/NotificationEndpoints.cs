@@ -133,7 +133,9 @@ public static class NotificationEndpoints
             SourceMicroservice = requestDto.SourceMicroservice,
             Message = requestDto.Message,
             IsRead = false,
-            CreatedAtUtc = DateTime.UtcNow
+            CreatedAtUtc = DateTime.UtcNow,
+            RelatedEntityType = requestDto.RelatedEntityType,
+            RelatedEntityId = requestDto.RelatedEntityId
         };
 
         db.Notifications.Add(notification);
