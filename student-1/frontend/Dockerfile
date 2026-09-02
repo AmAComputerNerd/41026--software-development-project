@@ -6,6 +6,7 @@ COPY shared/ui-kit ./shared/ui-kit
 COPY student-1/frontend ./student-1/frontend
 RUN npm ci
 ENV VITE_NOTIFICATIONS_API_BASE_URL=/api/notifications
+ENV VITE_DEADLINES_API_BASE_URL=/api/deadlines
 RUN npm run build --workspace=student-1-frontend
 
 # Serve stage
