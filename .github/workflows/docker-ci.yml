@@ -49,6 +49,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Create .env file for docker compose
+        run: cp .env.example .env
+
       - name: Validate Compose configuration
         run: docker compose config --quiet
 
