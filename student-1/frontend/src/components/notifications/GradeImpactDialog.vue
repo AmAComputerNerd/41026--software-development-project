@@ -130,6 +130,7 @@ async function handleSimulate(assignment: StudentMarkDto) {
   justify-content: center;
   z-index: 1100;
   padding: 16px;
+  animation: nb-backdrop-in 180ms ease-out both;
 }
 
 .nb-dialog {
@@ -144,6 +145,7 @@ async function handleSimulate(assignment: StudentMarkDto) {
   border-radius: 0;
   display: flex;
   flex-direction: column;
+  animation: nb-dialog-in 240ms cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
 }
 
 .nb-dialog__header {
@@ -211,6 +213,7 @@ async function handleSimulate(assignment: StudentMarkDto) {
   background: #ff5252;
   color: #ffffff;
   font-size: 12px;
+  animation: nb-alert-in 260ms ease-out both;
 }
 
 .nb-grade-list {
@@ -230,7 +233,22 @@ async function handleSimulate(assignment: StudentMarkDto) {
   display: flex;
   flex-direction: column;
   gap: var(--nb-space-2);
+  animation: nb-rise-in 240ms ease-out both;
+  transition: transform 140ms ease;
+
+  &:nth-child(2n) {
+    animation-delay: 35ms;
+  }
+
+  &:nth-child(3n) {
+    animation-delay: 70ms;
+  }
+
+  &:hover {
+    transform: translateX(3px);
+  }
 }
+
 
 .nb-grade-item__info {
   display: flex;

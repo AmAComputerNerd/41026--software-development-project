@@ -154,6 +154,7 @@ async function sendPrompt(textToSend?: string) {
   flex-direction: column;
   margin-top: var(--nb-space-6);
   border-radius: 0;
+  animation: nb-rise-in 380ms 120ms ease-out both;
 }
 
 .nb-chat-panel__header {
@@ -201,7 +202,9 @@ async function sendPrompt(textToSend?: string) {
 .nb-chat-msg {
   display: flex;
   width: 100%;
+  animation: nb-rise-in 240ms ease-out both;
 }
+
 
 .nb-chat-msg--user {
   justify-content: flex-end;

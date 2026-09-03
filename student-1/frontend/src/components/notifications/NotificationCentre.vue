@@ -90,6 +90,14 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
   color: var(--nb-color-ink);
   width: 44px;
   height: 44px;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.nb-bell:hover {
+  transform: translateY(-2px);
+  box-shadow: 2px 2px 0 var(--nb-color-ink);
 }
 
 .nb-bell .nb-badge {
@@ -106,7 +114,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
   max-width: 90vw;
   padding: 16px;
   z-index: 20;
+  animation: nb-dialog-in 200ms cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
 }
+
 
 .nb-centre__heading {
   font-weight: 700;

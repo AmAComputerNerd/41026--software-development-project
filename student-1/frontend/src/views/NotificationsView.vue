@@ -153,6 +153,7 @@ onMounted(fetchNotifications)
   align-items: baseline;
   justify-content: space-between;
   margin-bottom: 16px;
+  animation: nb-rise-in 320ms ease-out both;
 }
 
 .nb-list__title {
@@ -164,20 +165,22 @@ onMounted(fetchNotifications)
   color: var(--nb-color-muted);
 }
 
-.nb-list__panel {
-  margin-top: 16px;
-}
-
 .nb-list__controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  animation: nb-rise-in 360ms 60ms ease-out both;
 }
 
 .nb-list__sort {
   flex-shrink: 0;
+}
+
+.nb-list__panel {
+  margin-top: 16px;
+  animation: nb-rise-in 380ms 100ms ease-out both;
 }
 
 .nb-list__empty,
@@ -186,4 +189,9 @@ onMounted(fetchNotifications)
   text-align: center;
   color: var(--nb-color-muted);
 }
+
+.nb-list__error {
+  animation: nb-alert-in 260ms ease-out both;
+}
 </style>
+
