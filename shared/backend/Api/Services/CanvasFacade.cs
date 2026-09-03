@@ -35,6 +35,18 @@ public sealed class CanvasFacade(
                 cancellationToken));
     }
 
+    public Task<IReadOnlyList<CanvasAssignmentGroupDto>> GetAssignmentGroupAsync(
+        long courseId,
+        CancellationToken cancellationToken)
+    {
+        return GetOrAddAsync(
+            $"canvas:assignment-groups:{courseId}",
+            () => ExecuteLoggedAsync(
+                $"GetAssignmentGroups:{courseId}",
+                token => canvasApiClient.GetAssignmentGroupAsync(courseId, token),
+                cancellationToken));
+    }
+
     public Task<IReadOnlyList<CanvasUserDto>> GetUsersForCourseAsync(
         long courseId,
         CancellationToken cancellationToken)

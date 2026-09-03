@@ -11,7 +11,17 @@ public static class CanvasEndpoints
         group.MapGet("/courses", GetCourses);
         group.MapGet("/courses/{courseId:long}/assignments", GetAssignments);
         group.MapGet("/courses/{courseId:long}/users", GetUsers);
+        group.MapGet("/courses/{courseId:long}/assignment-groups", GetAssignmentGroups);
         return endpoints;
+    }
+
+    private static async Task<IResult> GetAssignmentGroups(
+        [FromRoute] long courseId,
+        CanvasFacade canvas,
+        CancellationToken cancellationToken)
+    {
+        var assignmentGroups = await canvas.GetAssignmentGroupAsync(courseId, cancellationToken);
+        return Results.Ok(assignmentGroups);
     }
 
     private static async Task<IResult> GetCourses(

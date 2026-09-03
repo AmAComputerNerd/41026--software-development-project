@@ -30,6 +30,22 @@ public sealed class CanvasApiClient(
             .ToList();
     }
 
+    public async Task<IReadOnlyList<CanvasAssignmentGroupDto>> GetAssignmentGroupAsync(
+        long courseId,
+        CancellationToken cancellationToken)
+    {
+        var assignmentGroups = await GetAllPagesAsync<CanvasAssignmentGroupResponse>(
+            $"api/v1/courses/{courseId}/assignment_groups",
+            cancellationToken);
+
+        return assignmentGroups
+            .Select(group => new CanvasAssignmentGroupDto(
+                group.Id,
+                group.Name,
+                group.Weight))
+            .ToList();
+    }
+
     public async Task<IReadOnlyList<CanvasAssignmentDto>> GetAssignmentsAsync(
         long courseId,
         CancellationToken cancellationToken)
@@ -42,15 +58,18 @@ public sealed class CanvasApiClient(
             .Select(assignment => new CanvasAssignmentDto(
                 assignment.Id,
                 assignment.CourseId,
+                assignment.AssignmentGroupId,
                 assignment.Name,
                 CanvasHtmlTextConverter.ToPlainText(assignment.Description),
                 assignment.DueAt,
                 assignment.UpdatedAt,
                 assignment.WorkflowState,
                 assignment.Published,
+                assignment.MaxMarks,
                 assignment.Submission is null
                     ? null
                     : new CanvasSubmissionDto(
+                        assignment.Submission.FinalMark,
                         assignment.Submission.WorkflowState,
                         assignment.Submission.SubmittedAt,
                         assignment.Submission.Late,
