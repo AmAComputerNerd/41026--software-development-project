@@ -296,10 +296,6 @@ namespace GradesManager.Data
                 var count = Math.Min(10, courses.Count);
                 for (int i = 0; i < count; i++)
                 {
-                    // Weight is stored as a 0..1 fraction (Canvas convention):
-                    // 1.0 = 100% of the course. The seeder previously wrote 100,
-                    // which the UI multiplied by 100 again and displayed as
-                    // 10000%. Seed 1.0 so seeded groups render correctly.
                     ags.Add(new AssignmentGroup
                     {
                         CourseId = courses[i].CourseId,
