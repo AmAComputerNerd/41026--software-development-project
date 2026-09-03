@@ -95,6 +95,36 @@ public sealed class CanvasApiClient(
             .ToList();
     }
 
+    public async Task<CanvasUserDto> GetCurrentUserAsync(
+        CancellationToken cancellationToken)
+    {
+        ConfigureClient();
+
+        using var response = await httpClient.GetAsync(
+            "api/v1/users/self",
+            cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new CanvasApiException(
+                response.StatusCode,
+                $"Canvas returned HTTP {(int)response.StatusCode}.");
+        }
+
+        var payload = await response.Content.ReadFromJsonAsync<CanvasSelfUserResponse>(
+            JsonOptions,
+            cancellationToken)
+            ?? throw new CanvasApiException(
+                System.Net.HttpStatusCode.BadGateway,
+                "Canvas returned an empty /users/self response.");
+
+        return new CanvasUserDto(
+            payload.Id,
+            payload.Name,
+            payload.Email,
+            payload.SisUserId,
+            payload.LoginId);
+    }
+
     private async Task<IReadOnlyList<T>> GetAllPagesAsync<T>(
         string relativeUrl,
         CancellationToken cancellationToken)

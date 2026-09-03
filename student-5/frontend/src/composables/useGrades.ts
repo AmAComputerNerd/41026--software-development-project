@@ -109,16 +109,26 @@ export function useGrades() {
     return available.length ? available.reduce((sum, mark) => sum + mark, 0) / available.length : null
   })
 
+  async function resolveActiveStudent(): Promise<Student | null> {
+    // Manual override wins so devs / demos can pin a specific student without
+    // touching the live Canvas API token. Otherwise we ask Canvas who the
+    // configured token belongs to and look up the matching local student.
+    if (CONFIGURED_STUDENT_ID) {
+      const allStudents = await gradesApi.getStudents()
+      return allStudents.find((item) => item.studentId === CONFIGURED_STUDENT_ID) ?? null
+    }
+
+    const canvasUser = await gradesApi.getCurrentCanvasUser()
+    return await gradesApi.getStudentByCanvasId(canvasUser.id)
+  }
+
   async function load() {
     if (loaded.value || loading.value) return
     loading.value = true
     error.value = null
 
     try {
-      const allStudents = await gradesApi.getStudents()
-      const selected = CONFIGURED_STUDENT_ID
-        ? allStudents.find((item) => item.studentId === CONFIGURED_STUDENT_ID)
-        : allStudents[0]
+      const selected = await resolveActiveStudent()
 
       if (!selected) throw new Error('No student grade profile is available.')
       student.value = selected

@@ -79,6 +79,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const gradesApi = {
   getStudents: () => request<Student[]>('/api/students/'),
   getStudent: (studentId: string) => request<Student>(`/api/students/${studentId}`),
+  getStudentByCanvasId: (canvasUserId: number) =>
+    request<Student>(`/api/students/Canvas/student/${canvasUserId}`),
+  getCurrentCanvasUser: () =>
+    request<{ id: number; name: string }>('/api/canvas/me'),
   getCourses: () => request<Course[]>('/api/courses/'),
   getStudentAssignments: (studentId: string) =>
     request<Assignment[]>(`/api/assignment/student/${studentId}`),

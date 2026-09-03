@@ -23,19 +23,19 @@ public sealed class CanvasTaskSyncService(
             foreach (var course in remoteCourses)
             {
                 var assignments = await canvasClient.GetAssignmentsAsync(
-                    course.Id,
+                    course.CanvasCourseId,
                     cancellationToken);
                 var assignmentGroups = await canvasClient.GetAssignmentGroupsAsync(
-                    course.Id,
+                    course.CanvasCourseId,
                     cancellationToken);
                 var users = await canvasClient.GetCourseUsersAsync(
-                    course.Id,
+                    course.CanvasCourseId,
                     cancellationToken);
 
-                if (assignments.Any(assignment => assignment.CourseId != course.Id))
+                if (assignments.Any(assignment => assignment.CanvasCourseId != course.CanvasCourseId))
                 {
                     throw new SharedServiceException(
-                        $"The shared service returned an assignment for the wrong course ({course.Id}).");
+                        $"The shared service returned an assignment for the wrong course ({course.CanvasCourseId}).");
                 }
 
                 snapshots.Add(new CourseSnapshot(course, assignments, assignmentGroups, users));
@@ -54,7 +54,7 @@ public sealed class CanvasTaskSyncService(
         CancellationToken cancellationToken)
     {
         var duplicateCourseId = snapshots
-            .GroupBy(snapshot => snapshot.Course.Id)
+            .GroupBy(snapshot => snapshot.Course.CanvasCourseId)
             .FirstOrDefault(group => group.Count() > 1)?.Key;
         if (duplicateCourseId is not null)
         {
@@ -64,7 +64,7 @@ public sealed class CanvasTaskSyncService(
 
         var allAssignments = snapshots.SelectMany(snapshot => snapshot.Assignments).ToList();
         var duplicateAssignmentId = allAssignments
-            .GroupBy(assignment => assignment.Id)
+            .GroupBy(assignment => assignment.CanvasAssignmentId)
             .FirstOrDefault(group => group.Count() > 1)?.Key;
         if (duplicateAssignmentId is not null)
         {
@@ -116,7 +116,7 @@ public sealed class CanvasTaskSyncService(
         // users across all synced courses and dedupe by CanvasUserId.
         var canvasUserIds = snapshots
             .SelectMany(snapshot => snapshot.Users)
-            .Select(user => user.Id)
+            .Select(user => user.CanvasUserId)
             .Distinct()
             .ToList();
         var existingStudents = await db.Students
@@ -127,7 +127,7 @@ public sealed class CanvasTaskSyncService(
         var studentsByCanvasUserId = new Dictionary<long, Student>(existingStudents);
         var canvasUsersById = snapshots
             .SelectMany(snapshot => snapshot.Users)
-            .GroupBy(user => user.Id)
+            .GroupBy(user => user.CanvasUserId)
             .ToDictionary(group => group.Key, group => group.First());
         foreach (var canvasUserId in canvasUserIds)
         {
@@ -168,17 +168,17 @@ public sealed class CanvasTaskSyncService(
 
         foreach (var snapshot in snapshots)
         {
-            seenCourseIds.Add(snapshot.Course.Id);
+            seenCourseIds.Add(snapshot.Course.CanvasCourseId);
 
             // Resolve the local students enrolled in this Canvas course
             // (every user the shared service returned for this course).
             var courseStudents = snapshot.Users
-                .Where(user => studentsByCanvasUserId.ContainsKey(user.Id))
-                .Select(user => studentsByCanvasUserId[user.Id])
+                .Where(user => studentsByCanvasUserId.ContainsKey(user.CanvasUserId))
+                .Select(user => studentsByCanvasUserId[user.CanvasUserId])
                 .ToList();
-            studentsByCanvasCourseId[snapshot.Course.Id] = courseStudents;
+            studentsByCanvasCourseId[snapshot.Course.CanvasCourseId] = courseStudents;
 
-            if (!existingCourses.TryGetValue(snapshot.Course.Id, out var course))
+            if (!existingCourses.TryGetValue(snapshot.Course.CanvasCourseId, out var course))
             {
                 var matchingUnlinkedCourses = string.IsNullOrWhiteSpace(snapshot.Course.CourseCode)
                     ? []
@@ -200,7 +200,7 @@ public sealed class CanvasTaskSyncService(
                     course = new Course
                     {
                         Code = snapshot.Course.CourseCode ??
-                            snapshot.Course.Id.ToString(CultureInfo.InvariantCulture),
+                            snapshot.Course.CanvasCourseId.ToString(CultureInfo.InvariantCulture),
                         Name = snapshot.Course.Name
                     };
                     db.Courses.Add(course);
@@ -213,13 +213,13 @@ public sealed class CanvasTaskSyncService(
             }
 
             course.Code = snapshot.Course.CourseCode ??
-                snapshot.Course.Id.ToString(CultureInfo.InvariantCulture);
+                snapshot.Course.CanvasCourseId.ToString(CultureInfo.InvariantCulture);
             course.Name = snapshot.Course.Name;
-            course.CanvasCourseId = snapshot.Course.Id;
+            course.CanvasCourseId = snapshot.Course.CanvasCourseId;
             course.CanvasWorkflowState = snapshot.Course.WorkflowState;
             course.CanvasIsActive = true;
             course.LastCanvasSyncAt = now;
-            existingCourses[snapshot.Course.Id] = course;
+            existingCourses[snapshot.Course.CanvasCourseId] = course;
 
             // Populate StudentCourse join rows for every Canvas-enrolled
             // student. Existing rows are left alone so manually-set marks
@@ -228,7 +228,7 @@ public sealed class CanvasTaskSyncService(
             {
                 var alreadyLinked = existingStudentCourses
                     .Any(link => link.StudentId == student.StudentId &&
-                        link.CanvasCourseId == snapshot.Course.Id);
+                        link.CanvasCourseId == snapshot.Course.CanvasCourseId);
                 if (alreadyLinked) continue;
                 db.StudentCourses.Add(new StudentCourse
                 {
@@ -237,7 +237,7 @@ public sealed class CanvasTaskSyncService(
                 });
                 existingStudentCourses.Add(new StudentCourseLink(
                     student.StudentId,
-                    snapshot.Course.Id));
+                    snapshot.Course.CanvasCourseId));
                 studentCoursesCreated++;
             }
 
@@ -245,20 +245,20 @@ public sealed class CanvasTaskSyncService(
 
             foreach (var remoteGroup in snapshot.AssignmentGroups)
             {
-                seenAssignmentGroupIds.Add((course.CourseId, remoteGroup.Id));
+                seenAssignmentGroupIds.Add((course.CourseId, remoteGroup.CanvasAssignmentGroupId));
 
                 if (!existingAssignmentGroups.TryGetValue(
-                    (course.CourseId, remoteGroup.Id), out var group))
+                    (course.CourseId, remoteGroup.CanvasAssignmentGroupId), out var group))
                 {
                     group = new AssignmentGroup
                     {
                         CourseId = course.CourseId,
-                        CanvasAssignmentGroupId = remoteGroup.Id,
+                        CanvasAssignmentGroupId = remoteGroup.CanvasAssignmentGroupId,
                         Name = remoteGroup.Name,
                         Weight = remoteGroup.Weight
                     };
                     db.AssignmentGroups.Add(group);
-                    existingAssignmentGroups[(course.CourseId, remoteGroup.Id)] = group;
+                    existingAssignmentGroups[(course.CourseId, remoteGroup.CanvasAssignmentGroupId)] = group;
                     assignmentGroupsCreated++;
                 }
                 else
@@ -269,17 +269,17 @@ public sealed class CanvasTaskSyncService(
                     assignmentGroupsUpdated++;
                 }
 
-                groupsByCanvasId[remoteGroup.Id] = group;
+                groupsByCanvasId[remoteGroup.CanvasAssignmentGroupId] = group;
             }
 
             foreach (var remoteAssignment in snapshot.Assignments)
             {
-                seenAssignmentIds.Add(remoteAssignment.Id);
+                seenAssignmentIds.Add(remoteAssignment.CanvasAssignmentId);
 
-                if (!groupsByCanvasId.TryGetValue(remoteAssignment.AssignmentGroupId, out var group))
+                if (!groupsByCanvasId.TryGetValue(remoteAssignment.CanvasAssignmentGroupId, out var group))
                 {
                     throw new SharedServiceException(
-                        $"Assignment {remoteAssignment.Id} references unknown assignment group {remoteAssignment.AssignmentGroupId}.");
+                        $"Assignment {remoteAssignment.CanvasAssignmentId} references unknown assignment group {remoteAssignment.CanvasAssignmentGroupId}.");
                 }
 
                 // Canvas returns null points_possible for assignments that
@@ -289,7 +289,7 @@ public sealed class CanvasTaskSyncService(
                 // whole mark because Assignment.MaxMark is stored as int?.
                 var maxMark = (int)Math.Round(remoteAssignment.MaxMarks ?? 0d);
 
-                if (!existingAssignments.TryGetValue(remoteAssignment.Id, out var assignment))
+                if (!existingAssignments.TryGetValue(remoteAssignment.CanvasAssignmentId, out var assignment))
                 {
                     assignment = new Assignment
                     {
@@ -297,7 +297,7 @@ public sealed class CanvasTaskSyncService(
                         DueAt = remoteAssignment.DueAt,
                         UpdatedAt = remoteAssignment.UpdatedAt,
                         MaxMark = maxMark,
-                        CanvasAssignmentId = remoteAssignment.Id,
+                        CanvasAssignmentId = remoteAssignment.CanvasAssignmentId,
                         CanvasWorkflowState = remoteAssignment.WorkflowState,
                         CanvasSubmissionState = remoteAssignment.Submission?.WorkflowState,
                         CanvasIsActive = true,
@@ -305,7 +305,7 @@ public sealed class CanvasTaskSyncService(
                         GroupId = group.GroupId
                     };
                     db.Assignments.Add(assignment);
-                    existingAssignments[remoteAssignment.Id] = assignment;
+                    existingAssignments[remoteAssignment.CanvasAssignmentId] = assignment;
                     assignmentsCreated++;
                 }
                 else
@@ -329,7 +329,7 @@ public sealed class CanvasTaskSyncService(
                 {
                     var alreadyLinked = existingStudentAssignments
                         .Any(link => link.StudentId == student.StudentId &&
-                            link.CanvasAssignmentId == remoteAssignment.Id);
+                            link.CanvasAssignmentId == remoteAssignment.CanvasAssignmentId);
                     if (alreadyLinked) continue;
                     db.StudentAssignments.Add(new StudentAssignment
                     {
@@ -338,7 +338,7 @@ public sealed class CanvasTaskSyncService(
                     });
                     existingStudentAssignments.Add(new StudentAssignmentLink(
                         student.StudentId,
-                        remoteAssignment.Id));
+                        remoteAssignment.CanvasAssignmentId));
                     studentAssignmentsCreated++;
                 }
             }

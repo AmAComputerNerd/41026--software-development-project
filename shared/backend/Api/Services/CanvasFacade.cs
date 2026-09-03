@@ -59,6 +59,44 @@ public sealed class CanvasFacade(
                 cancellationToken));
     }
 
+    public async Task<CanvasUserDto> GetCurrentUserAsync(CancellationToken cancellationToken)
+    {
+        // Not cached: the active user can change between requests (token rotation,
+        // re-auth) and a stale value would silently pin the UI to the wrong
+        // student.
+        var log = new CanvasRequestLog
+        {
+            Operation = "GetCurrentUser",
+            StartedAt = DateTime.UtcNow
+        };
+
+        try
+        {
+            var user = await canvasApiClient.GetCurrentUserAsync(cancellationToken);
+            log.Succeeded = true;
+            log.ItemCount = 1;
+            return user;
+        }
+        catch (CanvasApiException exception)
+        {
+            log.UpstreamStatusCode = (int)exception.StatusCode;
+            throw;
+        }
+        catch (HttpRequestException exception)
+        {
+            log.UpstreamStatusCode = exception.StatusCode is null
+                ? null
+                : (int)exception.StatusCode.Value;
+            throw;
+        }
+        finally
+        {
+            log.CompletedAt = DateTime.UtcNow;
+            db.CanvasRequestLogs.Add(log);
+            await db.SaveChangesAsync(CancellationToken.None);
+        }
+    }
+
     private async Task<IReadOnlyList<T>> GetOrAddAsync<T>(
         string cacheKey,
         Func<Task<IReadOnlyList<T>>> action)

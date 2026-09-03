@@ -12,6 +12,7 @@ public static class CanvasEndpoints
         group.MapGet("/courses/{courseId:long}/assignments", GetAssignments);
         group.MapGet("/courses/{courseId:long}/users", GetUsers);
         group.MapGet("/courses/{courseId:long}/assignment-groups", GetAssignmentGroups);
+        group.MapGet("/me", GetCurrentUser);
         return endpoints;
     }
 
@@ -48,5 +49,13 @@ public static class CanvasEndpoints
     {
         var users = await canvas.GetUsersForCourseAsync(courseId, cancellationToken);
         return Results.Ok(users);
+    }
+
+    private static async Task<IResult> GetCurrentUser(
+        CanvasFacade canvas,
+        CancellationToken cancellationToken)
+    {
+        var user = await canvas.GetCurrentUserAsync(cancellationToken);
+        return Results.Ok(user);
     }
 }

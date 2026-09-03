@@ -44,3 +44,12 @@ internal sealed record CanvasUserResponse(
     [property: JsonPropertyName("sis_user_id")] string? SisUserId,
     [property: JsonPropertyName("login_id")] string? LoginId
 );
+
+// Canvas' /api/v1/users/self response only documents the subset we rely on.
+internal sealed record CanvasSelfUserResponse(
+    [property: JsonPropertyName("id")] long Id,
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("email")] string? Email,
+    [property: JsonPropertyName("sis_user_id")] string? SisUserId,
+    [property: JsonPropertyName("login_id")] string? LoginId
+);
