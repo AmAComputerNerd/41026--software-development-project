@@ -50,7 +50,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create .env file for docker compose
-        run: cp .env.example .env
+        run: |
+          cat << 'EOF' > .env
+          OPENROUTER_API_KEY=ci-placeholder
+          CANVAS_BASE_URL=https://canvas.example.invalid
+          CANVAS_API_TOKEN=ci-placeholder
+          EOF
 
       - name: Validate Compose configuration
         run: docker compose config --quiet

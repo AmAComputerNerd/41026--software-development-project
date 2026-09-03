@@ -13,6 +13,8 @@ services:
               required: false
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+            CANVAS_BASE_URL: ${CANVAS_BASE_URL:-https://your-institution.instructure.com}
+            CANVAS_API_TOKEN: ${CANVAS_API_TOKEN:-}
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -118,6 +120,7 @@ services:
               required: false
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+            OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
