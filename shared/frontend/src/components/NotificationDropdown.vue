@@ -68,6 +68,7 @@ function formatRelativeTime(isoDate: string): string {
   overflow-y: auto;
   padding: var(--nb-space-4, 16px);
   z-index: 20;
+  animation: nb-dialog-in 200ms var(--nb-ease-pop) both;
 }
 
 .nb-notif-dropdown__empty {
@@ -85,6 +86,7 @@ function formatRelativeTime(isoDate: string): string {
 .nb-notif-dropdown__item {
   padding: var(--nb-space-3, 12px) 0;
   border-bottom: var(--nb-border-width-sm) solid var(--nb-color-ink);
+  transition: background-color var(--nb-transition-fast), transform var(--nb-transition-fast);
 }
 
 .nb-notif-dropdown__item:last-child {
@@ -95,6 +97,7 @@ function formatRelativeTime(isoDate: string): string {
   border-left: var(--nb-border-width-md) solid var(--nb-color-accent-orange);
   padding-left: var(--nb-space-2, 8px);
 }
+
 
 .nb-notif-dropdown__message {
   margin: 0 0 4px;

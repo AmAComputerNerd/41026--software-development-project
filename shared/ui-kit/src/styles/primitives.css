@@ -57,7 +57,21 @@ button {
   letter-spacing: 0.5px;
   text-transform: uppercase;
   padding: var(--nb-space-2) var(--nb-space-4);
-  transition: none;
+  transition:
+    transform var(--nb-transition-fast),
+    box-shadow var(--nb-transition-fast),
+    filter var(--nb-transition-fast),
+    background-color var(--nb-transition-fast);
+}
+
+.nb-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0 var(--nb-color-ink);
+}
+
+.nb-btn:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--nb-color-ink);
 }
 
 .nb-btn:disabled {
@@ -85,6 +99,16 @@ button {
   letter-spacing: 0.5px;
   text-transform: uppercase;
   padding: var(--nb-space-1) var(--nb-space-3);
+  transition:
+    transform var(--nb-transition-fast),
+    box-shadow var(--nb-transition-fast),
+    background-color var(--nb-transition-fast),
+    color var(--nb-transition-fast);
+}
+
+.nb-chip:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 2px 2px 0 var(--nb-color-ink);
 }
 
 .nb-chip--active {
@@ -131,3 +155,120 @@ button {
   font-size: 11px;
   font-weight: var(--nb-font-weight-bold);
 }
+
+/* ---- Standard Route & View Transitions ---- */
+.page-enter-active,
+.page-leave-active {
+  transition:
+    opacity 160ms ease,
+    transform 220ms ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* ---- Reusable Utility Animation Classes ---- */
+.nb-animate-rise {
+  animation: nb-rise-in var(--nb-duration-slow) ease-out both;
+}
+
+.nb-animate-fade {
+  animation: nb-fade-in var(--nb-duration-base) ease-out both;
+}
+
+.nb-animate-dialog {
+  animation: nb-dialog-in 240ms var(--nb-ease-pop) both;
+}
+
+.nb-animate-alert {
+  animation: nb-alert-in 260ms ease-out both;
+}
+
+.nb-stagger-item {
+  animation: nb-rise-in 300ms ease-out both;
+}
+
+.nb-stagger-item:nth-child(2n) {
+  animation-delay: 35ms;
+}
+
+.nb-stagger-item:nth-child(3n) {
+  animation-delay: 70ms;
+}
+
+.nb-stagger-item:nth-child(4n) {
+  animation-delay: 105ms;
+}
+
+/* ---- Core Animation Keyframes ---- */
+@keyframes nb-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nb-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nb-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes nb-backdrop-in {
+  from {
+    background: rgb(20 20 20 / 0%);
+  }
+  to {
+    background: rgb(20 20 20 / 60%);
+  }
+}
+
+@keyframes nb-alert-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ---- Accessibility / Reduced Motion Override ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
