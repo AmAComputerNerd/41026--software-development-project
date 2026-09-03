@@ -89,6 +89,10 @@ services:
             - student-5-db:/app/Data
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+            SharedService__BaseUrl: http://shared-backend:8080
+        depends_on:
+            shared-backend:
+                condition: service_healthy
 
     student-1-frontend:
         build:

@@ -17,7 +17,7 @@ public sealed class SharedCanvasClient(
         CancellationToken cancellationToken)
     {
         return GetAsync<SharedCanvasCourseDto>(
-            "GradesManager/canvas/courses",
+            "api/canvas/courses",
             cancellationToken);
     }
 
@@ -26,7 +26,16 @@ public sealed class SharedCanvasClient(
         CancellationToken cancellationToken)
     {
         return GetAsync<SharedCanvasAssignmentDto>(
-            $"GradesManager/canvas/courses/{courseId}/assignments",
+            $"api/canvas/courses/{courseId}/assignments",
+            cancellationToken);
+    }
+
+    public Task<IReadOnlyList<SharedCanvasAssignmentGroupDto>> GetAssignmentGroupsAsync(
+        long courseId,
+        CancellationToken cancellationToken)
+    {
+        return GetAsync<SharedCanvasAssignmentGroupDto>(
+            $"api/canvas/courses/{courseId}/assignment-groups",
             cancellationToken);
     }
 
