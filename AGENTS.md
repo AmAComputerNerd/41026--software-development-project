@@ -133,7 +133,7 @@ The root `.env` file (copied from `.env.example`) supplies configuration:
 
 | Variable | Target Service | Purpose |
 |---|---|---|
-| `OPENROUTER_API_KEY` | `ai-mode` | API key for OpenRouter LLM models (e.g. `nvidia/nemotron-3-ultra-550b-a55b:free`) |
+| `OPENROUTER_API_KEY` | `ai-mode` | API key for OpenRouter LLM models (e.g. `minimax/minimax-m3:free`) |
 | `CANVAS_BASE_URL` | `shared-backend` | Base URL of institution Canvas instance (`https://your-institution.instructure.com`) |
 | `CANVAS_API_TOKEN` | `shared-backend` | Personal Canvas access token |
 | `ASPNETCORE_ENVIRONMENT` | All .NET backends | Set to `Development` |

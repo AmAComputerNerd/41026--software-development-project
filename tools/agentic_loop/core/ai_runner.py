@@ -35,7 +35,7 @@ class AIRunner:
             self.api_key = openrouter_key
             self.implementation_model = os.getenv(
                 "OPENROUTER_MODEL",
-                "nvidia/nemotron-3-ultra-550b-a55b:free",
+                "minimax/minimax-m3:free",
             )
             self.review_model = os.getenv("OPENROUTER_REVIEW_MODEL", self.implementation_model)
         else:

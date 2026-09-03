@@ -10,7 +10,16 @@ export async function request(path, options = {}) {
   })
 
   if (!response.ok) {
-    throw new Error(`Notification API request failed: ${response.status} ${response.statusText}`)
+    let errorDetail = response.statusText
+    try {
+      const errorJson = await response.json()
+      if (errorJson?.detail) {
+        errorDetail = errorJson.detail
+      } else if (errorJson?.title) {
+        errorDetail = errorJson.title
+      }
+    } catch (_) {}
+    throw new Error(`Notification API request failed: ${response.status} ${errorDetail}`)
   }
 
   const text = await response.text()

@@ -11,7 +11,7 @@ public sealed partial class OpenRouterDigestService(
     HttpClient httpClient,
     ILogger<OpenRouterDigestService> logger) : IAiDigestService
 {
-    private const string Model = "nvidia/nemotron-3-ultra-550b-a55b:free";
+    private const string Model = "minimax/minimax-m3:free";
     private const int MaxAttempts = 3;
     private const int MaxDigestCharacters = 4000;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

@@ -101,7 +101,7 @@ Each microservice uses Entity Framework Core mapped to its own isolated SQLite f
 ### Centralized AI Mode Boundary
 - `ai-services/ai-mode` is the only service that reads `OPENROUTER_API_KEY`.
 - Downstream services send chat completion requests to `http://ai-mode:8080/v1/chat/completions`.
-- Standard model: `nvidia/nemotron-3-ultra-550b-a55b:free`.
+- Standard model: `minimax/minimax-m3:free`.
 
 ---
 

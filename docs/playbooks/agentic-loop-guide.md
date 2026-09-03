@@ -59,7 +59,7 @@ When the loop runs, `core/doc_loader.py` automatically reads:
 2. Configure credentials in `tools/agentic_loop/.env` or rely on root `.env`:
    ```dotenv
    OPENROUTER_API_KEY=sk-or-v1-...
-   OPENROUTER_MODEL=nvidia/nemotron-3-ultra-550b-a55b:free
+   OPENROUTER_MODEL=minimax/minimax-m3:free
    ```
 3. Run the interactive review tool:
    ```bash

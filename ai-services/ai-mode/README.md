@@ -29,7 +29,7 @@ correctly.
 
 ## Model
 
-Defaults to Nemotron 3 Ultra (`nvidia/nemotron-3-ultra-550b-a55b:free`) if
+Defaults to MiniMax-M3 (`minimax/minimax-m3:free`) if
 you omit `model`. Override by setting `model` in request body.
 
 ## docker-compose

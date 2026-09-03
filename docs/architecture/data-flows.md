@@ -133,7 +133,7 @@ This document traces the primary end-to-end data flows and lifecycle sequences a
         │
         │ 6. Inject OpenRouter API Key & Call LLM
         ▼
-[ OpenRouter (Nemotron) ]
+[ OpenRouter (MiniMax-M3) ]
         │
         │ 7. Return AI Completion
         ▼
