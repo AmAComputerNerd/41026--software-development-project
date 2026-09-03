@@ -55,7 +55,11 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
       </template>
     </Navbar>
     <main>
-      <router-view />
+      <router-view v-slot="{ Component, route: currentRoute }">
+        <Transition name="page" mode="out-in" appear>
+          <component :is="Component" :key="currentRoute.name" />
+        </Transition>
+      </router-view>
     </main>
   </div>
 </template>
@@ -73,6 +77,14 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
   width: 44px;
   height: 44px;
   padding: 0;
+  transition:
+    transform var(--nb-transition-fast),
+    box-shadow var(--nb-transition-fast);
+}
+
+.nb-navbar__bell:hover {
+  transform: translateY(-2px);
+  box-shadow: 2px 2px 0 var(--nb-color-ink);
 }
 
 .nb-navbar__bell-badge {
@@ -81,3 +93,4 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
   right: -8px;
 }
 </style>
+

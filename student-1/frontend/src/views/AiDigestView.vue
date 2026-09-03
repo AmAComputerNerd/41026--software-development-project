@@ -31,10 +31,13 @@ onMounted(fetchDigests)
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 16px;
+  animation: nb-rise-in 320ms ease-out both;
 }
 
 .nb-digest__error {
   padding: 16px 0;
   color: var(--nb-color-muted);
+  animation: nb-alert-in 260ms ease-out both;
 }
 </style>
+

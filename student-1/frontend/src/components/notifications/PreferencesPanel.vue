@@ -59,17 +59,21 @@ onMounted(fetchPreferences)
 .nb-prefs__title {
   font-size: 28px;
   font-weight: 700;
+  animation: nb-rise-in 320ms ease-out both;
 }
 
 .nb-prefs__desc {
   color: var(--nb-color-muted);
   margin-top: 4px;
   margin-bottom: 24px;
+  animation: nb-rise-in 340ms 40ms ease-out both;
 }
 
 .nb-prefs__error {
   padding: 24px;
   text-align: center;
   color: var(--nb-color-muted);
+  animation: nb-alert-in 260ms ease-out both;
 }
 </style>
+

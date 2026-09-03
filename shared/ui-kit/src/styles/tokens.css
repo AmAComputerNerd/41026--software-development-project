@@ -44,7 +44,18 @@
   --nb-space-6: 24px;
   --nb-space-8: 32px;
   --nb-space-16: 64px;
+
+  /* Transitions & Animation curves */
+  --nb-duration-fast: 140ms;
+  --nb-duration-base: 220ms;
+  --nb-duration-slow: 320ms;
+  --nb-ease-standard: ease;
+  --nb-ease-out: ease-out;
+  --nb-ease-pop: cubic-bezier(0.2, 0.9, 0.25, 1.15);
+  --nb-transition-fast: var(--nb-duration-fast) var(--nb-ease-standard);
+  --nb-transition-base: var(--nb-duration-base) var(--nb-ease-standard);
 }
+
 
 /* Dark mode: softened warm-neutral palette from the Notifications-Dark
  * design (claude.ai/design project 5afc3379-890a-4fb9-8e8d-516a388c619a),

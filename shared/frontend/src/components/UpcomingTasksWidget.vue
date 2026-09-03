@@ -93,6 +93,7 @@ function relativeDueDate(value: string) {
   grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
   margin-bottom: var(--nb-space-8);
   overflow: hidden;
+  animation: nb-rise-in 360ms 80ms ease-out both;
 }
 
 .nb-upcoming__header {
@@ -135,7 +136,25 @@ function relativeDueDate(value: string) {
   border-bottom: var(--nb-border-width-sm) solid var(--nb-color-ink);
   color: var(--nb-color-ink);
   text-decoration: none;
+  animation: nb-rise-in 280ms ease-out both;
+  transition:
+    transform var(--nb-transition-fast),
+    background-color var(--nb-transition-fast);
+
+  &:nth-child(2n) {
+    animation-delay: 35ms;
+  }
+
+  &:nth-child(3n) {
+    animation-delay: 70ms;
+  }
+
+  &:hover {
+    transform: translateX(3px);
+    background-color: var(--nb-color-bg);
+  }
 }
+
 
 .nb-upcoming__row:last-child {
   border-bottom: 0;
