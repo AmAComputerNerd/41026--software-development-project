@@ -5,7 +5,7 @@ namespace Api.Endpoints;
 
 public static partial class ChatEndpoints
 {
-    private const string DefaultModel = "nvidia/nemotron-3-ultra-550b-a55b:free";
+    private const string DefaultModel = "minimax/minimax-m3:free";
     private const string OpenRouterEndpoint = "https://openrouter.ai/api/v1/chat/completions";
 
     public static IEndpointRouteBuilder MapChatEndpoints(this IEndpointRouteBuilder endpoints)

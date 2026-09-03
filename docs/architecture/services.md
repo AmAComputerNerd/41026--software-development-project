@@ -49,7 +49,7 @@ This document details every service in the repository, including responsibilitie
 ### Responsibilities
 - Centralized proxy for OpenRouter LLM completions (`https://openrouter.ai/api/v1/chat/completions`).
 - Holds the repository's sole `OPENROUTER_API_KEY`.
-- Defaults to `nvidia/nemotron-3-ultra-550b-a55b:free` if no model is explicitly specified in the request payload.
+- Defaults to `minimax/minimax-m3:free` if no model is explicitly specified in the request payload.
 - Converts embedded error payloads into proper HTTP status codes for robust client-side retry handling.
 - Provides health check endpoints (`/health/live` for process liveness, `/health/ready` for API key validation).
 

@@ -8,10 +8,13 @@ services:
             - "5110:8080"
         volumes:
             - shared-db:/app/Data
+        env_file:
+            - path: .env
+              required: false
         environment:
             ASPNETCORE_ENVIRONMENT: Development
-            CANVAS_BASE_URL: ${CANVAS_BASE_URL}
-            CANVAS_API_TOKEN: ${CANVAS_API_TOKEN}
+            CANVAS_BASE_URL: ${CANVAS_BASE_URL:-https://your-institution.instructure.com}
+            CANVAS_API_TOKEN: ${CANVAS_API_TOKEN:-}
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -36,6 +39,7 @@ services:
             Cors__AllowedOrigins__3: http://localhost:5174
             Cors__AllowedOrigins__4: http://localhost:5199
             SharedService__BaseUrl: http://shared-backend:8080
+            AiGateway__BaseUrl: http://ai-mode:8080
             CanvasSync__IntervalMinutes: "2"
         restart: unless-stopped
         healthcheck:
@@ -46,6 +50,8 @@ services:
             start_period: 15s
         depends_on:
             shared-backend:
+                condition: service_healthy
+            ai-mode:
                 condition: service_healthy
 
     student-3-backend:
@@ -109,8 +115,12 @@ services:
         build:
             context: ./ai-services/ai-mode
             dockerfile: Api/Dockerfile
+        env_file:
+            - path: .env
+              required: false
         environment:
-            OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+            ASPNETCORE_ENVIRONMENT: Development
+            OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]

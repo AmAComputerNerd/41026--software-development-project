@@ -43,8 +43,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
-app.UseHttpsRedirection();
-
 app.MapChatEndpoints();
 app.MapHealthChecks(
     "/health/live",

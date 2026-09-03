@@ -17,7 +17,7 @@ An automated multi-agent architecture, code quality, and compliance review pipel
   - Reads `AGENTS.md` (database isolation, Canvas gateway boundary, centralized AI gateway, `@better-canvas/ui-kit` Neobrutalism design system, port maps).
   - Ingests layer-specific docs from `docs/` (`services.md`, `data-flows.md`, `database-and-migrations.md`, `new-frontend-microservice.md`).
 - **OpenRouter & Local LLM Support**:
-  - Out-of-the-box support for OpenRouter (`nvidia/nemotron-3-ultra-550b-a55b:free` / OpenAI-compatible endpoints) as approved by the tutor, with fallback to local Ollama.
+  - Out-of-the-box support for OpenRouter (`minimax/minimax-m3:free` / OpenAI-compatible endpoints) as approved by the tutor, with fallback to local Ollama.
 - **Frontend Discovery for `@better-canvas/ui-kit`**:
   - Inspects Vue 3 `<script setup>` SFCs, Vue Router definitions, and `@better-canvas/ui-kit` Neobrutalism tokens and components (`TopNav`, `--nb-*`).
 
@@ -71,7 +71,7 @@ cp .env.example .env
 Configure `.env` (or let the tool automatically read `OPENROUTER_API_KEY` from the repository root `.env`):
 ```dotenv
 OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxx
-OPENROUTER_MODEL=nvidia/nemotron-3-ultra-550b-a55b:free
+OPENROUTER_MODEL=minimax/minimax-m3:free
 ```
 
 ### Run
