@@ -38,6 +38,25 @@ services:
         depends_on:
             - shared-backend
 
+    student-4-backend:
+        build:
+            context: ./student-4/backend
+            dockerfile: Api/Dockerfile
+        ports:
+            - "5104:8080"
+        volumes:
+            - student-4-db:/app/Data
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+            AiGateway__BaseUrl: http://ai-mode:8080
+        depends_on:
+            - ai-mode
+
+    student-4-frontend:
+        build:
+            context: .
+            dockerfile: student-4/frontend/Dockerfile
+
     student-1-frontend:
         build:
             context: .
@@ -66,8 +85,11 @@ services:
             - student-1-backend
             - student-3-frontend
             - student-3-backend
+            - student-4-frontend
+            - student-4-backend
 
 volumes:
     shared-db:
     student-1-db:
     student-3-db:
+    student-4-db:

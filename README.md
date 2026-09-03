@@ -22,7 +22,7 @@ Canvas assignment imports through the shared backend. Canvas sync keeps one
 primary task per assignment and updates it on later imports without storing a
 separate assessment table.
 
-**Student 4: Tristan Huang (STUDENT-NUM).**  
+**Student 4: Tristan Huang (25322025).**  
 Working directory: `student-4/`  
 TODO: Short summary of microservice, other info
 
