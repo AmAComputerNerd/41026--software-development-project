@@ -16,16 +16,16 @@ public record CanvasSyncResultDto(
 );
 
 public record SharedCanvasCourseDto(
-    long Id,
+    long CanvasCourseId,
     string Name,
     string? CourseCode,
     string WorkflowState
 );
 
 public record SharedCanvasAssignmentDto(
-    long Id,
-    long CourseId,
-    long AssignmentGroupId,
+    long CanvasAssignmentId,
+    long CanvasCourseId,
+    long CanvasAssignmentGroupId,
     string Name,
     string? Description,
     DateTime? DueAt,
@@ -37,7 +37,7 @@ public record SharedCanvasAssignmentDto(
 );
 
 public record SharedCanvasAssignmentGroupDto(
-    long Id,
+    long CanvasAssignmentGroupId,
     string Name,
     double Weight
 );
@@ -51,6 +51,6 @@ public record SharedCanvasSubmissionDto(
 );
 
 public record SharedCanvasUserDto(
-    long Id,
+    long CanvasUserId,
     string Name
 );

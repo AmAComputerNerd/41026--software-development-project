@@ -17,8 +17,17 @@ namespace GradesManager.Endpoints
             group.MapPost("/", AddIdealMark);
             group.MapPut("/", UpdateIdealMark);
             group.MapDelete("/{studentId:guid}", DeleteIdealMark);
+            group.MapGet("/Canvas/student/{id:long}", GetStudentByCanvasId);
 
             return endpoints;
+        }
+
+        private static async Task<IResult> GetStudentByCanvasId([FromRoute] long id, AppDbContext db)
+        {
+            var student = await db.Students
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.CanvasUserId == id);
+            return student == null ? Results.NotFound() : Results.Ok(student.ToDto());
         }
 
         private static async Task<IResult> GetStudent([FromRoute] Guid id, AppDbContext db)
