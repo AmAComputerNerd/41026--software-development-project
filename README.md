@@ -6,9 +6,10 @@ student owns a vertical slice, services talk to each other over HTTP,
 and one shared Canvas gateway is the only thing that talks to Canvas
 directly. A shared dashboard shell routes users to each microservice.
 
-For the architecture, service map, ports, and AI wiring, see
-[`docs/architecture/overview.md`](docs/architecture/overview.md). For
-how to contribute, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+For AI agent guidance, see [`AGENTS.md`](AGENTS.md). For the complete
+documentation hub, see [`docs/README.md`](docs/README.md) and
+[`docs/architecture/overview.md`](docs/architecture/overview.md). For how to
+contribute, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Team
 

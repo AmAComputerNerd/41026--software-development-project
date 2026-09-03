@@ -1,94 +1,144 @@
-# Playbook: adding a new student frontend
+# Playbook: Adding a New Student Frontend Microservice
 
-Follow this when scaffolding student-2, student-4, or student-5's
-frontend, using student-1/frontend as the reference implementation.
+Follow this guide when scaffolding a new frontend microservice (such as `student-2` for Automations or `student-4` for Account), using `student-1/frontend`, `student-3/frontend`, and `student-5/frontend` as reference implementations.
 
-## 1. Scaffold
+---
 
-Vue 3, no Vuetify, plain SCSS. Use create-vue the same way
-student-1/frontend was set up (check its `package.json` for the exact
-dependency versions to match — currently `vue ^3.5.41`, `vue-router
-^5.2.0`, `sass-embedded`, `vue-tsc` for type-checking).
+## 1. Scaffold the Project
 
-## 2. Add to the npm workspace
+Use Vue 3 with TypeScript, `<script setup>`, and plain SCSS (no Vuetify). Match the existing project dependencies:
+- `vue ^3.5.x`
+- `vue-router ^4.x`
+- `sass-embedded`
+- `vue-tsc` (for type-checking)
+- `@better-canvas/ui-kit` (workspace dependency)
 
-Add your frontend's path to the root `package.json`'s `"workspaces"`
-array (alongside `shared/frontend`, `shared/ui-kit`, `student-1/frontend`).
+---
 
-## 3. Depend on @better-canvas/ui-kit
+## 2. Add to the Root npm Workspace
 
-In your frontend's `package.json`:
+In root `package.json`, ensure your frontend path is listed in `"workspaces"`:
+
+```json
+"workspaces": [
+  "shared/ui-kit",
+  "shared/frontend",
+  "student-1/frontend",
+  "student-3/frontend",
+  "student-5/frontend",
+  "student-2/frontend",
+  "student-4/frontend"
+]
+```
+
+---
+
+## 3. Depend on `@better-canvas/ui-kit`
+
+In your `student-N/frontend/package.json`:
+
 ```json
 "dependencies": {
-    "@better-canvas/ui-kit": "*"
+  "@better-canvas/ui-kit": "*"
 }
 ```
 
-In your app entrypoint (`main.ts`):
+In your application entrypoint (`src/main.ts`):
+
 ```ts
+import { createApp } from 'vue'
+import App from './App.vue'
+import router from './router'
+
+// Import Neobrutalism design system tokens and styles
 import '@better-canvas/ui-kit/styles/tokens.css'
 import '@better-canvas/ui-kit/styles/primitives.css'
+
+const app = createApp(App)
+app.use(router)
+app.mount('#app')
 ```
 
-Use the CSS custom properties from ui-kit instead of hardcoding colours,
-borders, or shadows (note the actual token names are prefixed `--nb-`):
-```css
-background: var(--nb-color-bg);
-border: var(--nb-border-width-md) solid var(--nb-color-ink);
+Use the shared `TopNav` component from `@better-canvas/ui-kit`:
+
+```vue
+<script setup lang="ts">
+import { TopNav } from '@better-canvas/ui-kit'
+</script>
+
+<template>
+  <TopNav title="Automations" current-service="automations" />
+  <main class="page-container">
+    <!-- Feature content -->
+  </main>
+</template>
 ```
 
-Use the shared TopNav component from ui-kit rather than building your own
-nav bar, so the header stays identical across every feature.
+---
 
-## 4. Dockerfile
+## 4. Multi-Stage Dockerfile
 
-Copy `student-1/frontend/Dockerfile` as your starting point: multi-stage
-build. Build stage (`node:22-alpine`) copies root `package.json` +
-`package-lock.json`, `shared/ui-kit`, and your own `student-N/frontend`
-directory, runs `npm ci`, then `npm run build --workspace=<your-workspace-name>`.
-If your app needs its backend's base URL baked in at build time, set it
-via an `ENV VITE_<NAME>_API_BASE_URL=/api/<name>` line before the build
-step (student-1 does this for `VITE_NOTIFICATIONS_API_BASE_URL`). Serve
-stage (`nginx:1.27-alpine`) copies your own `nginx.conf` to
-`/etc/nginx/conf.d/default.conf` and the `dist/` output from the build
-stage.
+Create `student-N/frontend/Dockerfile`:
 
-Your own `nginx.conf` inside your service only needs a Vue Router
-history-mode fallback:
+```dockerfile
+FROM node:22-alpine AS build
+WORKDIR /app
+
+# Copy root workspace manifests
+COPY package.json package-lock.json ./
+COPY shared/ui-kit/ ./shared/ui-kit/
+COPY student-N/frontend/ ./student-N/frontend/
+
+RUN npm ci
+
+# Set backend API proxy path
+ENV VITE_FEATURE_API_BASE_URL=/api/feature
+
+WORKDIR /app/student-N/frontend
+RUN npm run build
+
+FROM nginx:1.27-alpine AS final
+COPY --from=build /app/student-N/frontend/dist /usr/share/nginx/html
+COPY student-N/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
 ```
-location / {
-    try_files $uri $uri/ /index.html;
+
+Your `student-N/frontend/nginx.conf` only needs standard SPA fallback:
+
+```nginx
+server {
+    listen 80;
+    server_name localhost;
+
+    location / {
+        root /usr/share/nginx/html;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
 }
 ```
-The actual cross-service routing happens in `shared/frontend/nginx.conf`,
-not yours.
 
-## 5. Add yourself to docker-compose.yml
+---
 
-Add a service block matching `student-1-frontend`'s pattern: build context
-`.` (repo root, needed so the Dockerfile can `COPY shared/ui-kit`), your
-Dockerfile path, no host `ports` entry (you're only reached through the
-shell).
+## 5. Reverse Proxy & Compose Registration
 
-## 6. Uncomment your route in shared/frontend/nginx.conf
-
-Commented-out stubs already exist for `/grades` (student-2),
-`/automations` (student-4), and `/account` (student-5). Uncomment yours,
-replace the placeholder container names (e.g. `student-2-frontend`,
-`student-2-backend`) with your actual service names from
-`docker-compose.yml`, and add `depends_on` entries for your
-frontend/backend in the `shared-shell` service block (it currently
-depends on `student-1-frontend` and `student-1-backend`).
-
-## 7. Flip your tile to live
-
-The dashboard tile grid is data-driven, not hardcoded per-tile in
-`DashboardGrid.vue`. The live/dead switch lives in the canonical service
-registry: `shared/ui-kit/src/services.ts`. Find your `ServiceId` entry in
-the `SERVICES` array and set `route` to your shared-shell path (e.g.
-`/grades/`) and `live: true` (student-1's `notifications` entry is the
-only one currently live; student-3's `deadlines-tasks` entry is still
-`route: null, live: false` as the placeholder pattern to follow until
-built). `shared/frontend/src/data/tiles.ts` merges each `SERVICES` entry
-with a dashboard-specific icon and description — add/check yours there
-too if it's missing.
+1. In `docker-compose.yml`, define `student-N-frontend`:
+   ```yaml
+   student-N-frontend:
+     build:
+       context: .
+       dockerfile: student-N/frontend/Dockerfile
+     networks:
+       - internal
+   ```
+2. In `shared/frontend/nginx.conf`, uncomment or add the proxy block:
+   ```nginx
+   location /feature/ {
+       proxy_pass http://student-N-frontend:80/;
+       proxy_set_header Host $host;
+       proxy_set_header X-Real-IP $remote_addr;
+   }
+   ```
+3. In `shared/ui-kit/src/services.ts`, toggle your service to `live: true` and specify its route.
+4. In `shared/frontend/src/data/tiles.ts`, verify the tile icon, label, and description.
