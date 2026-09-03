@@ -39,6 +39,15 @@ public sealed class SharedCanvasClient(
             cancellationToken);
     }
 
+    public Task<IReadOnlyList<SharedCanvasUserDto>> GetCourseUsersAsync(
+        long courseId,
+        CancellationToken cancellationToken)
+    {
+        return GetAsync<SharedCanvasUserDto>(
+            $"api/canvas/courses/{courseId}/users",
+            cancellationToken);
+    }
+
     private async Task<IReadOnlyList<T>> GetAsync<T>(
         string relativeUrl,
         CancellationToken cancellationToken)

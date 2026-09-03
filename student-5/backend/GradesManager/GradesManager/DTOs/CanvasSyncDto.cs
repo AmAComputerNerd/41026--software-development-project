@@ -9,7 +9,10 @@ public record CanvasSyncResultDto(
     int AssignmentGroupsDeactivated,
     int AssignmentsCreated,
     int AssignmentsUpdated,
-    int AssignmentsDeactivated
+    int AssignmentsDeactivated,
+    int StudentsCreated,
+    int StudentCoursesCreated,
+    int StudentAssignmentsCreated
 );
 
 public record SharedCanvasCourseDto(

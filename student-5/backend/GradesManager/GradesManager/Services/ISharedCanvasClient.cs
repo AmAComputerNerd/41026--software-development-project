@@ -14,4 +14,8 @@ public interface ISharedCanvasClient
     Task<IReadOnlyList<SharedCanvasAssignmentGroupDto>> GetAssignmentGroupsAsync(
         long courseId,
         CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<SharedCanvasUserDto>> GetCourseUsersAsync(
+        long courseId,
+        CancellationToken cancellationToken);
 }

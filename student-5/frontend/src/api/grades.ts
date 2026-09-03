@@ -48,6 +48,9 @@ export interface CanvasSyncResult {
   assignmentsCreated: number
   assignmentsUpdated: number
   assignmentsDeactivated: number
+  studentsCreated: number
+  studentCoursesCreated: number
+  studentAssignmentsCreated: number
 }
 
 const API_BASE = (import.meta.env.VITE_GRADES_API_BASE_URL || '/api/grades').replace(/\/$/, '')

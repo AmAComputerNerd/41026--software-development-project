@@ -28,6 +28,9 @@ public sealed class CanvasTaskSyncService(
                 var assignmentGroups = await canvasClient.GetAssignmentGroupsAsync(
                     course.Id,
                     cancellationToken);
+                var users = await canvasClient.GetCourseUsersAsync(
+                    course.Id,
+                    cancellationToken);
 
                 if (assignments.Any(assignment => assignment.CourseId != course.Id))
                 {
@@ -35,7 +38,7 @@ public sealed class CanvasTaskSyncService(
                         $"The shared service returned an assignment for the wrong course ({course.Id}).");
                 }
 
-                snapshots.Add(new CourseSnapshot(course, assignments, assignmentGroups));
+                snapshots.Add(new CourseSnapshot(course, assignments, assignmentGroups, users));
             }
 
             return await ApplySnapshotAsync(snapshots, cancellationToken);
@@ -104,10 +107,76 @@ public sealed class CanvasTaskSyncService(
         var assignmentsCreated = 0;
         var assignmentsUpdated = 0;
         var assignmentsDeactivated = 0;
+        var studentsCreated = 0;
+        var studentCoursesCreated = 0;
+        var studentAssignmentsCreated = 0;
+
+        // Upsert students keyed by CanvasUserId across every snapshot. The
+        // shared backend only exposes /courses/{id}/users, so we union the
+        // users across all synced courses and dedupe by CanvasUserId.
+        var canvasUserIds = snapshots
+            .SelectMany(snapshot => snapshot.Users)
+            .Select(user => user.Id)
+            .Distinct()
+            .ToList();
+        var existingStudents = await db.Students
+            .Where(student => student.CanvasUserId != null)
+            .ToDictionaryAsync(
+                student => student.CanvasUserId!.Value,
+                cancellationToken);
+        var studentsByCanvasUserId = new Dictionary<long, Student>(existingStudents);
+        var canvasUsersById = snapshots
+            .SelectMany(snapshot => snapshot.Users)
+            .GroupBy(user => user.Id)
+            .ToDictionary(group => group.Key, group => group.First());
+        foreach (var canvasUserId in canvasUserIds)
+        {
+            if (studentsByCanvasUserId.ContainsKey(canvasUserId)) continue;
+            var canvasUser = canvasUsersById[canvasUserId];
+            var student = new Student
+            {
+                Name = canvasUser.Name,
+                CanvasUserId = canvasUserId,
+            };
+            db.Students.Add(student);
+            studentsByCanvasUserId[canvasUserId] = student;
+            studentsCreated++;
+        }
+
+        // Track which Canvas users were enrolled in each Canvas course so we
+        // can populate StudentCourse / StudentAssignment join tables and
+        // prune stale enrollments when a course disappears.
+        var studentsByCanvasCourseId = new Dictionary<long, IReadOnlyList<Student>>();
+        var existingStudentCourses = await db.StudentCourses
+            .Where(sc => sc.Course!.CanvasCourseId != null)
+            .Join(
+                db.Courses,
+                sc => sc.CourseId,
+                course => course.CourseId,
+                (sc, course) => new StudentCourseLink(sc.StudentId, course.CanvasCourseId!.Value))
+            .ToListAsync(cancellationToken);
+        var existingStudentAssignments = await db.StudentAssignments
+            .Where(sa => sa.Assignment!.CanvasAssignmentId != null)
+            .Join(
+                db.Assignments,
+                sa => sa.AssignmentId,
+                assignment => assignment.AssignmentId,
+                (sa, assignment) => new StudentAssignmentLink(
+                    sa.StudentId,
+                    assignment.CanvasAssignmentId!.Value))
+            .ToListAsync(cancellationToken);
 
         foreach (var snapshot in snapshots)
         {
             seenCourseIds.Add(snapshot.Course.Id);
+
+            // Resolve the local students enrolled in this Canvas course
+            // (every user the shared service returned for this course).
+            var courseStudents = snapshot.Users
+                .Where(user => studentsByCanvasUserId.ContainsKey(user.Id))
+                .Select(user => studentsByCanvasUserId[user.Id])
+                .ToList();
+            studentsByCanvasCourseId[snapshot.Course.Id] = courseStudents;
 
             if (!existingCourses.TryGetValue(snapshot.Course.Id, out var course))
             {
@@ -151,6 +220,26 @@ public sealed class CanvasTaskSyncService(
             course.CanvasIsActive = true;
             course.LastCanvasSyncAt = now;
             existingCourses[snapshot.Course.Id] = course;
+
+            // Populate StudentCourse join rows for every Canvas-enrolled
+            // student. Existing rows are left alone so manually-set marks
+            // (TempMark/FinalMark via StudentAssignment) are preserved.
+            foreach (var student in courseStudents)
+            {
+                var alreadyLinked = existingStudentCourses
+                    .Any(link => link.StudentId == student.StudentId &&
+                        link.CanvasCourseId == snapshot.Course.Id);
+                if (alreadyLinked) continue;
+                db.StudentCourses.Add(new StudentCourse
+                {
+                    StudentId = student.StudentId,
+                    CourseId = course.CourseId,
+                });
+                existingStudentCourses.Add(new StudentCourseLink(
+                    student.StudentId,
+                    snapshot.Course.Id));
+                studentCoursesCreated++;
+            }
 
             var groupsByCanvasId = new Dictionary<long, AssignmentGroup>();
 
@@ -232,6 +321,26 @@ public sealed class CanvasTaskSyncService(
                     assignment.GroupId = group.GroupId;
                     assignmentsUpdated++;
                 }
+
+                // Populate StudentAssignment join rows for every enrolled
+                // student. Existing rows (with TempMark/FinalMark) are
+                // preserved untouched.
+                foreach (var student in courseStudents)
+                {
+                    var alreadyLinked = existingStudentAssignments
+                        .Any(link => link.StudentId == student.StudentId &&
+                            link.CanvasAssignmentId == remoteAssignment.Id);
+                    if (alreadyLinked) continue;
+                    db.StudentAssignments.Add(new StudentAssignment
+                    {
+                        StudentId = student.StudentId,
+                        AssignmentId = assignment.AssignmentId,
+                    });
+                    existingStudentAssignments.Add(new StudentAssignmentLink(
+                        student.StudentId,
+                        remoteAssignment.Id));
+                    studentAssignmentsCreated++;
+                }
             }
         }
 
@@ -266,11 +375,19 @@ public sealed class CanvasTaskSyncService(
             assignmentGroupsDeactivated,
             assignmentsCreated,
             assignmentsUpdated,
-            assignmentsDeactivated);
+            assignmentsDeactivated,
+            studentsCreated,
+            studentCoursesCreated,
+            studentAssignmentsCreated);
     }
 
     private sealed record CourseSnapshot(
         SharedCanvasCourseDto Course,
         IReadOnlyList<SharedCanvasAssignmentDto> Assignments,
-        IReadOnlyList<SharedCanvasAssignmentGroupDto> AssignmentGroups);
+        IReadOnlyList<SharedCanvasAssignmentGroupDto> AssignmentGroups,
+        IReadOnlyList<SharedCanvasUserDto> Users);
+
+    private sealed record StudentCourseLink(Guid StudentId, long CanvasCourseId);
+
+    private sealed record StudentAssignmentLink(Guid StudentId, long CanvasAssignmentId);
 }
