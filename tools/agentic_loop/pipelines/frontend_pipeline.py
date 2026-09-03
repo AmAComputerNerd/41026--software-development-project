@@ -1,12 +1,18 @@
-def build_user_prompt(task_prompt: str, context: str, evidence: str) -> str:
-    """Build the user prompt for a Frontend (Vue + Vuetify) review."""
+from __future__ import annotations
 
-    task_with_evidence = task_prompt.replace("{{REVIEW_TARGET}}", "Frontend")
-    task_with_evidence = task_with_evidence.replace("{{VALIDATION_EVIDENCE}}", evidence)
 
-    return f"""
-{task_with_evidence}
-
-Feature Context:
-{context}
-""".strip()
+def build_user_prompt(
+    task_prompt: str,
+    context: str,
+    evidence: str,
+    doc_context: str = "",
+) -> str:
+    """Build the user prompt for a Frontend review."""
+    prompt = (
+        task_prompt
+        .replace("{{REVIEW_TARGET}}", "Frontend")
+        .replace("{{VALIDATION_EVIDENCE}}", evidence)
+        .replace("{{FEATURE_CONTEXT}}", context)
+        .replace("{{DOCUMENTATION_CONTEXT}}", doc_context)
+    )
+    return prompt.strip()

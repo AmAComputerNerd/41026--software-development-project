@@ -1,187 +1,137 @@
-# Architecture overview
+# Architecture Overview
 
-Current state as of this document's last update. This is source material
-for the technical report's architecture diagrams, and orientation for
-anyone (or any AI agent) new to the repo.
+Current architectural state of the **41026 Advanced Software Development Project**. This document serves as the authoritative source material for technical reports, architecture diagrams, and onboarding for developers and AI agents.
 
-## Services
+---
 
-| Service | Path | Stack | Port (host) | Owns | Depends on |
-|---|---|---|---|---|---|
-| shared-shell | shared/frontend | Vue 3 + nginx | 8080 | Unified dashboard, reverse proxy to every feature | every frontend + backend |
-| shared-backend | shared/backend | ASP.NET Core + SQLite | 5110 | Canvas API integration (courses, assignments, users), in-memory cache, audit log | — |
-| ai-mode | ai-services/ai-mode | ASP.NET Core | (internal only) | OpenRouter proxy, shared LLM access | — |
-| student-1-frontend | student-1/frontend | Vue 3 | (proxied at /notifications/) | Notifications UI | student-1-backend |
-| student-1-backend | student-1/backend | ASP.NET Core + SQLite | 5101 | Notifications, preferences, AI digest | ai-mode |
-| student-3-frontend | student-3/frontend | Vue 3 | (proxied at /deadlines/) | Deadlines & tasks UI | student-3-backend |
-| student-3-backend | student-3/backend | ASP.NET Core + SQLite | 5103 | Deadlines & task tracker, Canvas assignment sync, AI task planning | shared-backend, ai-mode, student-1-backend |
-| student-5-frontend | student-5/frontend | Vue 3 | (proxied at /grades/) | Grades & progress UI | student-5-backend |
-| student-5-backend | student-5/backend | ASP.NET Core + SQLite | 5105 | Grades & progress API | (no cross-service calls yet) |
+## 1. System Topology & Microservices
 
-Students 2 (Automations) and 4 (Account) have placeholder
-`backend/` and `frontend/` directories only — no code yet. The
-nginx stubs for `/account/` and `/automations/` are still commented
-out in `shared/frontend/nginx.conf`; their dashboard tiles render
-as "coming soon" until those slices ship.
+The application is structured as a decentralized microservices architecture composed of independent vertical slices running inside a Docker network behind an Nginx reverse proxy shell (`shared-shell`).
 
-## Shared infrastructure
+```
+                                      [ Client Browser ]
+                                               │
+                                      (HTTP: Port 8080)
+                                               ▼
+                         ┌───────────────────────────────────────────┐
+                         │           shared-shell (Nginx)            │
+                         │   • /              -> Dashboard (Vue 3)   │
+                         │   • /notifications -> student-1-frontend  │
+                         │   • /deadlines     -> student-3-frontend  │
+                         │   • /grades        -> student-5-frontend  │
+                         │   • /api/*         -> Proxied to backends │
+                         └─────────────────┬───┬───┬─────────────────┘
+                                           │   │   │
+                  ┌────────────────────────┘   │   └────────────────────────┐
+                  ▼                            ▼                            ▼
+      ┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐
+      │   student-1-frontend  │   │   student-3-frontend  │   │   student-5-frontend  │
+      │   (Notifications UI)  │   │   (Deadlines & Tasks) │   │   (Grades & Progress) │
+      └───────────┬───────────┘   └───────────┬───────────┘   └───────────┬───────────┘
+                  │                           │                           │
+                  │ /api/notifications/*      │ /api/deadlines/*          │ /api/grades/*
+                  ▼                           ▼                           ▼
+      ┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐
+      │   student-1-backend   │   │   student-3-backend   │   │   student-5-backend   │
+      │   (Port 5101)         │◄──┤   (Port 5103)         │   │   (Port 5105)         │
+      │   [SQLite: notifs.db] │push│   [SQLite: tasks.db]  │   │   [SQLite: grades.db] │
+      └───────────┬───────────┘   └───────────┬───────────┘   └───────────────────────┘
+                  │                           │
+                  │ Chat / Digest             │ Canvas sync
+                  ▼                           ▼
+      ┌───────────────────────┐   ┌───────────────────────┐
+      │     ai-mode (8080)    │   │  shared-backend(5110) │
+      │  (OpenRouter Gateway) │   │  (Canvas LMS Gateway) │
+      │  [Holds API Key]      │   │  [SQLite: audit.db]   │
+      └───────────┬───────────┘   └───────────┬───────────┘
+                  │                           │
+                  ▼                           ▼
+          [ OpenRouter API ]          [ Canvas LMS API ]
+```
 
-Owned by student-1 (Bryan), per team assignment:
-- `shared/frontend` — the dashboard shell and reverse proxy.
-- `shared/ui-kit` — design tokens, fonts, shared Vue components,
-  consumed as an npm workspace package by every frontend.
-- `ai-services/ai-mode` — shared OpenRouter gateway.
+---
 
-Owned by student-3 (Jonathon), used by the whole team:
-- `shared/backend` — Canvas API integration, other services call its
-  HTTP API and don't read its database directly.
+## 2. Microservice Directory & Port Matrix
 
-Canvas assignment descriptions are treated as untrusted HTML. The shared
-backend parses them into compact plain text before returning its API DTOs,
-so downstream services neither render raw Canvas markup nor send it to AI
-models.
+| Service | Directory | Stack | Host Port | Internal Docker URL | Core Responsibilities | Dependencies |
+|---|---|---|---|---|---|---|
+| **`shared-shell`** | `shared/frontend` | Vue 3 + Nginx | `8080` | `http://shared-shell:80` | Host entrypoint, dashboard UI, reverse proxy routing | All frontends & backends |
+| **`shared-backend`** | `shared/backend` | ASP.NET Core + SQLite | `5110` | `http://shared-backend:8080` | Canvas LMS API client, HTML sanitizer, 3-min in-memory cache, audit log | Canvas LMS |
+| **`ai-mode`** | `ai-services/ai-mode` | ASP.NET Core | *Internal only* | `http://ai-mode:8080` | Central OpenRouter LLM gateway, status error normalization, health checks | OpenRouter API |
+| **`student-1-backend`** | `student-1/backend` | ASP.NET Core + SQLite | `5101` | `http://student-1-backend:8080` | Notification management, delivery preferences, AI digests & chat, SSE stream broker | `ai-mode`, `shared-backend` |
+| **`student-1-frontend`** | `student-1/frontend` | Vue 3 + Vite | *Proxied* | `http://student-1-frontend:80` | Notifications page, real-time toast alerts, AI digest chat panel | `student-1-backend` |
+| **`student-2-backend`** | `student-2/backend` | ASP.NET Core + SQLite | `5102` | `http://student-2-backend:8080` | Automations service (placeholder/stub) | — |
+| **`student-2-frontend`** | `student-2/frontend` | Vue 3 + Vite | *Proxied* | `http://student-2-frontend:80` | Automations UI (placeholder/stub) | `student-2-backend` |
+| **`student-3-backend`** | `student-3/backend` | ASP.NET Core + SQLite | `5103` | `http://student-3-backend:8080` | Task tracker, course linkage, Canvas sync, due-soon reminder worker, AI subtask planning | `shared-backend`, `ai-mode`, `student-1-backend` |
+| **`student-3-frontend`** | `student-3/frontend` | Vue 3 + Vite | *Proxied* | `http://student-3-frontend:80` | Task manager, calendar view, upcoming task view, AI breakdown modal | `student-3-backend` |
+| **`student-4-backend`** | `student-4/backend` | ASP.NET Core + SQLite | `5104` | `http://student-4-backend:8080` | Account/profile service (placeholder/stub) | — |
+| **`student-4-frontend`** | `student-4/frontend` | Vue 3 + Vite | *Proxied* | `http://student-4-frontend:80` | Account UI (placeholder/stub) | `student-4-backend` |
+| **`student-5-backend`** | `student-5/backend` | ASP.NET Core + SQLite | `5105` | `http://student-5-backend:8080` | Grades & progress calculation, what-if marks endpoints | — |
+| **`student-5-frontend`** | `student-5/frontend` | Vue 3 + Vite | *Proxied* | `http://student-5-frontend:80` | Grades list, grade breakdown, what-if simulator | `student-5-backend` |
 
-## Reverse proxy routing
+---
 
-`shared-shell`'s nginx config maps:
-- `/` — the dashboard itself.
-- `/notifications/` → student-1-frontend; `/api/notifications/` → student-1-backend.
-- `/deadlines/` → student-3-frontend; `/api/deadlines/` → student-3-backend.
-- `/grades/` → student-5-frontend; `/api/grades/` → student-5-backend.
-- `/automations/`, `/account/` — stubbed but commented out, waiting
-  on students 2 and 4. Note: the in-file comment in
-  `shared/frontend/nginx.conf` labels the `/account/` stub as
-  "student-5"; that is a leftover from an earlier reassignment. The
-  current student-5 route is `/grades/`, and `/account/` is unowned.
+## 3. Reverse Proxy Routing (shared-shell)
 
-## Data flow
+The Nginx server running inside `shared-shell` is the sole entry point exposed on port `8080`. It routes requests dynamically:
 
-Two concrete paths to know:
+- `/` → Serves the dashboard shell (`shared/frontend/dist`).
+- `/notifications/` → Proxies to `http://student-1-frontend:80/`.
+- `/api/notifications/` → Proxies to `http://student-1-backend:8080/`.
+- `/deadlines/` → Proxies to `http://student-3-frontend:80/`.
+- `/api/deadlines/` → Proxies to `http://student-3-backend:8080/`.
+- `/grades/` → Proxies to `http://student-5-frontend:80/`.
+- `/api/grades/` → Proxies to `http://student-5-backend:8080/`.
+- `/automations/`, `/account/` → Stubs present in `nginx.conf`, waiting for students 2 and 4.
 
-**Canvas assignment → task in the tracker**
+---
 
-1. The user (or a scheduled job) calls
-   `POST /api/canvas-sync` on student-3-backend.
-2. student-3-backend calls `GET /courses`, `GET /assignments`, etc.
-   on shared-backend over the internal Docker network.
-3. shared-backend hits Canvas with the user's `CANVAS_API_TOKEN`,
-   caches results briefly in memory, parses assignment HTML into
-   plain text, and writes an audit row to its own SQLite.
-4. student-3-backend upserts one task per stable Canvas assignment
-   ID into its own SQLite. Removed assignments are flagged inactive,
-   not deleted. Submitted/graded assignments mark the task complete.
+## 4. Cross-Service Boundaries & Communication Rules
 
-**Canvas notification → notification row in student-1**
+### Database Isolation
+Each microservice uses Entity Framework Core mapped to its own isolated SQLite file in a persistent Docker volume (`student1-data`, `student3-data`, `student5-data`, `shared-data`).
+- No service reads or writes another service's database file.
+- Direct database connection strings point only to the local service database.
 
-1. student-1-backend polls shared-backend for new notifications.
-2. shared-backend proxies the call to Canvas.
-3. student-1-backend persists the notification, applies the user's
-   per-type delivery preferences, and (on demand) asks ai-mode for
-   an LLM-generated digest of recent activity.
+### Canvas Data Boundary
+- `shared-backend` holds the `CANVAS_BASE_URL` and `CANVAS_API_TOKEN`.
+- Canvas assignment descriptions are converted from raw, untrusted HTML into clean plain text before returning DTOs to caller backends.
+- Course, assignment, and user responses are cached in-memory with a 3-minute TTL to minimize redundant Canvas requests.
 
-The browser only talks to the shared shell, never directly to
-ai-mode or any backend.
+### Centralized AI Mode Boundary
+- `ai-services/ai-mode` is the only service that reads `OPENROUTER_API_KEY`.
+- Downstream services send chat completion requests to `http://ai-mode:8080/v1/chat/completions`.
+- Standard model: `nvidia/nemotron-3-ultra-550b-a55b:free`.
 
-**Task due date → proactive reminder notification**
+---
 
-1. student-3-backend's `DueSoonReminderBackgroundService` polls its
-   own tasks on a timer, looking for incomplete tasks (Canvas-synced
-   or manually created) due within a configurable window.
-2. For each unreminded task it calls `POST /notifications/push` on
-   student-1-backend with `RelatedEntityType: "Task"` and
-   `RelatedEntityId: <task id>`, then stamps the task with
-   `DueSoonReminderSentAtUtc` so it isn't reminded twice.
-3. This is the only place student-3 calls student-1 directly — always
-   one-way (student-3 → student-1 over HTTP), never a database read
-   in either direction. A shorter second threshold re-fires the
-   reminder once, closer to the due date, if the task is still open —
-   this is also what powers "snooze" on the notification (dismissing
-   it just lets this second tier resurface it later).
-4. Deadline notifications that carry a `relatedEntityId` render VIEW
-   TASK / MARK COMPLETE / SNOOZE actions on student-1's notifications
-   list page; student-1's frontend calls student-3's
-   `PUT /api/tasks/{id}` directly (same-origin via nginx) to complete
-   a task inline. Canvas-sync-triggered Deadline notifications don't
-   carry a `relatedEntityId` yet and render without these actions.
+## 5. Key System Capabilities
 
-## AI-mode
+### A. Real-Time SSE Notification Streaming
+- `student-1-backend` exposes `GET /notifications/stream` emitting Server-Sent Events (`text/event-stream`).
+- An in-memory broker (`NotificationStreamBroker`) publishes events whenever Canvas sync detects updates or external services push reminders.
+- `shared-shell` and `student-1-frontend` maintain persistent SSE connections to update badge counts and display toast alerts without polling.
 
-Using OpenRouter (`nvidia/nemotron-3-ultra-550b-a55b:free`), approved by
-the tutor as a substitute for the spec's suggested Ollama runtime. One
-shared API key held only by the `ai-mode` gateway service, other backends
-call the gateway rather than OpenRouter directly.
+### B. Cross-Microservice Action Triggers
+Notifications carry structured action metadata enabling cross-service operations directly from the notifications interface:
+- **`AI BREAK DOWN`**: Triggers a modal calling `POST /api/deadlines/tasks/{id}/ai-breakdown` on `student-3-backend` to generate actionable subtasks with AI.
+- **`GRADE IMPACT`**: Triggers a modal calling `PUT /api/grades/api/assignment/marks/` on `student-5-backend` to simulate grade changes.
+- **`MARK COMPLETE`**: Calls `PUT /api/deadlines/tasks/{id}` on `student-3-backend` to mark a task done inline.
 
-The deadline tracker uses its backend as the AI boundary. It resolves
-course and assignment context from its own database, submits bounded
-prompts to `ai-mode`, validates structured responses, and persists
-generated subtasks atomically. The browser never calls `ai-mode`
-directly.
+### C. Conversational AI Digest Assistant
+- `student-1-backend` provides `POST /digest/chat` backed by `OpenRouterDigestService`.
+- The assistant is dynamically grounded with the student's unread notifications and course context, allowing interactive multi-turn questions ("What deadlines do I have this week?", "Explain the feedback on Assignment 1").
 
-## Database boundary
+---
 
-Each backend owns its own SQLite file. No service reads another's
-database directly. `shared-backend`'s SQLite stores only a Canvas
-request audit log, not cached Canvas data (course/assignment/user
-data is fetched live with a short in-memory cache, not persisted).
+## 6. Shared Design System: `@better-canvas/ui-kit`
 
-## Environment variables
-
-The root `.env` (gitignored, copy from `.env.example`) holds shared
-secrets. `docker-compose.yml` injects them into the services that need
-them. Per-service `environment:` blocks in compose set the rest.
-
-| Variable | Read by | Notes |
-|---|---|---|
-| `OPENROUTER_API_KEY` | ai-mode | The only service that needs the OpenRouter key. |
-| `CANVAS_BASE_URL` | shared-backend | Root URL of the Canvas instance (e.g. `https://your-institution.instructure.com`). |
-| `CANVAS_API_TOKEN` | shared-backend | Personal Canvas access token. |
-| `ASPNETCORE_ENVIRONMENT` | every .NET service | `Development` in compose; required for `dotnet user-secrets` to load. |
-| `SharedService__BaseUrl` | student-1-backend, student-3-backend | URL of shared-backend, in compose's DNS: `http://shared-backend:8080`. |
-| `AiGateway__BaseUrl` | student-3-backend | URL of ai-mode, in compose's DNS: `http://ai-mode:8080`. |
-| `CanvasSync__IntervalMinutes` | student-1-backend | Polling cadence for Canvas-native notifications. |
-| `Cors__AllowedOrigins__*` | student-1-backend | Allow-list of dev origins. CORS is locked down; new dev URLs need an entry here. |
-| `NotificationService__BaseUrl` | student-3-backend | URL of student-1-backend, in compose's DNS: `http://student-1-backend:8080`. Used to push due-soon reminder notifications. |
-| `DueSoonReminder__IntervalMinutes` | student-3-backend | Polling cadence for the due-soon reminder job. |
-| `DueSoonReminder__HoursBeforeDue` | student-3-backend | First reminder window: hours before a task's due date. |
-| `DueSoonReminder__FinalHoursBeforeDue` | student-3-backend | Second, closer reminder window — also what resurfaces a snoozed notification. |
-| `VITE_DEADLINES_API_BASE_URL` | student-1-frontend (build-time) | Same-origin path to student-3-backend via nginx (`/api/deadlines`), used only for the inline "mark task complete" action on Deadline notifications. |
-
-Running a .NET backend outside Docker: set these as actual
-environment variables, or via `dotnet user-secrets set` in that
-service's `Api/` directory. user-secrets only load under
-`ASPNETCORE_ENVIRONMENT=Development`; `dotnet run --no-launch-profile`
-silently skips them.
-
-## Troubleshooting
-
-**AI feature returns 500.** `OPENROUTER_API_KEY` is unset or wrong.
-Check root `.env`, then `docker compose up -d ai-mode` to restart
-the gateway with the new value.
-
-**Service can't reach another service.** Confirm both are running
-under `docker compose`. Standalone `dotnet run` won't get the
-internal DNS names; cross-service calls only work in compose.
-
-**CORS error in the browser.** Add the dev origin to
-`Cors__AllowedOrigins__*` in `docker-compose.yml` and restart
-student-1-backend.
-
-**Frontend shows the dashboard but the feature is blank.** The
-nginx route is commented out (only happens for unbuilt slices like
-`/automations/` and `/account/`). Confirm the feature actually has
-code; if it does, the route block in `shared/frontend/nginx.conf`
-needs uncommenting and the `shared-shell` service needs to
-`depends_on` the new frontend/backend.
-
-**EF Core complains about pending migrations.** A model change was
-made without a corresponding migration. Run
-`dotnet ef migrations add <Name> --project Api/Api.csproj` from the
-service's backend directory.
-
-## CI
-
-Each service group has its own GitHub Actions workflow under
-`.github/workflows/`. Path filters keep them scoped: `shared-ci.yml`
-only fires on changes to `shared/`, `student-3-ci.yml` only on
-`student-3/`, etc. All run on PRs into `main` and on pushes to
-`main`.
+All frontends share the workspace package `@better-canvas/ui-kit` (`shared/ui-kit`):
+- **Neobrutalism Aesthetics**:
+  - Border radius: `0px` (strict sharp corners).
+  - Borders: `4px solid var(--border-color)` (high-contrast ink borders).
+  - Shadows: `4px 4px 0 var(--shadow-color)` (hard unblurred drop shadows).
+  - Palette: High-contrast parchment surface, hazard yellow accents, retro status indicators.
+- **Animations & Micro-interactions**:
+  - Standard duration and easing tokens (`--anim-duration-base`, `--anim-ease-out`).
+  - Subtle spring transforms on hover and active states (`transform: translate(-2px, -2px)` with expanded shadow).

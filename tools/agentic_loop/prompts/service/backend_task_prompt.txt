@@ -1,27 +1,25 @@
 Review Target: {{REVIEW_TARGET}}
 
-The owner's backend must be running for this evidence to be meaningful. The
-evidence below comes from live HTTP requests and static route discovery.
-
 Live Validation Evidence:
 {{VALIDATION_EVIDENCE}}
 
-Task:
-Analyze the evidence above against the Feature Context. Identify ONE
-precise, evidence-backed improvement for:
-- Input validation and error handling (status codes, response bodies)
-- Response formatting/consistency
-- Edge cases visible in the evidence (missing references, unreachable
-  routes, unexpected status codes)
-- Whether the discovered routes plausibly match the stated feature
+Feature Context:
+{{FEATURE_CONTEXT}}
 
-If the evidence shows the backend is not responding: say "Unable to verify
-live behavior."
-If no improvement is supported by the evidence, that is a valid and good
-outcome - say exactly: "No evidence-backed improvement identified."
+{{DOCUMENTATION_CONTEXT}}
+
+Task:
+Analyze the Live Validation Evidence above against the Feature Context and Codebase Documentation.
+Identify ONE precise, evidence-backed improvement for:
+- Input validation and error handling (status codes, response bodies)
+- Adherence to documented API routes and DTO contracts
+- Architectural boundaries (strict database isolation, routing AI via ai-mode, routing Canvas via shared-backend)
+- Edge cases visible in the evidence (unreachable routes, unhandled nulls, unexpected 500s)
+
+If the evidence shows the backend is not responding: say "Unable to verify live behavior."
+If no improvement is supported by the evidence, say exactly: "No evidence-backed improvement identified."
 
 Output Format:
-- Return exactly two bullet points (Issue + Recommendation), or the
-  no-evidence sentence.
+- Return exactly two bullet points (Issue + Recommendation), or the no-evidence sentence.
 - Maximum 100 words total.
 - No explanations, no reasoning.

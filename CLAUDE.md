@@ -1,61 +1,46 @@
-# Project notes for AI agents
+# Project Notes for Claude & AI Agents
 
-This is a 5-student microservices project (ASD unit, Release 0). The
-authoritative source for service layout, ports, AI-mode wiring, and DB
-boundaries is `docs/architecture/overview.md` — keep it in sync with
-what's actually built and treat it as the first place to look.
+> **Universal Agent Guide**: Refer to [`AGENTS.md`](AGENTS.md) for full system specifications, port matrices, and CLI commands.  
+> **Documentation Hub**: Refer to [`docs/README.md`](docs/README.md) for architecture, runbooks, and playbooks.
 
-## Service boundaries
+---
 
-Each student's `student-N/backend` owns its own SQLite database. No
-service reads another service's database directly, cross-service data
-goes through HTTP APIs only. `shared/backend` owns Canvas API integration
-specifically (courses, assignments, users), everything else calls it
-over HTTP rather than hitting Canvas directly.
+## 1. Golden Architectural Rules
 
-## OpenRouter API key
+1. **Database Boundaries**: Each student's `student-N/backend` owns its own isolated SQLite database. **Zero cross-database queries**; all communication is via HTTP APIs.
+2. **Canvas Gateway**: `shared/backend` exclusively owns Canvas API communication (`courses`, `assignments`, `users`). Assignments' untrusted HTML is sanitized into plain text at the gateway.
+3. **AI Gateway (`ai-mode`)**: Only `ai-mode` holds `OPENROUTER_API_KEY`. All microservices call `http://ai-mode:8080/v1/chat/completions`.
+4. **Design System**: Use `@better-canvas/ui-kit` (workspace package) with Vue 3 `<script setup>` and plain SCSS. Follow Neobrutalism tokens (`0px` radius, thick borders, raw drop shadows). No Vuetify in new slices.
+5. **Git Workflow**: Branch off `main` per feature (`feat/`, `fix/`, `docs/`), use Conventional Commits, and open PRs into `main`.
 
-All AI features across microservices (digest generation, agentic loop,
-etc.) use one shared key: `OPENROUTER_API_KEY`.
+---
 
-- Root `.env` (gitignored, copy from `.env.example`) holds the real key.
-- `docker-compose.yml` reads root `.env` and injects it into each service
-  container as `OPENROUTER_API_KEY`.
-- Running a .NET backend outside Docker: set `OPENROUTER_API_KEY` as an
-  actual environment variable, or `dotnet user-secrets set OpenRouter:ApiKey
-  <key>` in that service's `Api/` directory. user-secrets only loads under
-  `ASPNETCORE_ENVIRONMENT=Development` — `dotnet run --no-launch-profile`
-  skips it and the key will silently appear unset.
+## 2. Ports & Routing Cheatsheet
 
-If an AI feature returns 500 with no obvious cause, check this first.
+- `http://localhost:8080` — Shared Shell (Nginx Dashboard + Reverse Proxy)
+- `http://localhost:8080/notifications/` / API: `5101` (`/api/notifications/`) — Student 1 (Notifications)
+- `http://localhost:8080/deadlines/` / API: `5103` (`/api/deadlines/`) — Student 3 (Deadlines & Tasks)
+- `http://localhost:8080/grades/` / API: `5105` (`/api/grades/`) — Student 5 (Grades & Progress)
+- API: `5110` (`/api/canvas/*`) — Shared Backend (Canvas Gateway)
+- Internal `8080` (`/v1/chat/completions`) — AI Mode (OpenRouter Gateway)
 
-## AI-mode
+---
 
-Don't call OpenRouter directly from a new backend. Call the shared
-`ai-mode` gateway service instead (`http://ai-mode:8080/v1/chat/completions`
-inside Docker), it holds the only OpenRouter key any service needs.
+## 3. Key CLI Commands
 
-## Adding a new frontend microservice
+```bash
+# Docker Stack
+docker compose up --build
+docker compose down -v
 
-Follow `docs/playbooks/new-frontend-microservice.md` — it covers the
-workspace wiring, the `@better-canvas/ui-kit` dependency, the Dockerfile
-shape, the `docker-compose.yml` entry, the `shared/frontend/nginx.conf`
-route block, and the dashboard tile registry.
+# Backend (.NET 10)
+dotnet build
+dotnet test
+dotnet format --verify-no-changes
+dotnet ef migrations add <Name> --project Api/Api.csproj
 
-Short version: Vue 3, no Vuetify, plain SCSS. Depend on
-`@better-canvas/ui-kit` (workspace package) for tokens, fonts, and shared
-components (TopNav, etc.) instead of writing your own. Add an nginx
-proxy block in `shared/frontend/nginx.conf` (commented-out stubs already
-exist for students 2/4/5). Add your service to the root
-`docker-compose.yml`. Add your tile entry to
-`shared/ui-kit/src/services.ts` (the canonical service registry) and a
-matching icon + description in
-`shared/frontend/src/data/tiles.ts`.
-
-## Git conventions used throughout this repo
-
-- Branch off `main` per feature, don't stack feature branches on other
-  open feature branches.
-- Commit after each logical step, not one giant commit at the end, push
-  as you go.
-- Open a PR into `main` when done, don't push directly to main.
+# Frontend (npm workspaces)
+npm run dev --workspace=shared-frontend
+npm run dev --workspace=student-1-frontend
+npm run build --workspaces
+```
