@@ -19,6 +19,8 @@ namespace GradesManager.Endpoints
             group.MapPut("/marks/", UpdateTempMark);
             group.MapDelete("/marks/{studentId:guid}/{assignmentId:guid}", DeleteTempMark);
             group.MapGet("/marks/{studentId:guid}", GetStudentMarks);
+            group.MapGet("/groups/course/{courseId:guid}", GetAssignmentGroupsByCourse);
+            group.MapGet("/groups/{assignmentGroupId:guid}", GetAssignmentsByGroup);
 
             return endpoints;
         }
@@ -30,7 +32,44 @@ namespace GradesManager.Endpoints
                 .FirstOrDefaultAsync(a => a.AssignmentId == id);
             return assignment == null ? Results.NotFound() : Results.Ok(assignment.ToDto());
         }
+        
+        private static async Task<IResult> GetAssignmentsByGroup([FromRoute] Guid assignmentGroupId, AppDbContext db)
+        {
+            if (assignmentGroupId == Guid.Empty)
+            {
+                return Results.BadRequest("Assignment Group ID cannot be empty.");
+            }
+            var assignments = await db.Assignments
+                .Where(a => a.GroupId == assignmentGroupId)
+                .ToListAsync();
+            if (!assignments.Any())
+            {
+                return Results.NotFound();
+            }
+            return Results.Ok(assignments.Select(a => a.ToDto()));
+        }
 
+        private static async Task<IResult> GetAssignmentGroupsByCourse([FromRoute] Guid courseId, AppDbContext db)
+        {
+            if (courseId == Guid.Empty)
+            {
+                return Results.BadRequest("Course ID cannot be empty.");
+            }
+            var course = await db.Courses
+            .FindAsync(courseId);
+            if (course is null)
+            {
+                return Results.NotFound();
+            }
+            var assignmentGroups = await db.AssignmentGroups
+                .Where(ag => ag.CourseId == courseId)
+                .ToListAsync();
+            if (!assignmentGroups.Any())
+            {
+                return Results.NotFound();
+            }
+            return Results.Ok(assignmentGroups.Select(ag => ag.ToDto()));
+        }
         private static async Task<IResult> GetAssignmentsByStudent([FromRoute] Guid studentId, AppDbContext db)
         {
             if (studentId == Guid.Empty)

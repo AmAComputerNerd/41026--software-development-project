@@ -11,6 +11,7 @@ namespace GradesManager.Data
         public DbSet<Student> Students { get; set; } = null!;
         public DbSet<StudentCourse> StudentCourses { get; set; } = null!;
         public DbSet<StudentAssignment> StudentAssignments { get; set; } = null!;
+        public DbSet<AssignmentGroup> AssignmentGroups { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //primary keys
@@ -24,6 +25,8 @@ namespace GradesManager.Data
                 .HasKey(a => a.AssignmentId);
             modelBuilder.Entity<StudentAssignment>()
                 .HasKey(sa => new { sa.StudentId, sa.AssignmentId });
+            modelBuilder.Entity<AssignmentGroup>()
+                .HasKey(ag => ag.GroupId);
 
             //foreign keys
             modelBuilder.Entity<StudentCourse>()
@@ -40,6 +43,11 @@ namespace GradesManager.Data
                 .WithMany()
                 .HasForeignKey(c => c.CourseId);
 
+            modelBuilder.Entity<Assignment>()
+                .HasOne(ag => ag.Group)
+                .WithMany()
+                .HasForeignKey(ag => ag.GroupId);
+
             modelBuilder.Entity<StudentAssignment>()
                 .HasOne(s => s.Student)
                 .WithMany()
@@ -48,6 +56,11 @@ namespace GradesManager.Data
                 .HasOne(c => c.Assignment)
                 .WithMany()
                 .HasForeignKey(c => c.AssignmentId);
+
+            modelBuilder.Entity<AssignmentGroup>()
+                .HasOne(c => c.Course)
+                .WithMany()
+                .HasForeignKey(c => c.CourseId);
         }
     }
 }

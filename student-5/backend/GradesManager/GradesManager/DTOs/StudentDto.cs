@@ -4,6 +4,7 @@
     (
         Guid StudentId,
         String? Name,
-        double? IdealMark
+        double? IdealMark,
+        long? CanvasUserId
     );
 }

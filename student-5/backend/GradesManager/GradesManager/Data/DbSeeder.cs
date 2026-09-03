@@ -9,7 +9,8 @@ namespace GradesManager.Data
             var courses = SeedCourses(db);
             var students = SeedStudents(db);
             SeedSC(db, courses, students);
-            var assignments = SeedAssignments(db, courses);
+            var groups = SeedAG(db, courses);
+            var assignments = SeedAssignments(db, courses, groups);
             SeedSA(db, students, assignments);
         }
 
@@ -176,7 +177,7 @@ namespace GradesManager.Data
             return scs.ToList();
         }
 
-        private static List<Assignment> SeedAssignments(AppDbContext db, List<Course> courses)
+        private static List<Assignment> SeedAssignments(AppDbContext db, List<Course> courses, List<AssignmentGroup> groups)
         {
             var assignments = db.Assignments;
             if (!assignments.Any())
@@ -186,80 +187,81 @@ namespace GradesManager.Data
                     {
                         CourseId = courses[0].CourseId,
                         Name = "Voice sample aquisition",
-                        Weight = 0.2,
-                        MaxMark = 10
+                        MaxMark = 1,
+                        GroupId = groups[0].GroupId
+
                     },
 
                     new Assignment //A2
                     {
                         CourseId = courses[0].CourseId,
                         Name = "Basic synthesiser program",
-                        Weight = 0.4,
-                        MaxMark = 25
+                        MaxMark = 25,
+                        GroupId = groups[0].GroupId
                     },
 
                     new Assignment //A3
                     {
                         CourseId = courses[1].CourseId,
                         Name = "Advanced Synthesiser program",
-                        Weight = 0.5,
-                        MaxMark = 30
+                        MaxMark = 30,
+                        GroupId = groups[0].GroupId
                     },
 
                     new Assignment //A4
                     {
                         CourseId = courses[1].CourseId,
                         Name = "Twin voice sampling",
-                        Weight = 0.2,
-                        MaxMark = 10
+                        MaxMark = 10,
+                        GroupId = groups[1].GroupId
                     },
 
                     new Assignment //A5
                     {
                         CourseId = courses[0].CourseId,
                         Name = "Final Test",
-                        Weight = 0.4,
-                        MaxMark = 50
+                        MaxMark = 50,
+                        GroupId = groups[1].GroupId
                     },
 
                     new Assignment //A6
                     {
                         CourseId = courses[1].CourseId,
                         Name = "Lab Quiz 1",
-                        Weight = 0.1,
-                        MaxMark = 5
+                        MaxMark = 5,
+                        GroupId = groups[2].GroupId
                     },
 
                     new Assignment //A7
                     {
                         CourseId = courses[1].CourseId,
                         Name = "Lab Quiz 2",
-                        Weight = 0.1,
-                        MaxMark = 5
+                        MaxMark = 5,
+                        GroupId = groups[2].GroupId
                     },
 
                     new Assignment //A8
                     {
                         CourseId = courses[1].CourseId,
                         Name = "Lab Quiz 3",
-                        Weight = 0.1,
-                        MaxMark = 5
+                        MaxMark = 5,
+                        GroupId = groups[2].GroupId
                     },
 
                     new Assignment //A9
                     {
                         CourseId = courses[2].CourseId,
                         Name = "Mid term Ecology Test",
-                        Weight = 0.5,
-                        MaxMark = 30
+                        MaxMark = 30,
+                        GroupId = groups[3].GroupId
                     },
 
                     new Assignment //A10
                     {
                         CourseId = courses[2].CourseId,
                         Name = "Final Practical Exam",
-                        Weight = 0.5,
-                        MaxMark = 50
+                        MaxMark = 50,
+                        GroupId = groups[3].GroupId
                     }
                 );
                 db.SaveChanges();
@@ -284,6 +286,26 @@ namespace GradesManager.Data
                 db.SaveChanges();
             }
             return sas.ToList();
+        }
+
+        private static List<AssignmentGroup> SeedAG(AppDbContext db, List<Course> courses)
+        {
+            var ags = db.AssignmentGroups;
+            if (!ags.Any())
+            {
+                var count = Math.Min(10, courses.Count);
+                for (int i = 0; i < count; i++)
+                {
+                    ags.Add(new AssignmentGroup
+                    {
+                        CourseId = courses[i].CourseId,
+                        Name = $"Assignment Group {i + 1}",
+                        Weight = 100
+                    });
+                }
+                db.SaveChanges();
+            }
+            return ags.ToList();
         }
     }
 }

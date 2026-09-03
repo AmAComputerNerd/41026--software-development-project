@@ -4,7 +4,7 @@
     (
         Guid StudentId,
         Guid AssignmentId,
-        int? TempMark,
-        int? FinalMark
+        double? TempMark,
+        double? FinalMark
     );
 }

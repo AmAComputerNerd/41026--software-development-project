@@ -5,6 +5,7 @@
         string Code,
         string Name,
         long? CanvasCourseId,
+        string? CanvasWorkflowState,
         bool? CanvasIsActive,
         DateTime? LastCanvasSyncAt
     );

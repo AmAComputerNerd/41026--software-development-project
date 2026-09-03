@@ -4,9 +4,14 @@
     (
         Guid AssignmentId,
         Guid CourseId,
+        Guid GroupId,
         string Name,
-        double? Weight,
-        int? MaxMark,
-        bool? Completed
+        double? MaxMark,
+        DateTime? DueAt,
+        DateTime? UpdatedAt,
+        string? CanvasWorkflowState,
+        string? CanvasSubmissionState,
+        bool? CanvasIsActive,
+        long? CanvasAssignmentId
     );
 }

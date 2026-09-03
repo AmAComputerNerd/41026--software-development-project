@@ -12,6 +12,7 @@ namespace GradesManager.Extensions
                 Code: course.Code,
                 Name: course.Name,
                 CanvasCourseId: course.CanvasCourseId,
+                CanvasWorkflowState: course.CanvasWorkflowState,
                 CanvasIsActive: course.CanvasIsActive,
                 LastCanvasSyncAt: course.LastCanvasSyncAt
             );
@@ -22,7 +23,8 @@ namespace GradesManager.Extensions
             return new StudentDto(
                 StudentId: student.StudentId,
                 Name: student.Name,
-                IdealMark: student.IdealMark
+                IdealMark: student.IdealMark,
+                CanvasUserId: student.CanvasUserId
             );
         }
 
@@ -31,11 +33,15 @@ namespace GradesManager.Extensions
             return new AssignmentDto(
                 AssignmentId: assignment.AssignmentId,
                 CourseId: assignment.CourseId,
+                GroupId: assignment.GroupId,
                 Name: assignment.Name,
                 MaxMark: assignment.MaxMark,
-                Weight: assignment.Weight,
-                Completed: assignment.Completed
-
+                DueAt: assignment.DueAt,
+                UpdatedAt: assignment.UpdatedAt,
+                CanvasWorkflowState: assignment.CanvasWorkflowState,
+                CanvasSubmissionState: assignment.CanvasSubmissionState,
+                CanvasIsActive: assignment.CanvasIsActive,
+                CanvasAssignmentId: assignment.CanvasAssignmentId
             );
         }
 
@@ -46,6 +52,17 @@ namespace GradesManager.Extensions
                 AssignmentId: studentAssignment.AssignmentId,
                 TempMark: studentAssignment.TempMark,
                 FinalMark: studentAssignment.FinalMark
+            );
+        }
+
+        public static AssignmentGroupDto ToDto(this AssignmentGroup assignmentGroup)
+        {
+            return new AssignmentGroupDto(
+                GroupId: assignmentGroup.GroupId,
+                CourseId: assignmentGroup.CourseId,
+                Name: assignmentGroup.Name,
+                Weight: assignmentGroup.Weight,
+                CanvasAssignmentGroupId: assignmentGroup.CanvasAssignmentGroupId
             );
         }
     }

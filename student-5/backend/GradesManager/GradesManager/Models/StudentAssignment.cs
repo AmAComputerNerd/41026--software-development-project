@@ -6,7 +6,7 @@
         public Student? Student { get; }
         public Guid AssignmentId { get; set; }
         public Assignment? Assignment { get; }
-        public int? TempMark { get; set; }
-        public int? FinalMark { get; set; }
+        public double? TempMark { get; set; }
+        public double? FinalMark { get; set; }
     }
 }
