@@ -66,7 +66,7 @@ async function remove() {
       <div>
         <h3>{{ assignment.name }}</h3>
         <p class="nb-mono">
-          WEIGHT {{ ((assignment.weight ?? 0) * 100).toFixed(0) }}% · MAX {{ assignment.maxMark ?? '—' }} PTS
+          MAX {{ assignment.maxMark ?? '—' }} PTS
         </p>
       </div>
     </div>

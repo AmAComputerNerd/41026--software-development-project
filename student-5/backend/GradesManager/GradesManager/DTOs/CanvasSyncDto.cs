@@ -29,7 +29,7 @@ public record SharedCanvasAssignmentDto(
     DateTime? UpdatedAt,
     string WorkflowState,
     bool Published,
-    double MaxMarks,
+    double? MaxMarks,
     SharedCanvasSubmissionDto? Submission
 );
 
@@ -45,4 +45,9 @@ public record SharedCanvasSubmissionDto(
     DateTime? SubmittedAt,
     bool Late,
     bool Missing
+);
+
+public record SharedCanvasUserDto(
+    long Id,
+    string Name
 );

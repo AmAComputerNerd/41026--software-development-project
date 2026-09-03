@@ -193,7 +193,12 @@ public sealed class CanvasTaskSyncService(
                         $"Assignment {remoteAssignment.Id} references unknown assignment group {remoteAssignment.AssignmentGroupId}.");
                 }
 
-                var maxMark = (int)Math.Round(remoteAssignment.MaxMarks);
+                // Canvas returns null points_possible for assignments that
+                // aren't graded (e.g. attendance, participation). Coerce null
+                // to 0 so the row still imports but contributes nothing to a
+                // weighted rollup. Non-null values are rounded to the nearest
+                // whole mark because Assignment.MaxMark is stored as int?.
+                var maxMark = (int)Math.Round(remoteAssignment.MaxMarks ?? 0d);
 
                 if (!existingAssignments.TryGetValue(remoteAssignment.Id, out var assignment))
                 {

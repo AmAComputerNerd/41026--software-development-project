@@ -2,6 +2,8 @@
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { Navbar, SERVICES } from '@better-canvas/ui-kit'
 import NotificationButton from '@/components/NotificationButton.vue'
+import { onMounted } from 'vue'
+import { useCanvasSync } from '@/composables/useCanvasSync'
 
 const route = useRoute()
 const services = SERVICES.map((service) =>
@@ -9,6 +11,9 @@ const services = SERVICES.map((service) =>
     ? { ...service, route: '/grades/', live: true }
     : service,
 )
+
+const { ensureAutoSync } = useCanvasSync()
+onMounted(ensureAutoSync)
 </script>
 
 <template>

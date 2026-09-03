@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import {
   gradesApi,
   type Assignment,
+  type AssignmentGroup,
   type Course,
   type Student,
   type StudentAssignment,
@@ -11,6 +12,7 @@ import { CONFIGURED_STUDENT_ID } from '@/config'
 const student = ref<Student | null>(null)
 const courses = ref<Course[]>([])
 const assignments = ref<Assignment[]>([])
+const groups = ref<AssignmentGroup[]>([])
 const marks = ref<StudentAssignment[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -32,11 +34,47 @@ function earnedPercent(assignment: Assignment, useTemporary: boolean) {
 }
 
 export function calculateCourseMark(courseId: string, useTemporary = false) {
-  const relevant = assignments.value.filter((assignment) => assignment.courseId === courseId)
+  const relevantGroups = groups.value.filter((group) => group.courseId === courseId)
+  const relevantAssignments = assignments.value.filter(
+    (assignment) => assignment.courseId === courseId,
+  )
+
+  // Group-weighted rollup: each group's mean percent is multiplied by the
+  // group's weight. Falls back to per-assignment weighting if groups haven't
+  // been loaded yet so the overview still has something to display.
+  if (relevantGroups.length > 0) {
+    let weightedScore = 0
+    let includedWeight = 0
+
+    for (const group of relevantGroups) {
+      const groupAssignments = relevantAssignments.filter(
+        (assignment) => assignment.groupId === group.groupId,
+      )
+      if (groupAssignments.length === 0) continue
+
+      let groupPercentSum = 0
+      let groupPercentCount = 0
+      for (const assignment of groupAssignments) {
+        const percent = earnedPercent(assignment, useTemporary)
+        if (percent == null) continue
+        groupPercentSum += percent
+        groupPercentCount += 1
+      }
+      if (groupPercentCount === 0) continue
+
+      const groupMean = groupPercentSum / groupPercentCount
+      const weight = group.weight ?? 0
+      weightedScore += groupMean * weight
+      includedWeight += weight
+    }
+
+    return includedWeight > 0 ? weightedScore / includedWeight : null
+  }
+
   let weightedScore = 0
   let includedWeight = 0
 
-  for (const assignment of relevant) {
+  for (const assignment of relevantAssignments) {
     const percent = earnedPercent(assignment, useTemporary)
     if (percent == null) continue
     const weight = assignment.weight ?? 0
@@ -119,6 +157,48 @@ export function useGrades() {
     }
   }
 
+  async function ensureCourseGroups(courseId: string) {
+    await load()
+    if (groups.value.some((group) => group.courseId === courseId)) return
+
+    try {
+      const courseGroups = await gradesApi.getAssignmentGroups(courseId)
+      const newGroups = courseGroups.filter(
+        (group) => !groups.value.some((existing) => existing.groupId === group.groupId),
+      )
+      groups.value.push(...newGroups)
+
+      // Fetch per-group assignments so the detail view can render nested rows.
+      const groupAssignments = (
+        await Promise.all(
+          newGroups.map((group) =>
+            gradesApi
+              .getGroupAssignments(group.groupId)
+              .catch(() => [] as Assignment[]),
+          ),
+        )
+      ).flat()
+      const existingAssignmentIds = new Set(
+        assignments.value.map((assignment) => assignment.assignmentId),
+      )
+      assignments.value.push(
+        ...groupAssignments.filter(
+          (assignment) => !existingAssignmentIds.has(assignment.assignmentId),
+        ),
+      )
+    } catch (loadError) {
+      error.value = messageFrom(loadError)
+    }
+  }
+
+  function groupsForCourse(courseId: string) {
+    return groups.value.filter((group) => group.courseId === courseId)
+  }
+
+  function assignmentsForGroup(groupId: string) {
+    return assignments.value.filter((assignment) => assignment.groupId === groupId)
+  }
+
   async function updateIdealMark(value: number) {
     if (!student.value) return
     const updated = await gradesApi.setIdealMark(
@@ -155,6 +235,7 @@ export function useGrades() {
     student,
     courses,
     assignments,
+    groups,
     marks,
     loading,
     error,
@@ -162,11 +243,14 @@ export function useGrades() {
     overallProjectedMark,
     load,
     ensureCourseAssignments,
+    ensureCourseGroups,
     updateIdealMark,
     updateTemporaryMark,
     deleteTemporaryMark,
     markFor,
     calculateCourseMark,
     courseStats,
+    groupsForCourse,
+    assignmentsForGroup,
   }
 }

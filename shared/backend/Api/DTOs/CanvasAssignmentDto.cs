@@ -10,7 +10,7 @@ public record CanvasAssignmentDto(
     DateTime? UpdatedAt,
     string WorkflowState,
     bool Published,
-    double MaxMarks,
+    double? MaxMarks,
     CanvasSubmissionDto? Submission
 );
 

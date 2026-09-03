@@ -19,7 +19,7 @@ internal sealed record CanvasAssignmentResponse(
     [property: JsonPropertyName("updated_at")] DateTime? UpdatedAt,
     [property: JsonPropertyName("workflow_state")] string WorkflowState,
     [property: JsonPropertyName("published")] bool Published,
-    [property: JsonPropertyName("points_possible")] double MaxMarks,
+    [property: JsonPropertyName("points_possible")] double? MaxMarks,
     [property: JsonPropertyName("submission")] CanvasSubmissionResponse? Submission
 );
 

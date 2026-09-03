@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import AssignmentRow from '@/components/grades/AssignmentRow.vue'
+import AssignmentGroupCard from '@/components/grades/AssignmentGroupCard.vue'
+import CanvasSyncButton from '@/components/grades/CanvasSyncButton.vue'
 import MarkMeter from '@/components/grades/MarkMeter.vue'
 import { useGrades } from '@/composables/useGrades'
 
@@ -13,14 +14,18 @@ const {
   loading,
   error,
   ensureCourseAssignments,
+  ensureCourseGroups,
   updateTemporaryMark,
   deleteTemporaryMark,
   markFor,
   calculateCourseMark,
   courseStats,
+  groupsForCourse,
+  assignmentsForGroup,
 } = useGrades()
 
 const course = computed(() => courses.value.find((item) => item.courseId === props.courseId))
+const courseGroups = computed(() => groupsForCourse(props.courseId))
 const courseAssignments = computed(() =>
   assignments.value.filter((assignment) => assignment.courseId === props.courseId),
 )
@@ -40,7 +45,10 @@ async function removeTemporaryMark(assignmentId: string) {
   await deleteTemporaryMark(assignmentId)
 }
 
-onMounted(() => ensureCourseAssignments(props.courseId))
+onMounted(async () => {
+  await ensureCourseAssignments(props.courseId)
+  await ensureCourseGroups(props.courseId)
+})
 </script>
 
 <template>
@@ -64,6 +72,9 @@ onMounted(() => ensureCourseAssignments(props.courseId))
               {{ stats.gradedCount }}/{{ stats.assignmentCount }} ASSIGNMENTS MARKED
             </p>
           </div>
+        </div>
+        <div class="course-hero__actions">
+          <CanvasSyncButton />
         </div>
 
         <div class="course-hero__marks">
@@ -97,22 +108,30 @@ onMounted(() => ensureCourseAssignments(props.courseId))
       <div class="section-heading">
         <div>
           <p class="page-heading__eyebrow nb-mono">ASSESSMENT RESULTS</p>
-          <h2>ASSIGNMENTS</h2>
+          <h2>ASSIGNMENT GROUPS</h2>
         </div>
-        <span class="section-heading__count nb-mono">{{ courseAssignments.length }} ITEMS</span>
+        <span class="section-heading__count nb-mono">
+          {{ courseGroups.length }} GROUPS · {{ courseAssignments.length }} ITEMS
+        </span>
       </div>
 
-      <div v-if="courseAssignments.length" class="assignment-list nb-panel">
-        <AssignmentRow
-          v-for="assignment in courseAssignments"
-          :key="assignment.assignmentId"
-          :assignment="assignment"
-          :mark="markFor(assignment.assignmentId)"
+      <div v-if="courseGroups.length" class="group-grid">
+        <AssignmentGroupCard
+          v-for="group in courseGroups"
+          :key="group.groupId"
+          :group="group"
+          :assignments="assignmentsForGroup(group.groupId)"
+          :mark-for="markFor"
           :save-temporary-mark="saveTemporaryMark"
           :remove-temporary-mark="removeTemporaryMark"
         />
       </div>
-      <div v-else class="state-panel nb-panel nb-mono">NO ASSIGNMENTS FOUND FOR THIS COURSE.</div>
+      <div v-else-if="courseAssignments.length" class="state-panel nb-panel nb-mono">
+        NO ASSIGNMENT GROUPS LINKED YET — TRY SYNCING CANVAS.
+      </div>
+      <div v-else class="state-panel nb-panel nb-mono">
+        NO ASSIGNMENTS FOUND FOR THIS COURSE.
+      </div>
     </template>
 
     <div v-else class="state-panel nb-panel">

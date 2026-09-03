@@ -16,10 +16,19 @@ export interface Course {
 export interface Assignment {
   assignmentId: string
   courseId: string
+  groupId: string
   name: string
   weight: number | null
   maxMark: number | null
   completed: boolean | null
+}
+
+export interface AssignmentGroup {
+  groupId: string
+  courseId: string
+  name: string | null
+  weight: number | null
+  canvasAssignmentGroupId: number | null
 }
 
 export interface StudentAssignment {
@@ -27,6 +36,18 @@ export interface StudentAssignment {
   assignmentId: string
   tempMark: number | null
   finalMark: number | null
+}
+
+export interface CanvasSyncResult {
+  coursesCreated: number
+  coursesUpdated: number
+  coursesDeactivated: number
+  assignmentGroupsCreated: number
+  assignmentGroupsUpdated: number
+  assignmentGroupsDeactivated: number
+  assignmentsCreated: number
+  assignmentsUpdated: number
+  assignmentsDeactivated: number
 }
 
 const API_BASE = (import.meta.env.VITE_GRADES_API_BASE_URL || '/api/grades').replace(/\/$/, '')
@@ -62,6 +83,12 @@ export const gradesApi = {
     request<Assignment[]>(`/api/assignment/course/${courseId}`),
   getStudentMarks: (studentId: string) =>
     request<StudentAssignment[]>(`/api/assignment/marks/${studentId}`),
+  getAssignmentGroups: (courseId: string) =>
+    request<AssignmentGroup[]>(`/api/assignment/groups/course/${courseId}`),
+  getGroupAssignments: (groupId: string) =>
+    request<Assignment[]>(`/api/assignment/groups/${groupId}`),
+  syncCanvas: () =>
+    request<CanvasSyncResult>('/api/canvas-sync', { method: 'POST' }),
   setIdealMark: (studentId: string, idealMark: number, exists: boolean) =>
     request<Student>('/api/students/', {
       method: exists ? 'PUT' : 'POST',

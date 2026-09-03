@@ -2,7 +2,11 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import CourseCard from '@/components/grades/CourseCard.vue'
 import MarkMeter from '@/components/grades/MarkMeter.vue'
+import CanvasSyncButton from '@/components/grades/CanvasSyncButton.vue'
 import { useGrades } from '@/composables/useGrades'
+import { useCanvasSync } from '@/composables/useCanvasSync'
+
+const { isSyncing: canvasSyncing } = useCanvasSync()
 
 const {
   student,
@@ -57,7 +61,7 @@ onMounted(load)
         <p class="page-heading__eyebrow nb-mono">ACADEMIC PROGRESS / LIVE VIEW</p>
         <h1>{{ student?.name ? `${student.name.toUpperCase()}'S GRADES` : 'GRADES & PROGRESS' }}</h1>
       </div>
-      <span class="page-heading__status nb-mono">● {{ loading ? 'SYNCING' : 'UP TO DATE' }}</span>
+      <span class="page-heading__status nb-mono">● {{ canvasSyncing || loading ? 'SYNCING' : 'UP TO DATE' }}</span>
     </header>
 
     <div v-if="error" class="state-panel nb-panel" role="alert">
@@ -127,7 +131,10 @@ onMounted(load)
           <p class="page-heading__eyebrow nb-mono">ENROLLED COURSES</p>
           <h2>YOUR COURSES</h2>
         </div>
-        <span class="section-heading__count nb-mono">{{ courses.length }} TOTAL</span>
+        <div class="section-heading__actions">
+          <CanvasSyncButton />
+          <span class="section-heading__count nb-mono">{{ courses.length }} TOTAL</span>
+        </div>
       </div>
 
       <div v-if="courses.length" class="course-grid">
