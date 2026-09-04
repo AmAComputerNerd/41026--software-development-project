@@ -20,11 +20,18 @@ The service searches parent directories for `.env` when run outside Docker:
 dotnet run --project shared\backend\Api
 ```
 
-Canvas endpoints are available under `/api/canvas`. The SQLite database stores
-request audit records only, it is not used for caching Canvas data.
+Canvas endpoints are available under `/api/canvas`. This includes course and
+assignment data, enrolled users, and course-scoped messageable recipients from
+Canvas's preferred `/api/v1/search/recipients` endpoint. Classic Quizzes are
+also exposed: the quiz list per course, plus starting a quiz submission, reading
+its questions, and saving answers against it. There is deliberately no endpoint
+for completing a submission, so no caller can turn a student's quiz in. The
+SQLite database
+stores request audit records only, it is not used for caching Canvas data.
 
 `CanvasFacade` holds an in-memory cache (`IMemoryCache`, in-process only, not
-persisted anywhere) for courses, assignments, and enrolled users, each keyed
+persisted anywhere) for courses, assignments, enrolled users, messageable
+recipients, and quiz lists, each keyed
 by request parameters (e.g. course ID) with a 3 minute TTL. This means
 responses may be up to 3 minutes stale rather than always live, and cuts
 down on repeated identical Canvas API calls across the multiple backends
@@ -37,8 +44,8 @@ frontend in takes 4 steps.
 
 ### 1. Depend on @better-canvas/ui-kit
 
-Once your app is on Vue, don't copy CSS files around — depend on the shared
-`@better-canvas/ui-kit` workspace package (`shared/ui-kit`) instead. Add it to
+Once your app is on Vue, depend on the shared `@better-canvas/ui-kit` workspace
+package (`shared/ui-kit`). Add it to
 your frontend's `package.json`:
 
 ```json
@@ -58,9 +65,9 @@ import '@better-canvas/ui-kit/styles/primitives.css'
 ```
 
 ```css
-background: var(--color-surface);
-border: var(--border-width-md) solid var(--border-color);
-box-shadow: var(--shadow-offset-md) var(--shadow-offset-md) 0 var(--shadow-color);
+background: var(--nb-color-bg);
+border: var(--nb-border-width-md) solid var(--nb-color-ink);
+box-shadow: var(--nb-shadow);
 ```
 
 See `shared/ui-kit/src/styles/tokens.css` for the full list (colours, border
@@ -71,10 +78,10 @@ reference implementation for consuming the kit — check its `package.json` and
 ### 2. Add your nginx route
 
 In `shared/frontend/nginx.conf`, uncomment/add your `location` block(s), pointing
-`proxy_pass` at your docker-compose service name(s). Example already stubbed for grades:
+`proxy_pass` at your docker-compose service name(s). Example for automations:
 
 ```nginx
-location /grades/ {
+location /automations/ {
     proxy_pass http://student-2-frontend:80/;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -82,8 +89,8 @@ location /grades/ {
     proxy_set_header X-Forwarded-Proto $scheme;
 }
 
-location /api/grades/ {
-    proxy_pass http://student-2-backend:8080/;
+location /api/automations/ {
+    proxy_pass http://student-2-backend:8080/api/;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -101,18 +108,18 @@ Follow the `student-1-frontend` pattern at repo root `docker-compose.yml`:
 ```yaml
 student-2-frontend:
     build:
-        context: ./student-2/frontend
-        dockerfile: Dockerfile
+        context: .
+        dockerfile: student-2/frontend/Dockerfile
 ```
 
 Add your container name to `shared-shell`'s `depends_on` so it starts before the shell.
 
 ### 4. Flip your tile live
 
-In `shared/frontend/src/data/tiles.ts`, find your tile and set:
+In `shared/ui-kit/src/services.ts`, find your service and set:
 
 ```ts
-route: 'http://localhost:5173/grades',  // your route prefix from step 2
+route: '/automations/',
 live: true,
 ```
 

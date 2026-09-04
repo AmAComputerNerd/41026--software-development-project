@@ -21,9 +21,15 @@ delivery preferences by notification type and channel (in-app or email),
 and AI-generated digests summarising a student's recent notification
 activity.
 
-**Student 2: Isaac Thomas (STUDENT-NUM).**  
-Working directory: `student-2/`  
-TODO: Short summary of microservice, other info
+**Student 2: Isaac Thomas (25341708).**
+
+Working directory: `student-2/`
+
+Automations service: configures assignment extension, scheduled post, and quiz
+filler automations, stores each type in its own Entity Framework table, and
+provides read-only records of previous runs. A periodic worker executes due
+scheduled posts and fills eligible Canvas quizzes through the shared backend's
+Canvas gateway, and uses durable execution keys to prevent duplicate runs.
 
 **Student 3: Jonathon Thomson (25488154).**  
 Working directory: `student-3/`  
@@ -181,12 +187,11 @@ Working branch: `main`
 Feature set:
 - Shared dashboard shell and UI kit.
 - Notification preferences, notification management, and AI digests.
-- Deadline/task CRUD, course linkage, filtering, and Canvas
-  synchronization.
-- Shared Canvas API gateway, audit database, Docker image, and CI
-  workflow.
+- Assignment extension configuration, scheduled Canvas posts, AI quiz filling, and automation run history.
+- Deadline/task CRUD, course linkage, filtering, and Canvas synchronization.
+- Shared Canvas API gateway, audit database, Docker image, and CI workflow.
 - Grades & progress slice (student 5) — backend API and frontend
   shell, integrated into the shared dashboard.
 
-Heading into Release 1: students 2 and 4 (Automations, Account) are
-the next planned slices.
+Heading into Release 1: student 4's Account slice is the next planned
+service.

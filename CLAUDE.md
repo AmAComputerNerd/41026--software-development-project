@@ -1,6 +1,9 @@
 # Project Notes for Claude & AI Agents
 
-> **Universal Agent Guide**: Refer to [`AGENTS.md`](AGENTS.md) for full system specifications, port matrices, and CLI commands.  
+This is a 5-student microservices project (ASD unit, Release 0).
+Keep `docs/architecture/overview.md` up to date with what's actually built.
+
+> **Universal Agent Guide**: Refer to [`AGENTS.md`](AGENTS.md) for full system specifications, port matrices, and CLI commands.
 > **Documentation Hub**: Refer to [`docs/README.md`](docs/README.md) for architecture, runbooks, and playbooks.
 
 ---
@@ -44,3 +47,21 @@ npm run dev --workspace=shared-frontend
 npm run dev --workspace=student-1-frontend
 npm run build --workspaces
 ```
+
+## 4. Frontend Conventions
+
+Follow `docs/playbooks/new-frontend-microservice.md`.
+
+Short version: Vue 3, no Vuetify, plain SCSS. Depend on
+`@better-canvas/ui-kit` (workspace package) for tokens, fonts, and shared
+components (Navbar, etc.) instead of writing your own. Add an nginx
+proxy block in `shared/frontend/nginx.conf`, add your service to the root
+`docker-compose.yml`, and enable its tile in `shared/ui-kit/src/services.ts`.
+
+## 5. Git Conventions
+
+- Branch off `main` per feature, don't stack feature branches on other
+  open feature branches.
+- Commit after each logical step, not one giant commit at the end, push
+  as you go.
+- Open a PR into `main` when done, don't push directly to main.

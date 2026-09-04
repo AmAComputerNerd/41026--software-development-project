@@ -60,14 +60,27 @@ The application is structured as a decentralized microservices architecture comp
 | **`ai-mode`** | `ai-services/ai-mode` | ASP.NET Core | *Internal only* | `http://ai-mode:8080` | Central OpenRouter LLM gateway, status error normalization, health checks | OpenRouter API |
 | **`student-1-backend`** | `student-1/backend` | ASP.NET Core + SQLite | `5101` | `http://student-1-backend:8080` | Notification management, delivery preferences, AI digests & chat, SSE stream broker | `ai-mode`, `shared-backend` |
 | **`student-1-frontend`** | `student-1/frontend` | Vue 3 + Vite | *Proxied* | `http://student-1-frontend:80` | Notifications page, real-time toast alerts, AI digest chat panel | `student-1-backend` |
-| **`student-2-backend`** | `student-2/backend` | ASP.NET Core + SQLite | `5102` | `http://student-2-backend:8080` | Automations service (placeholder/stub) | — |
-| **`student-2-frontend`** | `student-2/frontend` | Vue 3 + Vite | *Proxied* | `http://student-2-frontend:80` | Automations UI (placeholder/stub) | `student-2-backend` |
+| **`student-2-backend`** | `student-2/backend` | ASP.NET Core + SQLite | `5102` | `http://student-2-backend:8080` | Assignment extensions, scheduled Canvas posts, AI quiz filling, periodic execution, run history | `shared-backend`, `ai-mode` |
+| **`student-2-frontend`** | `student-2/frontend` | Vue 3 + Vite | *Proxied* | `http://student-2-frontend:80` | Automation configuration and run-history UI | `student-2-backend` |
 | **`student-3-backend`** | `student-3/backend` | ASP.NET Core + SQLite | `5103` | `http://student-3-backend:8080` | Task tracker, course linkage, Canvas sync, due-soon reminder worker, AI subtask planning | `shared-backend`, `ai-mode`, `student-1-backend` |
 | **`student-3-frontend`** | `student-3/frontend` | Vue 3 + Vite | *Proxied* | `http://student-3-frontend:80` | Task manager, calendar view, upcoming task view, AI breakdown modal | `student-3-backend` |
 | **`student-4-backend`** | `student-4/backend` | ASP.NET Core + SQLite | `5104` | `http://student-4-backend:8080` | Account/profile service (placeholder/stub) | — |
 | **`student-4-frontend`** | `student-4/frontend` | Vue 3 + Vite | *Proxied* | `http://student-4-frontend:80` | Account UI (placeholder/stub) | `student-4-backend` |
 | **`student-5-backend`** | `student-5/backend` | ASP.NET Core + SQLite | `5105` | `http://student-5-backend:8080` | Grades & progress calculation, what-if marks endpoints | — |
 | **`student-5-frontend`** | `student-5/frontend` | Vue 3 + Vite | *Proxied* | `http://student-5-frontend:80` | Grades list, grade breakdown, what-if simulator | `student-5-backend` |
+
+Canvas assignment descriptions are treated as untrusted HTML. The shared
+backend parses them into compact plain text before returning its API DTOs, so
+downstream services neither render raw Canvas markup nor send it to AI models.
+The automations backend also obtains messageable Canvas recipient IDs and names
+through shared-backend; only shared-backend receives the Canvas API token.
+Its periodic executor asks each type-specific executor for zero or more due
+execution candidates and durably claims each candidate before external work.
+Candidate keys derive from their execution parameters; scheduled posts hash the
+scheduled time and complete Canvas message configuration, while quiz filling
+keys on the quiz ID so each quiz is attempted at most once. This prevents
+duplicate sends across timer overlap or replicas while allowing edited or
+multi-target automations to produce new logical executions.
 
 ---
 
@@ -78,11 +91,13 @@ The Nginx server running inside `shared-shell` is the sole entry point exposed o
 - `/` → Serves the dashboard shell (`shared/frontend/dist`).
 - `/notifications/` → Proxies to `http://student-1-frontend:80/`.
 - `/api/notifications/` → Proxies to `http://student-1-backend:8080/`.
+- `/automations/` → Proxies to `http://student-2-frontend:80/`.
+- `/api/automations/` → Proxies to `http://student-2-backend:8080/api/`.
 - `/deadlines/` → Proxies to `http://student-3-frontend:80/`.
 - `/api/deadlines/` → Proxies to `http://student-3-backend:8080/`.
 - `/grades/` → Proxies to `http://student-5-frontend:80/`.
 - `/api/grades/` → Proxies to `http://student-5-backend:8080/`.
-- `/automations/`, `/account/` → Stubs present in `nginx.conf`, waiting for students 2 and 4.
+- `/account/` → Stub present in `nginx.conf`, waiting for student 4.
 
 ---
 

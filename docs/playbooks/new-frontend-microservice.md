@@ -1,6 +1,8 @@
 # Playbook: Adding a New Student Frontend Microservice
 
-Follow this guide when scaffolding a new frontend microservice (such as `student-2` for Automations or `student-4` for Account), using `student-1/frontend`, `student-3/frontend`, and `student-5/frontend` as reference implementations.
+Follow this guide when scaffolding a new frontend microservice (such as
+`student-4` for Account), using the implemented student frontends as reference
+implementations.
 
 ---
 
@@ -140,5 +142,6 @@ server {
        proxy_set_header X-Real-IP $remote_addr;
    }
    ```
-3. In `shared/ui-kit/src/services.ts`, toggle your service to `live: true` and specify its route.
-4. In `shared/frontend/src/data/tiles.ts`, verify the tile icon, label, and description.
+    3. Add the frontend and backend to the `shared-shell` service's `depends_on` entries.
+    4. In `shared/ui-kit/src/services.ts`, set the service's route and toggle `live: true`.
+    5. In `shared/frontend/src/data/tiles.ts`, verify the tile icon, label, and description. The dashboard grid merges this metadata with the canonical service registry instead of hardcoding individual tiles.
