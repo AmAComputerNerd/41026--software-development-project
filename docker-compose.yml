@@ -60,6 +60,8 @@ services:
             ASPNETCORE_ENVIRONMENT: Development
             Cors__AllowedOrigins__0: http://localhost:3002
             Cors__AllowedOrigins__1: http://localhost:8080
+            SharedService__BaseUrl: http://shared-backend:8080
+            AiGateway__BaseUrl: http://ai-mode:8080
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -67,6 +69,11 @@ services:
             timeout: 3s
             retries: 5
             start_period: 15s
+        depends_on:
+            shared-backend:
+                condition: service_healthy
+            ai-mode:
+                condition: service_healthy
 
     student-3-backend:
         build:

@@ -7,65 +7,114 @@ namespace Api.Data;
 public static class DbSeeder
 {
     private static readonly Guid StudentId = Guid.Parse("25341708-0000-0000-0000-000000000002");
+    private static readonly string[] ScheduledPostRecipients = ["100001"];
 
     public static async Task SeedDataAsync(AppDbContext db)
     {
-        if (await db.Automations.AnyAsync())
+        var legacySeedIds = Enumerable.Range(102, 9)
+            .Concat(Enumerable.Range(202, 9))
+            .Select(CreateGuid)
+            .ToArray();
+        var legacySeeds = await db.Automations
+            .Where(automation => legacySeedIds.Contains(automation.Id))
+            .ToListAsync();
+        db.Automations.RemoveRange(legacySeeds);
+
+        var extensionId = CreateGuid(101);
+        if (!await db.Automations.AnyAsync(automation => automation.Id == extensionId))
         {
-            return;
+            db.Automations.Add(new AssignmentExtensionAutomation
+            {
+                Id = extensionId,
+                StudentId = StudentId,
+                Enabled = true,
+                SubjectId = null,
+                BufferMinutes = 30,
+                Reason = AssignmentExtensionReason.UNW,
+                FurtherDetails = "Supporting details for the assignment extension automation."
+            });
         }
 
-        var extensionAutomations = Enumerable.Range(1, 10)
-            .Select(index => new AssignmentExtensionAutomation
+        var postId = CreateGuid(201);
+        if (!await db.Automations.AnyAsync(automation => automation.Id == postId))
+        {
+            db.Automations.Add(new ScheduledPostAutomation
             {
-                Id = CreateGuid(100 + index),
+                Id = postId,
                 StudentId = StudentId,
-                Enabled = index <= 3,
-                BufferMinutes = index * 30,
-                Reason = $"Extension request reason {index}",
-                FurtherDetails = $"Supporting details for extension automation {index}."
-            })
-            .ToList();
+                Enabled = true,
+                PostTime = DateTime.UtcNow.Date.AddDays(1).AddHours(9),
+                ContextCode = "course_1001",
+                Recipients = JsonSerializer.Serialize(ScheduledPostRecipients),
+                Subject = "Scheduled post",
+                Body = "Body for the scheduled post automation.",
+                GroupConversation = true
+            });
+        }
 
-        var postAutomations = Enumerable.Range(1, 10)
-            .Select(index => new ScheduledPostAutomation
+        var quizFillerId = CreateGuid(501);
+        if (!await db.Automations.AnyAsync(automation => automation.Id == quizFillerId))
+        {
+            db.Automations.Add(new QuizFillerAutomation
             {
-                Id = CreateGuid(200 + index),
+                Id = quizFillerId,
                 StudentId = StudentId,
-                Enabled = index <= 3,
-                PostTime = DateTime.UtcNow.Date.AddDays(index).AddHours(9),
-                Recipients = JsonSerializer.Serialize(new[] { $"student{index}@example.edu.au" }),
-                Subject = $"Scheduled post {index}",
-                Body = $"Body for scheduled post automation {index}."
-            })
-            .ToList();
-
-        var extensionRuns = extensionAutomations.Select((automation, index) =>
-            new AssignmentExtensionAutomationRun
-            {
-                Id = CreateGuid(300 + index),
-                AutomationId = automation.Id,
-                ExecutionTimeStamp = DateTime.UtcNow.AddDays(-(index + 1)),
-                Result = index % 4 == 0 ? "FAI" : "SUC",
-                AssignmentId = $"assignment-{index + 1}"
+                Enabled = true,
+                SubjectId = null,
+                MultipleChoice = true,
+                ShortAnswer = true,
+                NumberOfAttemptsRequired = 2,
+                AllowForNoTimeLimit = true
             });
+        }
 
-        var postRuns = postAutomations.Select((automation, index) =>
-            new ScheduledPostAutomationRun
+        if (!await db.AutomationRuns.AnyAsync(run => run.Id == CreateGuid(300)))
+        {
+            db.AutomationRuns.Add(new AssignmentExtensionAutomationRun
             {
-                Id = CreateGuid(400 + index),
-                AutomationId = automation.Id,
-                ExecutionTimeStamp = DateTime.UtcNow.AddDays(-(index + 1)),
-                Result = index % 5 == 0 ? "FAI" : "SUC",
-                Recipients = automation.Recipients,
-                Subject = automation.Subject,
-                Body = automation.Body
+                Id = CreateGuid(300),
+                AutomationId = extensionId,
+                ExecutionKey = "seed",
+                ExecutionTimeStamp = DateTime.UtcNow.AddDays(-1),
+                Result = "SUC",
+                AssignmentId = "assignment-1"
             });
+        }
 
-        db.Automations.AddRange(extensionAutomations);
-        db.Automations.AddRange(postAutomations);
-        db.AutomationRuns.AddRange(extensionRuns);
-        db.AutomationRuns.AddRange(postRuns);
+        if (!await db.AutomationRuns.AnyAsync(run => run.Id == CreateGuid(400)))
+        {
+            db.AutomationRuns.Add(new ScheduledPostAutomationRun
+            {
+                Id = CreateGuid(400),
+                AutomationId = postId,
+                ExecutionKey = "once",
+                ExecutionTimeStamp = DateTime.UtcNow.AddDays(-1),
+                Result = "SUC",
+                PostTime = DateTime.UtcNow.Date.AddDays(1).AddHours(9),
+                ContextCode = "course_1001",
+                Recipients = JsonSerializer.Serialize(ScheduledPostRecipients),
+                Subject = "Scheduled post",
+                Body = "Body for the scheduled post automation.",
+                GroupConversation = true
+            });
+        }
+
+        if (!await db.AutomationRuns.AnyAsync(run => run.Id == CreateGuid(600)))
+        {
+            db.AutomationRuns.Add(new QuizFillerAutomationRun
+            {
+                Id = CreateGuid(600),
+                AutomationId = quizFillerId,
+                ExecutionKey = "quiz-filler:v1:2001",
+                ExecutionTimeStamp = DateTime.UtcNow.AddDays(-1),
+                Result = "SUC",
+                CourseId = 1001,
+                QuizId = 2001,
+                QuizTitle = "Practice quiz",
+                QuestionCount = 10
+            });
+        }
+
         await db.SaveChangesAsync();
     }
 

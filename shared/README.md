@@ -20,11 +20,18 @@ The service searches parent directories for `.env` when run outside Docker:
 dotnet run --project shared\backend\Api
 ```
 
-Canvas endpoints are available under `/api/canvas`. The SQLite database stores
-request audit records only, it is not used for caching Canvas data.
+Canvas endpoints are available under `/api/canvas`. This includes course and
+assignment data, enrolled users, and course-scoped messageable recipients from
+Canvas's preferred `/api/v1/search/recipients` endpoint. Classic Quizzes are
+also exposed: the quiz list per course, plus starting a quiz submission, reading
+its questions, and saving answers against it. There is deliberately no endpoint
+for completing a submission, so no caller can turn a student's quiz in. The
+SQLite database
+stores request audit records only, it is not used for caching Canvas data.
 
 `CanvasFacade` holds an in-memory cache (`IMemoryCache`, in-process only, not
-persisted anywhere) for courses, assignments, and enrolled users, each keyed
+persisted anywhere) for courses, assignments, enrolled users, messageable
+recipients, and quiz lists, each keyed
 by request parameters (e.g. course ID) with a 3 minute TTL. This means
 responses may be up to 3 minutes stale rather than always live, and cuts
 down on repeated identical Canvas API calls across the multiple backends

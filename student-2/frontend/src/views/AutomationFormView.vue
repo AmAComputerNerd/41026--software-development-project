@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { createAutomation, getAutomation, updateAutomation } from '@/api/automations'
+import { automationDefinitions, getAutomationDefinition } from '@/automations/registry'
 import { currentStudentId } from '@/config'
-import type { AutomationType, SaveAutomationInput } from '@/types/automation'
+import type { AutomationDiscriminator, AutomationFormData } from '@/types/automation'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,33 +12,15 @@ const automationId = computed(() => typeof route.params.id === 'string' ? route.
 const loading = ref(Boolean(automationId.value))
 const saving = ref(false)
 const error = ref('')
-
-const form = reactive({
-  type: 'AssignmentExtension' as AutomationType,
-  enabled: true,
-  bufferMinutes: 60,
-  reason: '',
-  furtherDetails: '',
-  postTime: toLocalDateTime(new Date(Date.now() + 24 * 60 * 60 * 1000)),
-  recipients: '',
-  subject: '',
-  body: '',
-})
+const form = ref<AutomationFormData>(automationDefinitions[0].createForm())
+const selectedDefinition = computed(() => getAutomationDefinition(form.value.$type))
 
 onMounted(async () => {
   if (!automationId.value) return
 
   try {
     const automation = await getAutomation(automationId.value)
-    form.type = automation.type
-    form.enabled = automation.enabled
-    form.bufferMinutes = automation.bufferMinutes ?? 60
-    form.reason = automation.reason ?? ''
-    form.furtherDetails = automation.furtherDetails ?? ''
-    form.postTime = automation.postTime ? toLocalDateTime(new Date(automation.postTime)) : ''
-    form.recipients = automation.recipients?.join(', ') ?? ''
-    form.subject = automation.subject ?? ''
-    form.body = automation.body ?? ''
+    form.value = getAutomationDefinition(automation.$type).loadForm(automation)
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : 'Unable to load the automation.'
   } finally {
@@ -45,32 +28,16 @@ onMounted(async () => {
   }
 })
 
-function toLocalDateTime(date: Date) {
-  const offset = date.getTimezoneOffset() * 60_000
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16)
-}
-
-function buildInput(): SaveAutomationInput {
-  const isExtension = form.type === 'AssignmentExtension'
-  return {
-    studentId: currentStudentId,
-    type: form.type,
-    enabled: form.enabled,
-    bufferMinutes: isExtension ? form.bufferMinutes : null,
-    reason: isExtension ? form.reason : null,
-    furtherDetails: isExtension ? form.furtherDetails : null,
-    postTime: isExtension ? null : new Date(form.postTime).toISOString(),
-    recipients: isExtension ? null : form.recipients.split(',').map((value) => value.trim()).filter(Boolean),
-    subject: isExtension ? null : form.subject,
-    body: isExtension ? null : form.body,
-  }
+function selectType(event: Event) {
+  const type = (event.target as HTMLSelectElement).value as AutomationDiscriminator
+  form.value = getAutomationDefinition(type).createForm()
 }
 
 async function save() {
   saving.value = true
   error.value = ''
   try {
-    const input = buildInput()
+    const input = selectedDefinition.value.buildInput(form.value, currentStudentId)
     if (automationId.value) {
       await updateAutomation(automationId.value, input)
     } else {
@@ -101,9 +68,10 @@ async function save() {
       <div class="nb-form-grid">
         <label class="nb-field">
           <span>Automation type</span>
-          <select v-model="form.type" :disabled="Boolean(automationId)">
-            <option value="AssignmentExtension">Assignment extension</option>
-            <option value="ScheduledPost">Scheduled post</option>
+          <select :value="form.$type" :disabled="Boolean(automationId)" @change="selectType">
+            <option v-for="definition in automationDefinitions" :key="definition.discriminator" :value="definition.discriminator">
+              {{ definition.label }}
+            </option>
           </select>
         </label>
 
@@ -116,39 +84,7 @@ async function save() {
         </fieldset>
       </div>
 
-      <template v-if="form.type === 'AssignmentExtension'">
-        <label class="nb-field">
-          <span>Buffer minutes</span>
-          <input v-model.number="form.bufferMinutes" type="number" min="0" required />
-        </label>
-        <label class="nb-field">
-          <span>Reason</span>
-          <input v-model.trim="form.reason" type="text" maxlength="500" required />
-        </label>
-        <label class="nb-field">
-          <span>Further details</span>
-          <textarea v-model.trim="form.furtherDetails" rows="6" maxlength="2000"></textarea>
-        </label>
-      </template>
-
-      <template v-else>
-        <label class="nb-field">
-          <span>Post time</span>
-          <input v-model="form.postTime" type="datetime-local" required />
-        </label>
-        <label class="nb-field">
-          <span>Recipients</span>
-          <input v-model="form.recipients" type="text" placeholder="name@example.edu.au, other@example.edu.au" required />
-        </label>
-        <label class="nb-field">
-          <span>Subject</span>
-          <input v-model.trim="form.subject" type="text" maxlength="200" required />
-        </label>
-        <label class="nb-field">
-          <span>Body</span>
-          <textarea v-model.trim="form.body" rows="8" maxlength="10000" required></textarea>
-        </label>
-      </template>
+      <component :is="selectedDefinition.formComponent" v-model="form" />
 
       <div class="nb-form-actions">
         <button type="button" class="nb-btn nb-btn--outline" @click="router.push({ name: 'automations' })">Cancel</button>

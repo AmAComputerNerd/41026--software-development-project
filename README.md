@@ -14,10 +14,11 @@ activity.
 
 Working directory: `student-2/`
 
-Automations service: configures assignment extension and scheduled post
-automations, stores each type in its own Entity Framework table, and provides
-read-only records of previous runs. Release 0 stores configuration only and
-does not execute automations.
+Automations service: configures assignment extension, scheduled post, and quiz
+filler automations, stores each type in its own Entity Framework table, and
+provides read-only records of previous runs. A periodic worker executes due
+scheduled posts and fills eligible Canvas quizzes through the shared backend's
+Canvas gateway, and uses durable execution keys to prevent duplicate runs.
 
 **Student 3: Jonathon Thomson (25488154).**  
 Working directory: `student-3/`  
@@ -87,6 +88,6 @@ Working branch: `main`
 Feature set:  
 - Shared dashboard shell and UI kit.
 - Notification preferences, notification management, and AI digests.
-- Assignment extension and scheduled post automation configuration and run history.
+- Assignment extension configuration, scheduled Canvas posts, AI quiz filling, and automation run history.
 - Deadline/task CRUD, course linkage, filtering, and Canvas synchronization.
 - Shared Canvas API gateway, audit database, Docker image, and CI workflow.

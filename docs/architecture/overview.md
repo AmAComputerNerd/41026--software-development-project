@@ -9,12 +9,12 @@ anyone (or any AI agent) new to the repo.
 | Service | Path | Stack | Port (host) | Owns | Depends on |
 |---|---|---|---|---|---|
 | shared-shell | shared/frontend | Vue 3 + nginx | 8080 | Unified dashboard, routing to all features | student-1, student-2, student-3 frontends and backends |
-| shared-backend | shared/backend | ASP.NET Core + SQLite | 5110 | Canvas API integration (courses, assignments, users), caching | — |
+| shared-backend | shared/backend | ASP.NET Core + SQLite | 5110 | Canvas API integration (courses, assignments, users, conversation recipients and creation, quizzes and quiz submissions), caching | — |
 | ai-mode | ai-services/ai-mode | ASP.NET Core | (internal only) | OpenRouter proxy, shared LLM access | — |
 | student-1-frontend | student-1/frontend | Vue 3 | (internal only, proxied at /notifications) | Notifications UI | student-1-backend |
 | student-1-backend | student-1/backend | ASP.NET Core + SQLite | 5101 | Notifications, preferences, AI digest | ai-mode |
 | student-2-frontend | student-2/frontend | Vue 3 + TypeScript | (internal only, proxied at /automations) | Automation configuration and run-history UI | student-2-backend |
-| student-2-backend | student-2/backend | ASP.NET Core + EF Core + SQLite | 5102 | Assignment extension and scheduled post configurations and run records | — |
+| student-2-backend | student-2/backend | ASP.NET Core + EF Core + SQLite | 5102 | Extensible periodic automation execution, assignment extension configuration, Canvas scheduled posts, AI quiz filling, and run records | shared-backend, ai-mode |
 | student-3-frontend | student-3/frontend | Vue 3 + TypeScript | (internal only, proxied at /deadlines) | Deadline and task-tracker UI | student-3-backend |
 | student-3-backend | student-3/backend | ASP.NET Core + SQLite | 5103 | Deadlines & task tracker, Canvas assignment sync, AI task planning | shared-backend, ai-mode |
 
@@ -36,6 +36,15 @@ Owned by student-3 (Jonathon), used by the whole team:
 Canvas assignment descriptions are treated as untrusted HTML. The shared
 backend parses them into compact plain text before returning its API DTOs, so
 downstream services neither render raw Canvas markup nor send it to AI models.
+The automations backend also obtains messageable Canvas recipient IDs and names
+through shared-backend; only shared-backend receives the Canvas API token.
+Its periodic executor asks each type-specific executor for zero or more due
+execution candidates and durably claims each candidate before external work.
+Candidate keys derive from their execution parameters; scheduled posts hash the
+scheduled time and complete Canvas message configuration, while quiz filling
+keys on the quiz ID so each quiz is attempted at most once. This prevents
+duplicate sends across timer overlap or replicas while allowing edited or
+multi-target automations to produce new logical executions.
 
 ## Reverse proxy routing
 

@@ -50,6 +50,11 @@ namespace Api.Migrations
                     b.Property<Guid>("AutomationId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ExecutionKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("ExecutionTimeStamp")
                         .HasColumnType("TEXT");
 
@@ -58,6 +63,9 @@ namespace Api.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AutomationId", "ExecutionKey")
+                        .IsUnique();
 
                     b.HasIndex("AutomationId", "ExecutionTimeStamp");
 
@@ -80,10 +88,39 @@ namespace Api.Migrations
 
                     b.Property<string>("Reason")
                         .IsRequired()
-                        .HasMaxLength(500)
+                        .HasMaxLength(3)
                         .HasColumnType("TEXT");
 
+                    b.Property<long?>("SubjectId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasIndex("SubjectId");
+
                     b.ToTable("AssignmentExtensionAutomations", (string)null);
+                });
+
+            modelBuilder.Entity("Api.Models.QuizFillerAutomation", b =>
+                {
+                    b.HasBaseType("Api.Models.Automation");
+
+                    b.Property<bool>("AllowForNoTimeLimit")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("MultipleChoice")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("NumberOfAttemptsRequired")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShortAnswer")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("SubjectId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasIndex("SubjectId");
+
+                    b.ToTable("QuizFillerAutomations", (string)null);
                 });
 
             modelBuilder.Entity("Api.Models.ScheduledPostAutomation", b =>
@@ -95,6 +132,14 @@ namespace Api.Migrations
                         .HasMaxLength(10000)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ContextCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("GroupConversation")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("PostTime")
                         .HasColumnType("TEXT");
 
@@ -104,7 +149,7 @@ namespace Api.Migrations
 
                     b.Property<string>("Subject")
                         .IsRequired()
-                        .HasMaxLength(200)
+                        .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
                     b.ToTable("ScheduledPostAutomations", (string)null);
@@ -121,12 +166,45 @@ namespace Api.Migrations
                     b.ToTable("AssignmentExtensionAutomationRuns", (string)null);
                 });
 
+            modelBuilder.Entity("Api.Models.QuizFillerAutomationRun", b =>
+                {
+                    b.HasBaseType("Api.Models.AutomationRun");
+
+                    b.Property<long>("CourseId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("QuestionCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("QuizId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("QuizTitle")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.ToTable("QuizFillerAutomationRuns", (string)null);
+                });
+
             modelBuilder.Entity("Api.Models.ScheduledPostAutomationRun", b =>
                 {
                     b.HasBaseType("Api.Models.AutomationRun");
 
                     b.Property<string>("Body")
                         .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContextCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("GroupConversation")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("PostTime")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Recipients")
@@ -135,6 +213,7 @@ namespace Api.Migrations
 
                     b.Property<string>("Subject")
                         .IsRequired()
+                        .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
                     b.ToTable("ScheduledPostAutomationRuns", (string)null);
@@ -160,6 +239,15 @@ namespace Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Api.Models.QuizFillerAutomation", b =>
+                {
+                    b.HasOne("Api.Models.Automation", null)
+                        .WithOne()
+                        .HasForeignKey("Api.Models.QuizFillerAutomation", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Api.Models.ScheduledPostAutomation", b =>
                 {
                     b.HasOne("Api.Models.Automation", null)
@@ -174,6 +262,15 @@ namespace Api.Migrations
                     b.HasOne("Api.Models.AutomationRun", null)
                         .WithOne()
                         .HasForeignKey("Api.Models.AssignmentExtensionAutomationRun", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Api.Models.QuizFillerAutomationRun", b =>
+                {
+                    b.HasOne("Api.Models.AutomationRun", null)
+                        .WithOne()
+                        .HasForeignKey("Api.Models.QuizFillerAutomationRun", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
