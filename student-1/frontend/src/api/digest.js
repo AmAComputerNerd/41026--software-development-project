@@ -11,3 +11,10 @@ export function generateDigest(studentId) {
   const query = buildQuery({ studentId })
   return request(`/digest/generate${query}`, { method: 'POST' })
 }
+
+export function chatWithAssistant(studentId, prompt, history = []) {
+  return request('/digest/chat', {
+    method: 'POST',
+    body: JSON.stringify({ studentId, prompt, history }),
+  })
+}

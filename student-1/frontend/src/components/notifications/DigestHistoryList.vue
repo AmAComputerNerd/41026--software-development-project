@@ -28,6 +28,7 @@ const history = computed(() => props.digests)
 <style scoped>
 .nb-history {
   margin-top: 32px;
+  animation: nb-rise-in 400ms 180ms ease-out both;
 }
 
 .nb-history__heading {
@@ -46,3 +47,4 @@ const history = computed(() => props.digests)
   margin: 0;
 }
 </style>
+

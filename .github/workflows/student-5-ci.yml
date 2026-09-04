@@ -1,0 +1,150 @@
+name: Student 5 - CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "student-5/backend/**"
+      - "student-5/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-5-ci.yml"
+  pull_request:
+    paths:
+      - "student-5/backend/**"
+      - "student-5/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-5-ci.yml"
+
+concurrency:
+  group: student-5-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  NODE_VERSION: "22"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  BACKEND_DIR: student-5/backend/GradesManager/GradesManager
+
+jobs:
+  frontend-build:
+    name: Frontend type check & production build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Type check and build
+        run: npm run build --workspace=student-5-frontend
+
+      - name: Audit production dependencies
+        run: npm audit --workspace=student-5-frontend --omit=dev --audit-level=high
+
+  backend-build:
+    name: Backend build & format check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-5/backend/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Build Release
+        run: dotnet build --configuration Release --no-restore
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Verify code formatting
+        run: dotnet format --verify-no-changes --severity warn --no-restore
+        working-directory: ${{ env.BACKEND_DIR }}
+
+  backend-migrations:
+    name: EF Core migrations drift check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Install matching EF Core CLI
+        run: dotnet tool install --global dotnet-ef --version 10.0.11
+
+      - name: Check for pending model changes
+        run: dotnet ef migrations has-pending-model-changes
+        working-directory: ${{ env.BACKEND_DIR }}
+
+  backend-vulnerability-scan:
+    name: NuGet vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Scan known vulnerabilities
+        shell: bash
+        run: |
+          set -o pipefail
+          dotnet list package --vulnerable --include-transitive | tee vulnerability-report.txt
+          if grep -qi "has the following vulnerable packages" vulnerability-report.txt; then
+            echo "::error::Vulnerable NuGet packages detected."
+            exit 1
+          fi
+        working-directory: ${{ env.BACKEND_DIR }}
+
+  package-images:
+    name: Build frontend & backend images
+    needs: [frontend-build, backend-build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build frontend image
+        run: docker build --file student-5/frontend/Dockerfile --tag student-5-frontend:ci .
+
+      - name: Build backend image
+        run: docker build --file student-5/backend/GradesManager/GradesManager/Dockerfile --tag student-5-backend:ci student-5/backend/GradesManager

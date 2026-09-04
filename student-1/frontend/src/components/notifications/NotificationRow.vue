@@ -12,11 +12,19 @@ const props = defineProps<{
 const emit = defineEmits<{
   'mark-read': [id: string]
   'mark-unread': [id: string]
+  'complete-task': [id: string]
+  'breakdown-task': [taskId: string, message: string]
+  'simulate-grade': [assignmentId: string | null, message: string]
   delete: [id: string]
 }>()
 
 const variant = computed(() => props.variant ?? 'dropdown')
 const time = computed(() => formatRelativeTime(props.notification.createdAtUtc))
+const isActionableDeadline = computed(
+  () => props.notification.type === 'Deadline' && !!props.notification.relatedEntityId,
+)
+const isGradeNotification = computed(() => props.notification.type === 'Grade')
+const taskUrl = computed(() => `/deadlines/?taskId=${props.notification.relatedEntityId}`)
 </script>
 
 <template>
@@ -52,13 +60,40 @@ const time = computed(() => formatRelativeTime(props.notification.createdAtUtc))
       >
         &check; READ &mdash; UNMARK
       </button>
+      <template v-if="isActionableDeadline">
+        <a class="nb-btn nb-btn--outline" :href="taskUrl">VIEW TASK</a>
+        <button
+          type="button"
+          class="nb-btn nb-btn--outline"
+          @click="emit('complete-task', notification.id)"
+        >
+          MARK COMPLETE
+        </button>
+        <button
+          type="button"
+          class="nb-btn nb-btn--outline"
+          @click="emit('breakdown-task', notification.relatedEntityId!, notification.message)"
+        >
+          AI BREAK DOWN
+        </button>
+      </template>
+      <template v-else-if="isGradeNotification">
+        <a class="nb-btn nb-btn--outline" href="/grades/">VIEW GRADES</a>
+        <button
+          type="button"
+          class="nb-btn nb-btn--outline"
+          @click="emit('simulate-grade', notification.relatedEntityId, notification.message)"
+        >
+          GRADE IMPACT
+        </button>
+      </template>
       <button
         type="button"
         class="nb-btn nb-btn--outline"
-        aria-label="Delete notification"
+        :aria-label="isActionableDeadline ? 'Snooze notification' : 'Delete notification'"
         @click="emit('delete', notification.id)"
       >
-        DELETE
+        {{ isActionableDeadline ? 'SNOOZE' : 'DELETE' }}
       </button>
     </template>
   </div>

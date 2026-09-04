@@ -1,9 +1,8 @@
 // Feature-specific neobrutalist styles for the notifications UI
 // (claude.ai/design project 5afc3379-890a-4fb9-8e8d-516a388c619a, Notifications.dc.html).
-// Design tokens, base resets, and generic building blocks (buttons, chips,
-// toggle, badge, panel) live in @better-canvas/ui-kit — this file only holds
-// the classes specific to the notifications feature (tags, rows, the
-// preferences table, the AI-summary inset, and the digest history list).
+// Design tokens, base resets, generic building blocks, keyframes, transitions,
+// and reduced-motion accessibility live in @better-canvas/ui-kit — this file holds
+// the classes specific to the notifications feature.
 
 // ---- Notification-centric components ----
 // Source-type tag chips: deadline/grade are solid accent fills, automation
@@ -56,6 +55,20 @@
   border-left: 6px solid transparent;
   background: var(--nb-color-bg);
   padding: var(--nb-space-3) var(--nb-space-4);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease,
+    background-color 160ms ease;
+  animation: nb-rise-in 300ms ease-out both;
+
+  &:nth-child(2n) {
+    animation-delay: 35ms;
+  }
+
+  &:nth-child(3n) {
+    animation-delay: 70ms;
+  }
 
   &--unread {
     border-left-color: var(--nb-color-accent-orange);
@@ -67,6 +80,13 @@
     grid-template-columns: 120px 1fr 140px 130px;
     align-items: center;
     gap: var(--nb-space-3);
+  }
+
+  &--list:hover {
+    position: relative;
+    z-index: 1;
+    transform: translateX(4px);
+    box-shadow: -4px 0 0 var(--nb-color-accent-orange);
   }
 }
 
@@ -88,6 +108,7 @@
 .nb-table {
   width: 100%;
   border-collapse: collapse;
+  animation: nb-rise-in 360ms 60ms ease-out both;
 }
 
 .nb-table__head th {
@@ -100,10 +121,23 @@
   text-align: left;
 }
 
-.nb-table__row td {
-  border-bottom: var(--nb-border-width-sm) solid var(--nb-color-ink);
-  padding: var(--nb-space-4);
-  vertical-align: middle;
+.nb-table__row {
+  animation: nb-rise-in 280ms ease-out both;
+  transition: background-color 140ms ease;
+
+  &:nth-child(2n) {
+    animation-delay: 35ms;
+  }
+
+  &:nth-child(3n) {
+    animation-delay: 70ms;
+  }
+
+  td {
+    border-bottom: var(--nb-border-width-sm) solid var(--nb-color-ink);
+    padding: var(--nb-space-4);
+    vertical-align: middle;
+  }
 }
 
 .nb-table__row-label {
@@ -122,6 +156,7 @@
   border: var(--nb-border-width-md) solid var(--nb-color-ink);
   background: var(--nb-color-white);
   margin-top: var(--nb-space-4);
+  animation: nb-rise-in 300ms ease-out both;
 }
 
 .nb-inset__header {
@@ -146,6 +181,22 @@
   gap: var(--nb-space-4);
   border-bottom: var(--nb-border-width-sm) solid var(--nb-color-ink);
   padding: var(--nb-space-3) 0;
+  animation: nb-rise-in 280ms ease-out both;
+  transition:
+    transform 140ms ease,
+    background-color 140ms ease;
+
+  &:nth-child(2n) {
+    animation-delay: 35ms;
+  }
+
+  &:nth-child(3n) {
+    animation-delay: 70ms;
+  }
+
+  &:hover {
+    transform: translateX(4px);
+  }
 }
 
 .nb-history__date {
@@ -154,3 +205,5 @@
   font-size: 11px;
   color: var(--nb-color-muted);
 }
+
+

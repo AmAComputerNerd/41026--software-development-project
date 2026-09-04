@@ -1,7 +1,9 @@
 using Api.Data;
+using Api.DTOs;
 using Api.Extensions;
 using Api.Models;
 using Api.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Endpoints;
@@ -13,6 +15,7 @@ public static class AiDigestEndpoints
         var group = endpoints.MapGroup("/digest");
         group.MapPost("/generate", GenerateDigest);
         group.MapGet("/", GetDigests);
+        group.MapPost("/chat", AskAssistant);
         return endpoints;
     }
 
@@ -53,5 +56,32 @@ public static class AiDigestEndpoints
             .ToListAsync();
 
         return Results.Ok(digestDtos);
+    }
+
+    private static async Task<IResult> AskAssistant(
+        [FromBody] AskAssistantRequestDto request,
+        AppDbContext db,
+        IAiDigestService aiDigestService,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Prompt))
+        {
+            return Results.BadRequest("`prompt` cannot be empty.");
+        }
+
+        var unreadNotifications = await db.Notifications
+            .AsNoTracking()
+            .Where(n => n.StudentId == request.StudentId && !n.IsRead)
+            .OrderBy(n => n.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
+
+        var reply = await aiDigestService.AskAssistantAsync(
+            request.StudentId,
+            request.Prompt,
+            request.History,
+            unreadNotifications,
+            cancellationToken);
+
+        return Results.Ok(new AskAssistantResponseDto(reply, DateTime.UtcNow));
     }
 }

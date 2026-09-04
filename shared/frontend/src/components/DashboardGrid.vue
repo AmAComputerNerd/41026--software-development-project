@@ -61,18 +61,21 @@ const liveCount = computed(() => TILES.filter((t) => t.live).length)
   margin: 0 0 var(--nb-space-2);
   font-size: 28px;
   font-weight: 700;
+  animation: nb-rise-in 320ms ease-out both;
 }
 
 .nb-dashboard__subtitle {
   margin: 0 0 var(--nb-space-8);
   font-size: 14px;
   color: var(--nb-color-muted);
+  animation: nb-rise-in 340ms 40ms ease-out both;
 }
 
 .nb-dashboard__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--nb-space-5);
+  animation: nb-rise-in 380ms 120ms ease-out both;
 }
 
 .nb-tile {
@@ -84,10 +87,32 @@ const liveCount = computed(() => TILES.filter((t) => t.live).length)
   overflow: hidden;
   text-decoration: none;
   color: var(--nb-color-ink);
+  animation: nb-rise-in 300ms ease-out both;
+  transition:
+    transform var(--nb-transition-fast),
+    box-shadow var(--nb-transition-fast),
+    background-color var(--nb-transition-fast);
+
+  &:nth-child(2n) {
+    animation-delay: 35ms;
+  }
+
+  &:nth-child(3n) {
+    animation-delay: 70ms;
+  }
+
+  &:nth-child(4n) {
+    animation-delay: 105ms;
+  }
 }
 
 .nb-tile--live {
   cursor: pointer;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 4px 4px 0 var(--nb-color-ink);
+  }
 }
 
 .nb-tile--soon {
@@ -131,11 +156,17 @@ const liveCount = computed(() => TILES.filter((t) => t.live).length)
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
+  transition: transform var(--nb-transition-fast);
+
+  .nb-tile--live:hover & {
+    transform: translateX(3px);
+  }
 }
 
 .nb-tile__footer--soon {
   color: var(--nb-color-muted);
 }
+
 
 .nb-tile__tag {
   position: absolute;

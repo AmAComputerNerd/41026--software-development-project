@@ -26,6 +26,16 @@ public static class ExceptionHandlingExtensions
                         }
                     ).ExecuteAsync(context);
                 }
+                else if (exception is Services.AiGatewayException aiEx)
+                {
+                    context.Response.StatusCode = StatusCodes.Status502BadGateway;
+
+                    await Results.Problem(
+                        statusCode: StatusCodes.Status502BadGateway,
+                        title: "AI Gateway Error",
+                        detail: aiEx.Message
+                    ).ExecuteAsync(context);
+                }
                 else
                 {
                     context.Response.StatusCode = StatusCodes.Status500InternalServerError;

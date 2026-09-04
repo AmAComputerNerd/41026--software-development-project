@@ -17,6 +17,7 @@ namespace GradesManager.Endpoints
             group.MapGet("/course/{courseId:guid}", GetAssignmentsByCourse);
             group.MapPost("/marks/", AddTempMark);
             group.MapPut("/marks/", UpdateTempMark);
+            group.MapDelete("/marks/{studentId:guid}/{assignmentId:guid}", DeleteTempMark);
             group.MapGet("/marks/{studentId:guid}", GetStudentMarks);
 
             return endpoints;
@@ -139,6 +140,34 @@ namespace GradesManager.Endpoints
             studentAssignment.TempMark = modifyTempMarkDto.TempMark;
             await db.SaveChangesAsync();
             return Results.Ok(studentAssignment.ToDto());
+        }
+
+        private static async Task<IResult> DeleteTempMark(
+            [FromRoute] Guid studentId,
+            [FromRoute] Guid assignmentId,
+            AppDbContext db)
+        {
+            if (studentId == Guid.Empty || assignmentId == Guid.Empty)
+            {
+                return Results.BadRequest("Student ID and Assignment ID cannot be empty.");
+            }
+
+            var studentAssignment = await db.StudentAssignments
+                .FirstOrDefaultAsync(sa => sa.StudentId == studentId && sa.AssignmentId == assignmentId);
+
+            if (studentAssignment is null)
+            {
+                return Results.NotFound();
+            }
+
+            if (!studentAssignment.TempMark.HasValue)
+            {
+                return Results.BadRequest("No temporary mark exists to delete.");
+            }
+
+            studentAssignment.TempMark = null;
+            await db.SaveChangesAsync();
+            return Results.NoContent();
         }
 
     }

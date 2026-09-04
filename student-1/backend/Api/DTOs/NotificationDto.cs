@@ -7,5 +7,8 @@ public record NotificationDto(
     string SourceMicroservice,
     string Message,
     bool IsRead,
-    DateTime CreatedAtUtc
+    DateTime CreatedAtUtc,
+    string? RelatedEntityType,
+    Guid? RelatedEntityId,
+    string? ActionPayload = null
 );

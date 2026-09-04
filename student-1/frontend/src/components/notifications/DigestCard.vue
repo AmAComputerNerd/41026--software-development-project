@@ -31,6 +31,7 @@ const emit = defineEmits<{ generate: [] }>()
 <style scoped>
 .nb-digest-card {
   padding: 24px;
+  animation: nb-rise-in 360ms 60ms ease-out both;
 }
 
 .nb-digest-card__heading {
@@ -43,3 +44,4 @@ const emit = defineEmits<{ generate: [] }>()
   margin: 4px 0 16px;
 }
 </style>
+

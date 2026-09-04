@@ -1,136 +1,83 @@
-# Agentic Loop
+# Shared Team Agentic AI Loop (Plan → Act → Observe → Adapt)
 
-An interactive Observe -> Prompts -> LLM -> Summary review loop for this
-repo's multi-student microservices project.
+An automated multi-agent architecture, code quality, and compliance review pipeline designed to implement the **Plan → Act → Observe → Adapt** Agentic AI workflow for this 5-student microservices project.
 
-- **Frontend/Backend/Database are reviewed per owner** (`student-1` ..
-  `student-5`, `shared`), selected from an interactive menu.
-- **Database review is schema-agnostic.** It introspects whatever SQLite
-  file(s) actually exist under an owner's directory via `PRAGMA` (tables,
-  columns, types, keys, FK violations, row counts) - never a fixed
-  migration - and asks the LLM whether that schema makes sense for the
-  owner's feature.
-- **Feature context is student-authored per owner.** Each student can
-  write `prompts/owners/<owner>/context_prompt.txt` describing what their
-  service is meant to do; if it doesn't exist yet, the tool falls back to
-  that owner's blurb in the root `README.md` so it still works out of the
-  box. See [Adding your own feature context](#adding-your-own-feature-context)
-  below.
-- **Every run has two agents.** An implementation agent produces one
-  evidence-backed recommendation (or explicitly reports that no
-  improvement was found - a valid, good outcome), then a review agent
-  critiques that recommendation against the same evidence, confirming it
-  rather than manufacturing a complaint when it holds up.
-- **Backend review** discovers routes by scanning `Endpoints/*.cs` files
-  under `<owner>/backend` (the `.MapGroup(...)` + `.MapGet/MapPost/MapPut/
-  MapDelete(...)` convention) and live-probes GET routes only; it never
-  invents a POST/PUT payload, since request shapes are feature-specific.
-- **Frontend review supports a Vue 3 + Vuetify stack.** It detects `vue` +
-  `vuetify` in an owner's `frontend/package.json`, statically discovers
-  `.vue` components, `vue-router` routes, and Vuetify component tags in
-  use, and best-effort probes a running dev/preview server. For any owner
-  not on that stack (or with no frontend yet), it reports that clearly
-  instead of guessing - each student can add their own collector under
-  `collectors/` if their stack differs.
-- **Docker Compose review** parses the real `docker-compose.yml` at the
-  repo root - services, ports, volumes, `depends_on`, networks - and works
-  automatically as more services are added.
+---
 
-## Structure
+## 1. Core Capabilities
+
+- **Plan → Act → Observe → Adapt Lifecycle**:
+  - **Plan**: Ingests authoritative codebase documentation (`AGENTS.md`, `docs/`, microservice READMEs) and student feature context to establish evaluation criteria.
+  - **Act**: Executes live endpoint probes, .NET Minimal API endpoint scanning, SQLite `PRAGMA` schema introspection, and Docker Compose configuration analysis.
+  - **Observe**: Structures runtime and static evidence without hallucination.
+  - **Adapt**:
+    - *Phase 1 (Implementation Agent)*: Generates one evidence-backed recommendation strictly bounded by the 5 Golden Architectural Rules.
+    - *Phase 2 (Review Agent)*: Critiques or confirms the recommendation against gathered evidence and architectural documentation.
+- **Authoritative Codebase Documentation Grounding**:
+  - Reads `AGENTS.md` (database isolation, Canvas gateway boundary, centralized AI gateway, `@better-canvas/ui-kit` Neobrutalism design system, port maps).
+  - Ingests layer-specific docs from `docs/` (`services.md`, `data-flows.md`, `database-and-migrations.md`, `new-frontend-microservice.md`).
+- **OpenRouter & Local LLM Support**:
+  - Out-of-the-box support for OpenRouter (`minimax/minimax-m3:free` / OpenAI-compatible endpoints) as approved by the tutor, with fallback to local Ollama.
+- **Frontend Discovery for `@better-canvas/ui-kit`**:
+  - Inspects Vue 3 `<script setup>` SFCs, Vue Router definitions, and `@better-canvas/ui-kit` Neobrutalism tokens and components (`TopNav`, `--nb-*`).
+
+---
+
+## 2. Directory Structure
 
 ```text
 tools/
-├── agentic_loop.py            # entrypoint wrapper
+├── agentic_loop.py            # Entrypoint wrapper
 └── agentic_loop/
-    ├── main.py                 # interactive menu: owner -> layer, + compose, + Run All
-    ├── config/review_config.py # OWNERS/LAYERS + per-owner feature context resolution
+    ├── main.py                 # Interactive terminal menu (Owner -> Layer -> Run All)
+    ├── config/
+    │   └── review_config.py    # Owners, layers, and context resolution
     ├── core/
-    │   ├── orchestrator.py     # Observe -> Prompts -> LLM (implement) -> LLM (review) -> Done
-    │   ├── prompt_registry.py
-    │   ├── ai_runner.py
-    │   ├── compose_utils.py    # shared docker-compose.yml parsing
-    │   └── reporter.py
+    │   ├── doc_loader.py       # Documentation ingestion & context loader
+    │   ├── orchestrator.py     # Plan -> Act -> Observe -> Adapt orchestrator
+    │   ├── ai_runner.py        # OpenRouter / OpenAI / Ollama client
+    │   ├── prompt_registry.py  # Prompt loader
+    │   ├── compose_utils.py    # docker-compose.yml parser
+    │   └── reporter.py         # Terminal output formatting
     ├── collectors/
-    │   ├── frontend_collector.py  # Vue 3 + Vuetify component/route discovery + dev-server probe
-    │   ├── backend_collector.py   # generic .NET minimal-API route discovery + GET probing
-    │   ├── database_collector.py # generic SQLite schema introspection
-    │   └── compose_collector.py  # docker-compose.yml evidence
+    │   ├── frontend_collector.py  # Vue 3 + @better-canvas/ui-kit static & live collector
+    │   ├── backend_collector.py   # .NET minimal-API route discovery + live GET prober
+    │   ├── database_collector.py  # SQLite PRAGMA schema introspector
+    │   └── compose_collector.py   # docker-compose.yml configuration collector
     ├── pipelines/
     │   ├── frontend_pipeline.py
     │   ├── backend_pipeline.py
     │   ├── database_pipeline.py
     │   ├── compose_pipeline.py
-    │   └── review_pipeline.py   # builds the review agent's prompt
+    │   └── review_pipeline.py     # Second-pass critique & validation prompt builder
     ├── prompts/
-    │   ├── service/              # shared baseline prompts - same for every owner
-    │   │   ├── system_prompt.txt
-    │   │   ├── frontend_task_prompt.txt
-    │   │   ├── backend_task_prompt.txt
-    │   │   ├── database_task_prompt.txt
-    │   │   ├── compose_task_prompt.txt
-    │   │   ├── review_system_prompt.txt
-    │   │   └── review_task_prompt.txt
-    │   └── owners/                # owner-specific feature context
-    │       ├── student-1/context_prompt.txt
-    │       ├── student-3/context_prompt.txt
-    │       └── shared/context_prompt.txt
+    │   ├── service/               # Shared system baseline & task prompts
+    │   └── owners/                # Owner-specific feature context prompts
+    ├── .env.example
     └── requirements.txt
 ```
 
-## Setup
+---
 
-```powershell
-cd tools\agentic_loop
+## 3. Setup & Execution
+
+### Setup
+```bash
+cd tools/agentic_loop
 pip install -r requirements.txt
-Copy-Item .env.example .env
+cp .env.example .env
 ```
 
-Requires an OpenAI-compatible model endpoint. For a local model, install
-[Ollama](https://ollama.com) and run `ollama pull llama3.1` (or set
-`OLLAMA_MODEL` to whatever you have pulled). To use the real OpenAI API
-instead, set `OLLAMA_BASE_URL=https://api.openai.com/v1` and
-`OPENAI_API_KEY=<your key>` in `.env`.
-
-If an owner's backend isn't reachable via a published port already declared
-in `docker-compose.yml` (as `<owner>-backend`), set
-`API_BASE_URL_<OWNER_SLUG>` in `.env` (e.g. `API_BASE_URL_STUDENT_3` for
-`dotnet run`'s default `http://localhost:5014`).
-
-The same applies to a Vue frontend's dev/preview server: set
-`FRONTEND_BASE_URL_<OWNER_SLUG>` in `.env` if it isn't reachable via a
-published `<owner>-frontend` port in `docker-compose.yml` (e.g.
-`FRONTEND_BASE_URL_STUDENT_3=http://localhost:5173` for `npm run dev`'s
-default Vite port). This is optional - static component/route evidence is
-still collected without it.
-
-## Run
-
-```powershell
-python tools\agentic_loop.py
+Configure `.env` (or let the tool automatically read `OPENROUTER_API_KEY` from the repository root `.env`):
+```dotenv
+OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxx
+OPENROUTER_MODEL=minimax/minimax-m3:free
 ```
 
-1. Choose an owner (`student-1` .. `student-5`, `shared`), `docker-compose`,
-   or `Run All`.
-2. For an owner, choose a layer: `Frontend`, `Backend`, `Database`, or
-   `All layers`.
+### Run
+From repository root:
+```bash
+python tools/agentic_loop.py
+```
 
-Each run prints `[START] -> [OBSERVE] -> [PROMPTS] -> [LLM] -> [REVIEW-PROMPTS]
--> [REVIEW-LLM] -> [DONE]` stage banners, followed by the collected
-evidence, the implementation agent's one evidence-backed recommendation (or
-an explicit "no improvement found"), and the review agent's short critique
-or confirmation of that recommendation.
-
-## Adding your own feature context
-
-Task/system/review prompts under `prompts/service/` are a shared baseline
-that every owner is judged against, so results stay consistent - don't
-edit these per-feature. The only thing that should vary per owner is the
-**feature context**: a short, plain description of what your service is
-supposed to do.
-
-To add yours, create `prompts/owners/<your-owner>/context_prompt.txt` (see
-`prompts/owners/student-3/context_prompt.txt` for an example). A few short
-paragraphs is enough - what the service manages, its key entities/fields,
-and anything explicitly out of scope. Until you add this file, the tool
-falls back to your blurb in the root `README.md`, so it still works, just
-with less detail for the agents to reason against.
+Select a target owner (`student-1` through `student-5`, `shared`), `docker-compose`, or `Run All`.

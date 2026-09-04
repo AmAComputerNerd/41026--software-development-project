@@ -6,6 +6,7 @@ import {
   markNotificationRead,
   markNotificationUnread,
 } from '@/api/notifications'
+import { completeTask } from '@/api/tasks'
 import { CURRENT_STUDENT_ID } from '@/config'
 
 export interface NotificationDto {
@@ -16,6 +17,9 @@ export interface NotificationDto {
   message: string
   isRead: boolean
   createdAtUtc: string
+  relatedEntityType: string | null
+  relatedEntityId: string | null
+  actionPayload?: string | null
 }
 
 // Matches the backend `NotificationType` enum names exactly — the API
@@ -121,6 +125,18 @@ export function useNotifications() {
     }
   }
 
+  async function markTaskComplete(id: string) {
+    const notification = notifications.value.find((n) => n.id === id)
+    if (!notification || !notification.relatedEntityId) return
+
+    try {
+      await completeTask(notification.relatedEntityId)
+      await markAsRead(id)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to mark task as complete'
+    }
+  }
+
   async function deleteNotification(id: string) {
     const index = notifications.value.findIndex((n) => n.id === id)
     if (index === -1) return
@@ -131,6 +147,12 @@ export function useNotifications() {
     } catch (err) {
       notifications.value.splice(index, 0, removed)
       error.value = err instanceof Error ? err.message : 'Failed to delete notification'
+    }
+  }
+
+  function addRealtimeNotification(n: NotificationDto) {
+    if (!notifications.value.some((item) => item.id === n.id)) {
+      notifications.value = [n, ...notifications.value]
     }
   }
 
@@ -149,6 +171,8 @@ export function useNotifications() {
     markAsRead,
     markAsUnread,
     markAllAsRead,
+    markTaskComplete,
     deleteNotification,
+    addRealtimeNotification,
   }
 }

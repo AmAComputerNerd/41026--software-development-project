@@ -1,6 +1,7 @@
 using System.Globalization;
 using Api.Data;
 using Api.DTOs;
+using Api.Extensions;
 using Api.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +9,8 @@ namespace Api.Services;
 
 public sealed class CanvasNotificationSyncService(
     ISharedCanvasClient canvasClient,
-    AppDbContext db)
+    AppDbContext db,
+    INotificationStreamBroker broker)
 {
     private static readonly Guid DemoStudentId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
@@ -39,6 +41,7 @@ public sealed class CanvasNotificationSyncService(
             .ToDictionaryAsync(w => w.CanvasAssignmentId, cancellationToken);
 
         var notificationsCreated = 0;
+        var createdNotifications = new List<Notification>();
 
         foreach (var assignment in assignments)
         {
@@ -46,7 +49,7 @@ public sealed class CanvasNotificationSyncService(
 
             if (!watermarks.TryGetValue(assignment.Id, out var watermark))
             {
-                db.Notifications.Add(new Notification
+                var notification = new Notification
                 {
                     StudentId = DemoStudentId,
                     Type = NotificationType.Deadline,
@@ -54,8 +57,12 @@ public sealed class CanvasNotificationSyncService(
                     Message = $"New assignment \"{assignment.Name}\" is due " +
                         $"{FormatDate(assignment.DueAt)}.",
                     IsRead = false,
-                    CreatedAtUtc = now
-                });
+                    CreatedAtUtc = now,
+                    RelatedEntityType = "Assignment",
+                    ActionPayload = $"{{\"canvasAssignmentId\": {assignment.Id}}}"
+                };
+                db.Notifications.Add(notification);
+                createdNotifications.Add(notification);
                 notificationsCreated++;
 
                 watermark = new CanvasAssignmentWatermark
@@ -69,7 +76,7 @@ public sealed class CanvasNotificationSyncService(
             {
                 if (watermark.LastDueDate != assignment.DueAt)
                 {
-                    db.Notifications.Add(new Notification
+                    var notification = new Notification
                     {
                         StudentId = DemoStudentId,
                         Type = NotificationType.Deadline,
@@ -77,23 +84,31 @@ public sealed class CanvasNotificationSyncService(
                         Message = $"Due date for \"{assignment.Name}\" changed from " +
                             $"{FormatDate(watermark.LastDueDate)} to {FormatDate(assignment.DueAt)}.",
                         IsRead = false,
-                        CreatedAtUtc = now
-                    });
+                        CreatedAtUtc = now,
+                        RelatedEntityType = "Assignment",
+                        ActionPayload = $"{{\"canvasAssignmentId\": {assignment.Id}}}"
+                    };
+                    db.Notifications.Add(notification);
+                    createdNotifications.Add(notification);
                     notificationsCreated++;
                 }
 
                 if (IsSubmittedOrGraded(submissionState) &&
                     !IsSubmittedOrGraded(watermark.LastSubmissionState))
                 {
-                    db.Notifications.Add(new Notification
+                    var notification = new Notification
                     {
                         StudentId = DemoStudentId,
                         Type = NotificationType.Grade,
                         SourceMicroservice = "canvas-sync",
                         Message = $"\"{assignment.Name}\" is now {submissionState}.",
                         IsRead = false,
-                        CreatedAtUtc = now
-                    });
+                        CreatedAtUtc = now,
+                        RelatedEntityType = "Assignment",
+                        ActionPayload = $"{{\"canvasAssignmentId\": {assignment.Id}}}"
+                    };
+                    db.Notifications.Add(notification);
+                    createdNotifications.Add(notification);
                     notificationsCreated++;
                 }
             }
@@ -106,6 +121,11 @@ public sealed class CanvasNotificationSyncService(
 
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        foreach (var n in createdNotifications)
+        {
+            await broker.PublishAsync(n.ToDto(), cancellationToken);
+        }
 
         return new CanvasNotificationSyncResultDto(notificationsCreated);
     }

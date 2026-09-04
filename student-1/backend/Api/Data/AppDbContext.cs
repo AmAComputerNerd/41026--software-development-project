@@ -32,6 +32,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .Property(n => n.Type)
             .HasConversion<string>();
 
+        modelBuilder.Entity<Notification>()
+            .HasIndex(n => new { n.RelatedEntityType, n.RelatedEntityId });
+
         modelBuilder.Entity<NotificationPreference>()
             .Property(p => p.Type)
             .HasConversion<string>();

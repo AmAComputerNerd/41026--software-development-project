@@ -32,17 +32,17 @@ namespace GradesManager.Endpoints
 
         private static async Task<IResult> AddIdealMark(ModifyIdealMarkDto requestDto, AppDbContext db)
         {
-            if(requestDto.idealMark is null)
+            if (requestDto.idealMark is null)
             {
                 return Results.BadRequest("Ideal mark cannot be null.");
             }
 
-            if(requestDto.idealMark < 0 || requestDto.idealMark > 100)
+            if (requestDto.idealMark < 0 || requestDto.idealMark > 100)
             {
                 return Results.BadRequest("Ideal mark must be between 0 and 100.");
             }
 
-            if(requestDto.StudentId == Guid.Empty)
+            if (requestDto.StudentId == Guid.Empty)
             {
                 return Results.BadRequest("Student ID cannot be empty.");
             }
@@ -109,7 +109,7 @@ namespace GradesManager.Endpoints
             {
                 return Results.NotFound();
             }
-            
+
             if (student.IdealMark is null)
             {
                 return Results.BadRequest("No ideal mark found for this student.");

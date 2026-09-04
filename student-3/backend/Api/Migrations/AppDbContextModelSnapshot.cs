@@ -84,6 +84,9 @@ namespace Api.Migrations
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("DueSoonReminderSentAtUtc")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid?>("ParentTaskId")
                         .HasColumnType("TEXT");
 

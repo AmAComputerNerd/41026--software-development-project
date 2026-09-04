@@ -20,7 +20,7 @@ const navLinks = [
       </template>
     </Navbar>
 
-    <nav class="nb-tabstrip">
+    <nav class="nb-tabstrip" aria-label="Notification sections">
       <RouterLink
         v-for="link in navLinks"
         :key="link.match"
@@ -33,7 +33,11 @@ const navLinks = [
     </nav>
 
     <main class="nb-main">
-      <RouterView />
+      <RouterView v-slot="{ Component, route: currentRoute }">
+        <Transition name="page" mode="out-in" appear>
+          <component :is="Component" :key="currentRoute.name" />
+        </Transition>
+      </RouterView>
     </main>
   </div>
 </template>
@@ -47,9 +51,11 @@ const navLinks = [
   display: flex;
   gap: 8px;
   padding: 20px 24px 0;
+  overflow-x: auto;
 }
 
 .nb-tabstrip__tab {
+  flex: 0 0 auto;
   border: var(--nb-border-width-md) solid var(--nb-color-ink);
   padding: 8px 16px;
   font-size: 12px;
@@ -58,6 +64,16 @@ const navLinks = [
   text-decoration: none;
   color: var(--nb-color-ink);
   background: var(--nb-color-bg);
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.nb-tabstrip__tab:hover {
+  transform: translateY(-3px);
+  box-shadow: 3px 3px 0 var(--nb-color-ink);
 }
 
 .nb-tabstrip__tab--active {
@@ -69,3 +85,4 @@ const navLinks = [
   padding: 24px;
 }
 </style>
+
