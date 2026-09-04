@@ -151,6 +151,13 @@ export function useGrades() {
     if (existing) existing.tempMark = null
   }
 
+  async function generateRecommendation() {
+    const incomplete = assignments.value
+      .filter((assignment) => assignment.completed === false)
+      .map((assignment) => ({ ...assignment }))
+    return gradesApi.generateRecommendation(incomplete)
+  }
+
   return {
     student,
     courses,
@@ -165,6 +172,7 @@ export function useGrades() {
     updateIdealMark,
     updateTemporaryMark,
     deleteTemporaryMark,
+    generateRecommendation,
     markFor,
     calculateCourseMark,
     courseStats,
