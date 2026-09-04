@@ -86,16 +86,24 @@ frontend displays Canvas course names while persisting only the numeric ID.
 
 Quiz filler automations answer Canvas Classic Quizzes. `subjectId` restricts
 them to one course or, when null, covers every enrolled course.
-`multipleChoice` and `shortAnswer` select which question types are answered; at
-least one is required. A quiz is eligible when it is published, not locked, has
-questions, and either allows at least `numberOfAttemptsRequired` attempts
+`multipleChoice` covers both Canvas multiple-choice and true/false questions;
+`shortAnswer` covers short-answer questions. At least one is required. A quiz is
+eligible when it is published, not locked, has
+questions, has not already been submitted by the current user, and either allows at least `numberOfAttemptsRequired` attempts
 (unlimited counts as enough) or has no time limit while `allowForNoTimeLimit`
 is set.
+
+When Canvas does not expose a course's Classic Quiz collection, the shared
+gateway discovers quiz IDs from course assignments and loads each quiz
+individually. If Canvas reports that an unsubmitted attempt already exists,
+the gateway resumes that attempt instead of trying to create a second one.
+Course-discovery failures are stored as failed runs with a deterministic
+course key, so they do not block other courses and are not executed again.
 
 Canvas cannot record answers through the Quiz Questions resource, which only
 authors questions. Filling a quiz therefore uses the Quiz Submission Questions
 resource: the worker starts a quiz submission, reads its questions, asks
-`ai-mode` to choose an option ID for each multiple choice question and to write
+`ai-mode` to choose an option ID for each multiple-choice or true/false question and to write
 text for each short answer question, then saves those answers against the
 submission using its attempt and validation token.
 

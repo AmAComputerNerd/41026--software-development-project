@@ -31,7 +31,8 @@ public sealed record SharedCanvasQuizDto(
     int AllowedAttempts,
     int QuestionCount,
     bool Published,
-    bool LockedForUser
+    bool LockedForUser,
+    bool HasSubmitted
 );
 
 public sealed record SharedCanvasQuizSubmissionDto(

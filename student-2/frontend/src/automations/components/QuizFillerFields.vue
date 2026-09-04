@@ -34,7 +34,7 @@ onMounted(async () => {
 
   <label class="nb-checkbox-row">
     <input v-model="model.multipleChoice" type="checkbox" />
-    <span>Answer multiple choice questions</span>
+    <span>Answer multiple choice questions (including true/false)</span>
   </label>
 
   <label class="nb-checkbox-row">

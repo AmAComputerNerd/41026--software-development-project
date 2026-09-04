@@ -13,6 +13,7 @@ internal sealed record CanvasCourseResponse(
 internal sealed record CanvasAssignmentResponse(
     [property: JsonPropertyName("id")] long Id,
     [property: JsonPropertyName("course_id")] long CourseId,
+    [property: JsonPropertyName("quiz_id")] long? QuizId,
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("description")] string? Description,
     [property: JsonPropertyName("due_at")] DateTime? DueAt,

@@ -49,7 +49,7 @@ export default defineAutomationType({
   }),
   automationTitle: (automation) =>
     [
-      automation.multipleChoice ? 'Multiple choice' : null,
+      automation.multipleChoice ? 'Multiple choice + true/false' : null,
       automation.shortAnswer ? 'Short answer' : null,
     ]
       .filter(Boolean)

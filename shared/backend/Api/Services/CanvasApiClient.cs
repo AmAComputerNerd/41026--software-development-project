@@ -143,22 +143,86 @@ public sealed class CanvasApiClient(
         long courseId,
         CancellationToken cancellationToken)
     {
-        var quizzes = await GetAllPagesAsync<CanvasQuizResponse>(
-            $"api/v1/courses/{courseId}/quizzes?per_page=100",
-            cancellationToken);
+        IReadOnlyList<CanvasQuizResponse> quizzes;
+        try
+        {
+            quizzes = await GetAllPagesAsync<CanvasQuizResponse>(
+                $"api/v1/courses/{courseId}/quizzes?per_page=100",
+                cancellationToken);
+        }
+        catch (CanvasApiException exception) when (
+            exception.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            quizzes = await GetQuizzesFromAssignmentsAsync(courseId, cancellationToken);
+        }
 
-        return quizzes
-            .Select(quiz => new CanvasQuizDto(
-                quiz.Id,
-                courseId,
-                quiz.Title ?? string.Empty,
-                quiz.QuizType,
-                quiz.TimeLimit,
-                quiz.AllowedAttempts ?? 1,
-                quiz.QuestionCount ?? 0,
-                quiz.Published ?? false,
-                quiz.LockedForUser ?? false))
-            .ToList();
+        var results = new List<CanvasQuizDto>();
+        foreach (var quiz in quizzes)
+        {
+            var submission = await SendJsonAsync<CanvasQuizSubmissionListResponse>(
+                HttpMethod.Get,
+                $"api/v1/courses/{courseId}/quizzes/{quiz.Id}/submission",
+                null,
+                cancellationToken);
+            results.Add(ToQuizDto(quiz, courseId, HasSubmitted(submission)));
+        }
+
+        return results;
+    }
+
+    private async Task<IReadOnlyList<CanvasQuizResponse>> GetQuizzesFromAssignmentsAsync(
+        long courseId,
+        CancellationToken cancellationToken)
+    {
+        var assignments = await GetAllPagesAsync<CanvasAssignmentResponse>(
+            $"api/v1/courses/{courseId}/assignments?per_page=100",
+            cancellationToken);
+        var quizzes = new List<CanvasQuizResponse>();
+
+        foreach (var quizId in assignments
+            .Where(assignment => assignment.QuizId.HasValue)
+            .Select(assignment => assignment.QuizId!.Value)
+            .Distinct())
+        {
+            quizzes.Add(await SendJsonAsync<CanvasQuizResponse>(
+                HttpMethod.Get,
+                $"api/v1/courses/{courseId}/quizzes/{quizId}",
+                null,
+                cancellationToken));
+        }
+
+        return quizzes;
+    }
+
+    private static bool HasSubmitted(CanvasQuizSubmissionListResponse response)
+    {
+        return (response.QuizSubmissions ?? []).Any(submission =>
+            string.Equals(
+                submission.WorkflowState,
+                "complete",
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(
+                submission.WorkflowState,
+                "pending_review",
+                StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static CanvasQuizDto ToQuizDto(
+        CanvasQuizResponse quiz,
+        long courseId,
+        bool hasSubmitted)
+    {
+        return new CanvasQuizDto(
+            quiz.Id,
+            courseId,
+            quiz.Title ?? string.Empty,
+            quiz.QuizType,
+            quiz.TimeLimit,
+            quiz.AllowedAttempts ?? 1,
+            quiz.QuestionCount ?? 0,
+            quiz.Published ?? false,
+            quiz.LockedForUser ?? false,
+            hasSubmitted);
     }
 
     public async Task<CanvasQuizSubmissionDto> StartQuizSubmissionAsync(
@@ -166,15 +230,41 @@ public sealed class CanvasApiClient(
         long quizId,
         CancellationToken cancellationToken)
     {
-        var payload = await SendJsonAsync<CanvasQuizSubmissionListResponse>(
-            HttpMethod.Post,
-            $"api/v1/courses/{courseId}/quizzes/{quizId}/submissions",
-            null,
-            cancellationToken);
+        CanvasQuizSubmissionListResponse payload;
+        var resumedExistingSubmission = false;
+        try
+        {
+            payload = await SendJsonAsync<CanvasQuizSubmissionListResponse>(
+                HttpMethod.Post,
+                $"api/v1/courses/{courseId}/quizzes/{quizId}/submissions",
+                null,
+                cancellationToken);
+        }
+        catch (CanvasApiException exception) when (
+            exception.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            resumedExistingSubmission = true;
+            payload = await SendJsonAsync<CanvasQuizSubmissionListResponse>(
+                HttpMethod.Get,
+                $"api/v1/courses/{courseId}/quizzes/{quizId}/submission",
+                null,
+                cancellationToken);
+        }
+
         var submission = payload.QuizSubmissions?.FirstOrDefault()
             ?? throw new CanvasApiException(
                 System.Net.HttpStatusCode.BadGateway,
                 "Canvas did not return a quiz submission.");
+
+        if (resumedExistingSubmission && !string.Equals(
+            submission.WorkflowState,
+            "untaken",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            throw new CanvasApiException(
+            System.Net.HttpStatusCode.Conflict,
+            "The existing Canvas quiz submission cannot be resumed.");
+        }
 
         if (string.IsNullOrWhiteSpace(submission.ValidationToken))
         {

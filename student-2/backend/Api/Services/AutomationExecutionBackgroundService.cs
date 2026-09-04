@@ -75,7 +75,18 @@ public sealed class AutomationExecutionBackgroundService(
 
         foreach (var automationId in automationIds)
         {
-            await ExecuteAutomationAsync(automationId, cancellationToken);
+            try
+            {
+                await ExecuteAutomationAsync(automationId, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                LogExecutionFailure(logger, automationId, exception);
+            }
         }
     }
 
