@@ -51,57 +51,57 @@ export interface UpdateUserRequest {
 // POST /api/auth/login — returns the matching UserDto on success,
 // throws (with the 401 message) if the email/password don't match.
 export async function login(email: string, password: string): Promise<UserDto> {
-  return request('/api/auth/login', {
+  return request('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   })
 }
 
 export async function getUsers(): Promise<UserDto[]> {
-  return request('/api/users')
+  return request('/users')
 }
 
 export async function getUser(userId: string): Promise<UserDto> {
-  return request(`/api/users/${userId}`)
+  return request(`/users/${userId}`)
 }
 
 export async function createUser(userData: CreateUserRequest): Promise<UserDto> {
-  return request('/api/users', {
+  return request('/users', {
     method: 'POST',
     body: JSON.stringify(userData),
   })
 }
 
 export async function updateUser(userId: string, userData: UpdateUserRequest): Promise<UserDto> {
-  return request(`/api/users/${userId}`, {
+  return request(`/users/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(userData),
   })
 }
 
 export async function deleteUser(userId: string): Promise<void> {
-  return request(`/api/users/${userId}`, {
+  return request(`/users/${userId}`, {
     method: 'DELETE',
   })
 }
 
 export async function getStudent(userId: string): Promise<StudentDto> {
-  return request(`/api/students/${userId}`)
+  return request(`/students/${userId}`)
 }
 
 export async function updateStudent(userId: string, studentData: Partial<StudentDto>): Promise<StudentDto> {
-  return request(`/api/students/${userId}`, {
+  return request(`/students/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(studentData),
   })
 }
 
 export async function getTeacher(userId: string): Promise<TeacherDto> {
-  return request(`/api/teachers/${userId}`)
+  return request(`/teachers/${userId}`)
 }
 
 export async function updateTeacher(userId: string, teacherData: Partial<TeacherDto>): Promise<TeacherDto> {
-  return request(`/api/teachers/${userId}`, {
+  return request(`/teachers/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(teacherData),
   })
@@ -114,7 +114,7 @@ export async function changePassword(
   currentPassword: string,
   newPassword: string
 ): Promise<{ message: string }> {
-  return request('/api/auth/change-password', {
+  return request('/auth/change-password', {
     method: 'POST',
     body: JSON.stringify({ email, currentPassword, newPassword }),
   })
@@ -126,7 +126,7 @@ export async function deleteAccount(
   email: string,
   password: string
 ): Promise<{ message: string }> {
-  return request('/api/auth/delete-account', {
+  return request('/auth/delete-account', {
     method: 'DELETE',
     body: JSON.stringify({ email, password }),
   })
@@ -135,7 +135,7 @@ export async function deleteAccount(
 // POST /api/users/{userId}/profile-summary — generates an AI profile
 // summary for the user and persists it. Returns { summary }.
 export async function generateProfileSummary(userId: string): Promise<{ summary: string }> {
-  return request(`/api/users/${userId}/profile-summary`, {
+  return request(`/users/${userId}/profile-summary`, {
     method: 'POST',
   })
 }

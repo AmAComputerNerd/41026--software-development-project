@@ -8,3 +8,6 @@ export const NOTIFICATIONS_API_BASE_URL =
 
 export const DEADLINES_API_BASE_URL =
   import.meta.env.VITE_DEADLINES_API_BASE_URL || 'http://localhost:5103/api'
+
+  export const ACCOUNT_API_BASE_URL =
+  import.meta.env.VITE_ACCOUNT_API_BASE_URL || 'http://localhost:5104/api'

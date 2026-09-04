@@ -98,7 +98,7 @@ export function useAuth() {
       const updated = await updateUser(currentUser.value.id, {
         email: userData.email ?? currentUser.value.email,
         firstName: userData.firstName ?? currentUser.value.firstName,
-        middleNames: userData.middleNames ?? currentUser.value.middleNames,
+        middleNames: (userData.middleNames ?? currentUser.value.middleNames) ?? undefined,
         lastName: userData.lastName ?? currentUser.value.lastName,
         gender: userData.gender ?? currentUser.value.gender,
         dateOfBirth: userData.dateOfBirth ?? currentUser.value.dateOfBirth,
