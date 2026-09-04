@@ -60,10 +60,12 @@
 /* Dark mode: softened warm-neutral palette from the Notifications-Dark
  * design (claude.ai/design project 5afc3379-890a-4fb9-8e8d-516a388c619a),
  * swapping the stark near-black/near-white pairing for warm charcoal/bone
- * tones. Accents stay punchy. */
+ * tones. Cool blue/violet accents distinguish the night palette. */
 :root[data-theme='dark'] {
   --nb-color-bg: #161513;
   --nb-color-ink: #C9C4B4;
+  --nb-color-accent-orange: #1E3A8A;
+  --nb-color-accent-yellow: #5B21B6;
   --nb-color-white: #1E1C18;
   --nb-color-muted: #85807A;
   --nb-color-shadow: #050403;
