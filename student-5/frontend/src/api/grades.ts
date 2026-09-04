@@ -81,4 +81,9 @@ export const gradesApi = {
     request<void>(`/api/assignment/marks/${studentId}/${assignmentId}`, {
       method: 'DELETE',
     }),
+  generateRecommendation: (assignments: Assignment[]) =>
+    request<{ recommendation: string }>('/api/ai/generate-recommendation', {
+      method: 'POST',
+      body: JSON.stringify({ assignments }),
+    }),
 }

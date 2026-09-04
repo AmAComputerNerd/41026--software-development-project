@@ -106,7 +106,7 @@ namespace GradesManager.Data
 
                     new Student //S3
                     {
-                        Name = "John MonsterHunter",
+                        Name = "John Dave",
                         IdealMark = 75.0
                     },
 
@@ -167,7 +167,7 @@ namespace GradesManager.Data
                 {
                     scs.Add(new StudentCourse
                     {
-                        StudentId = students[i].StudentId,
+                        StudentId = students[0].StudentId,
                         CourseId = courses[i].CourseId
                     });
                 }
@@ -187,7 +187,8 @@ namespace GradesManager.Data
                         CourseId = courses[0].CourseId,
                         Name = "Voice sample aquisition",
                         Weight = 0.2,
-                        MaxMark = 10
+                        MaxMark = 10,
+                        Completed = false
                     },
 
                     new Assignment //A2
@@ -195,7 +196,8 @@ namespace GradesManager.Data
                         CourseId = courses[0].CourseId,
                         Name = "Basic synthesiser program",
                         Weight = 0.4,
-                        MaxMark = 25
+                        MaxMark = 25,
+                        Completed = false
                     },
 
                     new Assignment //A3
@@ -203,7 +205,8 @@ namespace GradesManager.Data
                         CourseId = courses[1].CourseId,
                         Name = "Advanced Synthesiser program",
                         Weight = 0.5,
-                        MaxMark = 30
+                        MaxMark = 30,
+                        Completed = false
                     },
 
                     new Assignment //A4
@@ -211,7 +214,8 @@ namespace GradesManager.Data
                         CourseId = courses[1].CourseId,
                         Name = "Twin voice sampling",
                         Weight = 0.2,
-                        MaxMark = 10
+                        MaxMark = 10,
+                        Completed = false
                     },
 
                     new Assignment //A5
@@ -219,7 +223,8 @@ namespace GradesManager.Data
                         CourseId = courses[0].CourseId,
                         Name = "Final Test",
                         Weight = 0.4,
-                        MaxMark = 50
+                        MaxMark = 50,
+                        Completed = false
                     },
 
                     new Assignment //A6
@@ -227,7 +232,8 @@ namespace GradesManager.Data
                         CourseId = courses[1].CourseId,
                         Name = "Lab Quiz 1",
                         Weight = 0.1,
-                        MaxMark = 5
+                        MaxMark = 5,
+                        Completed = false
                     },
 
                     new Assignment //A7
@@ -235,7 +241,8 @@ namespace GradesManager.Data
                         CourseId = courses[1].CourseId,
                         Name = "Lab Quiz 2",
                         Weight = 0.1,
-                        MaxMark = 5
+                        MaxMark = 5,
+                        Completed = false
                     },
 
                     new Assignment //A8
@@ -243,7 +250,8 @@ namespace GradesManager.Data
                         CourseId = courses[1].CourseId,
                         Name = "Lab Quiz 3",
                         Weight = 0.1,
-                        MaxMark = 5
+                        MaxMark = 5,
+                        Completed = false
                     },
 
                     new Assignment //A9
@@ -251,7 +259,8 @@ namespace GradesManager.Data
                         CourseId = courses[2].CourseId,
                         Name = "Mid term Ecology Test",
                         Weight = 0.5,
-                        MaxMark = 30
+                        MaxMark = 30,
+                        Completed = false
                     },
 
                     new Assignment //A10
@@ -259,7 +268,8 @@ namespace GradesManager.Data
                         CourseId = courses[2].CourseId,
                         Name = "Final Practical Exam",
                         Weight = 0.5,
-                        MaxMark = 50
+                        MaxMark = 50,
+                        Completed = false
                     }
                 );
                 db.SaveChanges();
@@ -277,7 +287,7 @@ namespace GradesManager.Data
                 {
                     sas.Add(new StudentAssignment
                     {
-                        StudentId = students[i].StudentId,
+                        StudentId = students[0].StudentId,
                         AssignmentId = assignments[i].AssignmentId
                     });
                 }

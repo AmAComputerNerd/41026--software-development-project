@@ -2,6 +2,7 @@
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { Navbar, SERVICES } from '@better-canvas/ui-kit'
 import NotificationButton from '@/components/NotificationButton.vue'
+import AiActionBar from '@/components/grades/AiActionBar.vue'
 
 const route = useRoute()
 const services = SERVICES.map((service) =>
@@ -34,6 +35,8 @@ const services = SERVICES.map((service) =>
         02 COURSE DETAIL
       </span>
     </nav>
+
+    <AiActionBar />
 
     <main class="nb-main">
       <RouterView v-slot="{ Component, route: currentRoute }">

@@ -95,6 +95,10 @@ services:
             - student-5-db:/app/Data
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+            AiGateway__BaseUrl: http://ai-mode:8080
+        depends_on:
+            ai-mode:
+                condition: service_healthy
 
     student-1-frontend:
         build:

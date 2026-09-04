@@ -37,7 +37,7 @@ separate assessment table.
 Working directory: `student-4/`  
 TODO: Short summary of microservice, other info
 
-**Student 5: William Hannah (STUDENT-NUM).**  
+**Student 5: William Hannah (25494675).**  
 Working directory: `student-5/`  
 Grades and progress service: aggregates Canvas grade data and renders
 progress views. Backend listens on host port `5105`; frontend is
