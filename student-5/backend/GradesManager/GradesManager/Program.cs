@@ -1,13 +1,17 @@
 using GradesManager.Data;
 using GradesManager.Endpoints;
 using GradesManager.Extensions;
+using GradesManager.Configuration;
 using Microsoft.EntityFrameworkCore;
+using GradesManager.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Services
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
+builder.Services.Configure<AiGatewayOptions>(
+    builder.Configuration.GetSection("AiGatewayOptions.SectionName"));
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options
@@ -19,7 +23,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             return Task.CompletedTask;
         });
 });
-
+builder.Services.AddHttpClient<IAiTaskService, AiTaskService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
