@@ -11,7 +11,7 @@ public static class CanvasSyncEndpoints
     }
 
     private static async Task<IResult> Sync(
-        CanvasTaskSyncService syncService,
+        CanvasSyncOrchestrator syncService,
         CancellationToken cancellationToken)
     {
         var result = await syncService.SyncAsync(cancellationToken);

@@ -92,6 +92,7 @@ port.
 | `8080`    | `shared-shell` (nginx)           | Dashboard entry point. Proxies `/notifications`, `/deadlines`, `/grades`, and `/api/*` to the right microservice. |
 | `5101`    | `student-1-backend`              | Notifications API. |
 | `5103`    | `student-3-backend`              | Deadlines & tasks API. |
+| `5203`    | `student-3-database` (standalone)| Internal Student 3 persistence API; not host-published by Docker Compose. |
 | `5105`    | `student-5-backend`              | Grades & progress API. |
 | `5110`    | `shared-backend`                 | Canvas gateway. CORS is locked down; only other backends call it. |
 
@@ -110,7 +111,9 @@ the only service that needs the OpenRouter key. See
 │   └── ui-kit/          # @better-canvas/ui-kit workspace package
 │                        #   (tokens, fonts, shared Vue components)
 ├── student-N/           # one slice per student
-│   ├── backend/         # ASP.NET Core + SQLite
+│   ├── backend/         # ASP.NET Core public API
+│   ├── database/        # Student 3 internal EF Core/SQLite service
+│   ├── contracts/       # Student 3 internal HTTP contracts
 │   └── frontend/        # Vue 3 + plain SCSS
 ├── docs/
 │   ├── architecture/overview.md
@@ -126,11 +129,13 @@ Microservices communicate over HTTP and own separate SQLite databases.
 They must not query another service's Entity Framework database. The
 shared backend owns Canvas authentication and API pagination. The
 deadline and task-tracker backend receives `SharedService:BaseUrl`
-through standard ASP.NET configuration. Docker Compose supplies
-`http://shared-backend:8080`, where `shared-backend` is resolved by
-Compose's internal DNS. Cross-service integration is intentionally
-available only through Docker Compose; standalone services do not
-receive addresses for other services.
+and `DatabaseService:BaseUrl` through standard ASP.NET configuration.
+Its EF Core context and SQLite volume are exclusively owned by the
+internal `student-3-database` service. Docker Compose supplies
+`http://shared-backend:8080` and `http://student-3-database:8080`,
+resolved through Compose's internal DNS. The database service is isolated
+on a private network shared only with `student-3-backend`; notification
+service availability does not block the Student 3 API from starting.
 
 To import Canvas data, start the services and call:
 
