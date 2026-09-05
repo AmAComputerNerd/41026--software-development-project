@@ -119,6 +119,7 @@ public static class PersistenceEndpoints
         var task = await db.Tasks
             .AsNoTracking()
             .Include(item => item.Course)
+            .Include(item => item.ParentTask)
             .FirstOrDefaultAsync(item => item.Id == id, cancellationToken);
         return task is null ? Results.NotFound() : Results.Ok(task.ToRecord());
     }
