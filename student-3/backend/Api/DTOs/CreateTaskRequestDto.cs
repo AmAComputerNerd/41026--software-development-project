@@ -1,5 +1,3 @@
-using Api.Models;
-
 namespace Api.DTOs;
 
 public record CreateTaskRequestDto(

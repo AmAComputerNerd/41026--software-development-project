@@ -97,6 +97,18 @@ cd student-1/backend/Api
 dotnet run
 ```
 
+Student 3 requires its database service to start first:
+
+```bash
+dotnet run --project student-3/database/Database/Database.csproj
+# In another terminal:
+dotnet run --project student-3/backend/Api/Api.csproj
+```
+
+The standalone defaults are `http://localhost:5203` for
+`student-3-database` and `http://localhost:5103` for
+`student-3-backend`. Docker Compose keeps the database service internal.
+
 > [!IMPORTANT]
 > When running a backend outside Docker:
 > - Set environment variable `ASPNETCORE_ENVIRONMENT=Development`.

@@ -2,14 +2,17 @@
 
 This document details the database architecture, schema management, and Entity Framework Core migration workflows for the microservices in this repository.
 
+For the complete extraction process, see
+[Playbook: Splitting a Backend into API and Database Services](../playbooks/split-database-service.md).
+
 ---
 
 ## 1. Database Architecture & Boundaries
 
 ### Strict Isolation Rule
-Each backend microservice maintains an **independent SQLite database**:
+Each persistence-owning service maintains an **independent SQLite database**:
 - `student-1/backend/Api`: `notifications.db` (or configured database name)
-- `student-3/backend/Api`: `deadlines.db`
+- `student-3/database/Database`: `app.db` in Docker Compose
 - `student-5/backend/Api`: `grades.db`
 - `shared/backend/Api`: `canvas_audit.db`
 
@@ -29,10 +32,15 @@ Navigate to the microservice's `backend` or `Api` directory:
 # Example: Adding a migration to student-1
 cd student-1/backend
 dotnet ef migrations add <DescriptiveMigrationName> --project Api/Api.csproj
+
+# Student 3
+dotnet ef migrations add <DescriptiveMigrationName> \
+  --project student-3/database/Database/Database.csproj
 ```
 
 ### Step 2: Review Generated Migration
-Check the newly generated migration file in `Api/Migrations/`. Verify:
+Check the newly generated migration file in the owning project's
+`Migrations/` directory. Verify:
 - Up and Down methods are symmetric and reversible.
 - Column types, foreign keys, and indexes match the intended design.
 - No unintended drops or schema truncations occurred.
@@ -43,6 +51,10 @@ dotnet ef database update --project Api/Api.csproj
 ```
 
 In Docker Compose mode, migrations are typically applied automatically during application startup via `context.Database.Migrate()` or `DatabaseMigrator`.
+
+For Student 3, only `student-3-database` may mount `student-3-db` or
+apply migrations. `student-3-backend` accesses persistence exclusively
+through the internal HTTP API.
 
 ---
 

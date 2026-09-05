@@ -2,6 +2,12 @@
 
 This step-by-step playbook guides developers and AI agents through bootstrapping and integrating a new ASP.NET Core backend microservice (e.g. for Student 2: Automations or Student 4: Account).
 
+> [!NOTE]
+> This guide describes the existing single-service backend pattern. If the
+> slice requires a separately deployed persistence service, follow
+> [Splitting a Backend into API and Database Services](split-database-service.md)
+> after establishing the initial API behavior and data model.
+
 ---
 
 ## 1. Directory Structure

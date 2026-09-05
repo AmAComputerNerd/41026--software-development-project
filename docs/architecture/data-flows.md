@@ -30,10 +30,14 @@ This document traces the primary end-to-end data flows and lifecycle sequences a
         ▼
 [ student-3-backend ]
         │
-        │ 7. Transactional Upsert Tasks (EF Core SQLite)
+        │ 7. POST /internal/canvas-snapshots
+        ▼
+[ student-3-database ]
+        │
+        │ 8. Transactional Upsert Tasks (EF Core SQLite)
         │    (Existing tasks updated; missing marked inactive)
         ▼
-[ Database: tasks.db ]
+[ Database: /app/Data/app.db ]
 ```
 
 ### Steps:
@@ -42,7 +46,9 @@ This document traces the primary end-to-end data flows and lifecycle sequences a
 3. `shared-backend` forwards request with `CANVAS_API_TOKEN` to Canvas.
 4. Canvas returns course and assignment entities containing HTML descriptions.
 5. `shared-backend` cleans untrusted markup, producing clean plain text.
-6. `student-3-backend` performs atomic database upserts:
+6. `student-3-backend` validates and submits one complete snapshot to
+   `student-3-database`.
+7. `student-3-database` performs atomic database upserts:
    - New assignments become active tasks.
    - Deleted assignments in Canvas receive `CanvasIsActive = false` (never hard-deleted).
    - Submissions graded/submitted in Canvas mark the task `IsCompleted = true`.
@@ -52,39 +58,45 @@ This document traces the primary end-to-end data flows and lifecycle sequences a
 ## 2. Proactive Deadline Reminder & Inline Completion
 
 ```
-[ student-3 Background Service ]
+[ student-3-backend Background Service ]
         │
-        │ 1. Poll tasks due within reminder window
+        │ 1. GET /internal/reminders/due
         ▼
-[ Database: tasks.db ]
+[ student-3-database ]
         │
-        │ 2. POST /notifications/push
+        │ 2. Read /app/Data/app.db
+        ▼
+[ student-3-backend ]
+        │
+        │ 3. POST /notifications/push
         │    Payload: { Title, DueDate, RelatedEntityType: "Task", RelatedEntityId: 42 }
         ▼
 [ student-1-backend ]
         │
-        │ 3. Persist Notification (Type: Deadline)
-        │ 4. Publish Event to Stream Broker
+        │ 4. Persist Notification (Type: Deadline)
+        │ 5. Publish Event to Stream Broker
         ▼
 [ NotificationStreamBroker ] ───(SSE Event: "notification")───► [ student-1-frontend ]
                                                                       │
-                                                                      │ 5. Render Action Buttons
+                                                                      │ 6. Render Action Buttons
                                                                       │    [MARK COMPLETE] [AI BREAK DOWN]
                                                                       ▼
                                                               [ User clicks MARK COMPLETE ]
                                                                       │
-                                                                      │ 6. PUT /api/deadlines/tasks/42
+                                                                      │ 7. PUT /api/deadlines/tasks/42
                                                                       ▼
                                                               [ student-3-backend ]
 ```
 
 ### Steps:
-1. `DueSoonReminderBackgroundService` in `student-3` evaluates unreminded tasks due within the reminder window (e.g. 24h).
-2. It sends an HTTP push request to `student-1-backend` (`POST /notifications/push`) with `RelatedEntityType = "Task"` and `RelatedEntityId = <id>`.
-3. `student-1-backend` persists the notification in SQLite and stamps `DueSoonReminderSentAtUtc` on the task.
-4. `student-1-backend` emits a real-time event to `NotificationStreamBroker`.
-5. The user sees a toast alert and interactive action buttons on `/notifications/`.
-6. Clicking `MARK COMPLETE` executes an inline `PUT /api/deadlines/tasks/{id}` request directly through Nginx to `student-3-backend`.
+1. `DueSoonReminderBackgroundService` asks `student-3-database` for eligible tasks.
+2. The backend sends an HTTP push request to `student-1-backend` with the task identity.
+3. After successful delivery, the backend records `DueSoonReminderSentAtUtc`
+   through `student-3-database`.
+4. `student-1-backend` persists the notification and emits a real-time event.
+5. The user sees a toast alert and interactive action buttons.
+6. Clicking `MARK COMPLETE` calls `student-3-backend`, which sends one
+   transactional update command to `student-3-database`.
 
 ---
 
@@ -148,7 +160,9 @@ This document traces the primary end-to-end data flows and lifecycle sequences a
 1. User clicks `AI BREAK DOWN` on a Deadline notification.
 2. `student-1-frontend` opens `BreakdownDialog.vue`.
 3. Modal calls `POST /api/deadlines/tasks/{id}/ai-breakdown` on `student-3-backend`.
-4. `student-3-backend` builds prompt using assignment context from `tasks.db`, calls `ai-mode`, validates generated subtasks, and saves them atomically to the task.
+4. `student-3-backend` loads assignment context through `student-3-database`,
+   calls `ai-mode`, validates generated subtasks, and sends one bulk command
+   back to the database service for atomic persistence.
 
 ### Grade Impact Simulation Flow
 1. User clicks `GRADE IMPACT` on a Grade notification.

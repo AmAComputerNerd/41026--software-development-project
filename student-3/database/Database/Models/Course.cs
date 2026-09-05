@@ -1,4 +1,4 @@
-namespace Api.Models;
+namespace Database.Models;
 
 public class Course
 {
