@@ -1,10 +1,12 @@
 import { computed, ref } from 'vue'
 import {
+  deleteNotification as deleteNotificationRequest,
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
   markNotificationUnread,
 } from '@/api/notifications'
+import { completeTask } from '@/api/tasks'
 import { CURRENT_STUDENT_ID } from '@/config'
 
 export interface NotificationDto {
@@ -15,6 +17,9 @@ export interface NotificationDto {
   message: string
   isRead: boolean
   createdAtUtc: string
+  relatedEntityType: string | null
+  relatedEntityId: string | null
+  actionPayload?: string | null
 }
 
 // Matches the backend `NotificationType` enum names exactly — the API
@@ -41,12 +46,21 @@ const activeFilters = ref<Record<string, boolean>>(
   Object.fromEntries(NOTIFICATION_TYPES.map((t) => [t.value, true])),
 )
 
+export type SortOrder = 'newest' | 'oldest'
+
+const sortOrder = ref<SortOrder>('newest')
+
 export function useNotifications() {
   const unreadCount = computed(() => notifications.value.filter((n) => !n.isRead).length)
 
-  const filteredNotifications = computed(() =>
-    notifications.value.filter((n) => activeFilters.value[n.type]),
-  )
+  const filteredNotifications = computed(() => {
+    const filtered = notifications.value.filter((n) => activeFilters.value[n.type])
+    const direction = sortOrder.value === 'newest' ? -1 : 1
+    return [...filtered].sort(
+      (a, b) =>
+        direction * (new Date(a.createdAtUtc).getTime() - new Date(b.createdAtUtc).getTime()),
+    )
+  })
 
   async function fetchNotifications() {
     loading.value = true
@@ -66,6 +80,10 @@ export function useNotifications() {
 
   function setAllFilters(value: boolean) {
     NOTIFICATION_TYPES.forEach((t) => (activeFilters.value[t.value] = value))
+  }
+
+  function setSortOrder(value: SortOrder) {
+    sortOrder.value = value
   }
 
   async function markAsRead(id: string) {
@@ -107,18 +125,54 @@ export function useNotifications() {
     }
   }
 
+  async function markTaskComplete(id: string) {
+    const notification = notifications.value.find((n) => n.id === id)
+    if (!notification || !notification.relatedEntityId) return
+
+    try {
+      await completeTask(notification.relatedEntityId)
+      await markAsRead(id)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to mark task as complete'
+    }
+  }
+
+  async function deleteNotification(id: string) {
+    const index = notifications.value.findIndex((n) => n.id === id)
+    if (index === -1) return
+
+    const [removed] = notifications.value.splice(index, 1)
+    try {
+      await deleteNotificationRequest(id)
+    } catch (err) {
+      notifications.value.splice(index, 0, removed)
+      error.value = err instanceof Error ? err.message : 'Failed to delete notification'
+    }
+  }
+
+  function addRealtimeNotification(n: NotificationDto) {
+    if (!notifications.value.some((item) => item.id === n.id)) {
+      notifications.value = [n, ...notifications.value]
+    }
+  }
+
   return {
     notifications,
     loading,
     error,
     activeFilters,
+    sortOrder,
     unreadCount,
     filteredNotifications,
     fetchNotifications,
     toggleFilter,
     setAllFilters,
+    setSortOrder,
     markAsRead,
     markAsUnread,
     markAllAsRead,
+    markTaskComplete,
+    deleteNotification,
+    addRealtimeNotification,
   }
 }

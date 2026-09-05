@@ -2,7 +2,9 @@ using Api.Data;
 using Api.Endpoints;
 using Api.Extensions;
 using Api.Services;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +23,26 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         });
 });
 builder.Services.AddHttpClient();
-builder.Services.AddScoped<IAiDigestService, OpenRouterDigestService>();
+builder.Services.AddHttpClient<ISharedCanvasClient, SharedCanvasClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["SharedService:BaseUrl"]!);
+});
+var aiGatewayBaseUrl = builder.Configuration["AiGateway:BaseUrl"] ?? "http://ai-mode:8080";
+builder.Services.AddHttpClient<IAiDigestService, OpenRouterDigestService>(client =>
+{
+    client.BaseAddress = new Uri(aiGatewayBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+})
+.AddStandardResilienceHandler();
+builder.Services.AddScoped<CanvasNotificationSyncService>();
+builder.Services.AddSingleton<INotificationStreamBroker, NotificationStreamBroker>();
+builder.Services.AddHostedService<CanvasSyncBackgroundService>();
+builder.Services
+    .AddHealthChecks()
+    .AddCheck(
+        "self",
+        () => HealthCheckResult.Healthy(),
+        tags: ["live"]);
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy => policy
@@ -53,6 +74,19 @@ app.UseCors();
 app.MapNotificationEndpoints();
 app.MapPreferenceEndpoints();
 app.MapAiDigestEndpoints();
+app.MapCanvasSyncEndpoints();
+app.MapHealthChecks(
+    "/health/live",
+    new HealthCheckOptions
+    {
+        Predicate = registration => registration.Tags.Contains("live")
+    });
+app.MapHealthChecks(
+    "/health",
+    new HealthCheckOptions
+    {
+        Predicate = registration => registration.Tags.Contains("live")
+    });
 
 // Infrastructure
 app.UseApiExceptionHandling();

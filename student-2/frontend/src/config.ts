@@ -1,0 +1,1 @@
+export const currentStudentId = '25341708-0000-0000-0000-000000000002'

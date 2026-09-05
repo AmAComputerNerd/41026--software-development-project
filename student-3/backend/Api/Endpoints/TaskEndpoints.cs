@@ -17,6 +17,8 @@ public static class TaskEndpoints
         group.MapGet("/", GetTasks);
         group.MapGet("/{id:guid}", GetTask);
         group.MapPost("/", AddTask);
+        group.MapPost("/ai-description", GenerateDescription);
+        group.MapPost("/{id:guid}/ai-breakdown", GenerateBreakdown);
         group.MapPut("/{id:guid}", UpdateTask);
         group.MapDelete("/{id:guid}", DeleteTask);
         return endpoints;
@@ -137,6 +139,128 @@ public static class TaskEndpoints
             $"/api/tasks/{task.Id}",
             task.ToDto()
         );
+    }
+
+    private static async Task<IResult> GenerateBreakdown(
+        [FromRoute] Guid id,
+        GenerateTaskBreakdownRequestDto requestDto,
+        AppDbContext db,
+        IAiTaskService aiTaskService,
+        CancellationToken cancellationToken)
+    {
+        var prompt = requestDto.Prompt?.Trim();
+        if (string.IsNullOrWhiteSpace(prompt) || prompt.Length > 2000)
+        {
+            return Results.BadRequest("`prompt` must contain between 1 and 2000 characters.");
+        }
+
+        if (!Enum.TryParse(requestDto.Priority, out TaskPriority priority))
+        {
+            return Results.BadRequest("`priority` could not be correlated with a valid TaskPriority.");
+        }
+
+        var assignment = await db.Tasks
+            .Include(task => task.Course)
+            .FirstOrDefaultAsync(task => task.Id == id, cancellationToken);
+        if (assignment is null)
+        {
+            return Results.NotFound();
+        }
+
+        var generatedTasks = await aiTaskService.GenerateSubtasksAsync(
+            new AiTaskContext(
+                assignment.Title,
+                assignment.Description,
+                assignment.Course?.Name,
+                null,
+                assignment.DueDate),
+            prompt,
+            cancellationToken);
+        var now = DateTime.UtcNow;
+        var tasks = generatedTasks
+            .Select(generated => new TaskEntity
+            {
+                Title = generated.Title,
+                Description = generated.Description,
+                DueDate = assignment.DueDate,
+                Priority = priority,
+                Status = TaskStatus.Todo,
+                CourseId = assignment.CourseId,
+                Course = assignment.Course,
+                ParentTaskId = assignment.Id,
+                ParentTask = assignment,
+                CreatedAt = now,
+                UpdatedAt = now
+            })
+            .ToList();
+
+        db.Tasks.AddRange(tasks);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return Results.Created(
+            $"/api/tasks/{assignment.Id}",
+            tasks.Select(task => task.ToDto()).ToList());
+    }
+
+    private static async Task<IResult> GenerateDescription(
+        GenerateTaskDescriptionRequestDto requestDto,
+        AppDbContext db,
+        IAiTaskService aiTaskService,
+        CancellationToken cancellationToken)
+    {
+        var title = requestDto.Title?.Trim();
+        if (string.IsNullOrWhiteSpace(title) || title.Length > 200)
+        {
+            return Results.BadRequest("`title` must contain between 1 and 200 characters.");
+        }
+
+        Course? course = null;
+        if (requestDto.CourseId.HasValue)
+        {
+            course = await db.Courses
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    item => item.Id == requestDto.CourseId.Value,
+                    cancellationToken);
+            if (course is null)
+            {
+                return Results.BadRequest("Specified course does not exist.");
+            }
+        }
+
+        TaskEntity? parentTask = null;
+        if (requestDto.ParentTaskId.HasValue)
+        {
+            parentTask = await db.Tasks
+                .AsNoTracking()
+                .Include(task => task.Course)
+                .FirstOrDefaultAsync(
+                    item => item.Id == requestDto.ParentTaskId.Value,
+                    cancellationToken);
+            if (parentTask is null)
+            {
+                return Results.BadRequest("Specified parentTask does not exist.");
+            }
+
+            if (course is not null && parentTask.CourseId != course.Id)
+            {
+                return Results.BadRequest(
+                    "The specified course does not match the parent task.");
+            }
+
+            course ??= parentTask.Course;
+        }
+
+        var description = await aiTaskService.GenerateDescriptionAsync(
+            new AiTaskContext(
+                title,
+                null,
+                course?.Name,
+                parentTask?.Title,
+                parentTask?.DueDate),
+            cancellationToken);
+
+        return Results.Ok(new GeneratedTaskDescriptionDto(description));
     }
 
     private static async Task<IResult> UpdateTask(

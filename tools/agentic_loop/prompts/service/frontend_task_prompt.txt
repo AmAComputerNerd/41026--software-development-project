@@ -1,30 +1,25 @@
 Review Target: {{REVIEW_TARGET}}
 
-The evidence below is static discovery of the owner's Vue 3 + Vuetify
-frontend (component files, vue-router routes, Vuetify component tags in
-use) plus a best-effort reachability check of a running dev/preview
-server - not a hardcoded UI design, since the frontend is expected to
-change as the feature evolves.
-
-Frontend Evidence:
+Live Validation Evidence:
 {{VALIDATION_EVIDENCE}}
 
-Task:
-Compare the evidence against the Feature Context. Identify ONE precise,
-evidence-backed improvement, covering at most one of:
-- A component or route that seems missing for the stated feature to work
-- Vuetify components used in a way inconsistent with their typical purpose
-  (only flag this if it is visible in the evidence, not a general opinion)
-- A route discovered by vue-router with no obvious corresponding component
-- Whether the discovered components/routes plausibly match the feature
+Feature Context:
+{{FEATURE_CONTEXT}}
 
-If the dev server is not reachable: note that live behavior could not be
-verified, and base your assessment on the static evidence only.
-If no improvement is supported by the evidence, that is a valid and good
-outcome - say exactly: "No evidence-backed improvement identified."
+{{DOCUMENTATION_CONTEXT}}
+
+Task:
+Analyze the Live Validation Evidence above against the Feature Context and Codebase Documentation.
+Identify ONE precise, evidence-backed improvement for:
+- Adherence to the @better-canvas/ui-kit Neobrutalism design system tokens and components
+- Component structure and Vue Router configuration
+- Proxy routing alignment with shared-shell
+- Dev server responsiveness and connectivity
+
+If the evidence shows the frontend is not responding: say "Unable to verify live behavior."
+If no improvement is supported by the evidence, say exactly: "No evidence-backed improvement identified."
 
 Output Format:
-- Return exactly two bullet points (Observation + Recommendation), or the
-  no-evidence sentence.
+- Return exactly two bullet points (Issue + Recommendation), or the no-evidence sentence.
 - Maximum 100 words total.
 - No explanations, no reasoning.

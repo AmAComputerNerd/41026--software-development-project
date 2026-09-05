@@ -88,9 +88,10 @@ function openEdit(task: TaskItem) {
   <section class="nb-page">
     <header class="nb-page-header">
       <div>
-        <p class="nb-eyebrow nb-mono">MONTH AT A GLANCE</p>
-        <h1>Calendar</h1>
-        <p>See every deadline in context and add work directly to a day.</p>
+        <h1>CALENDAR</h1>
+        <p class="nb-page-subtitle">
+          See every deadline in context and add work directly to a day.
+        </p>
       </div>
       <div class="nb-calendar-controls">
         <button class="nb-btn nb-btn--outline" type="button" @click="moveMonth(-1)">←</button>
@@ -99,7 +100,7 @@ function openEdit(task: TaskItem) {
       </div>
     </header>
 
-    <v-alert v-if="error" type="error" variant="outlined" class="mb-5">{{ error }}</v-alert>
+    <div v-if="error" class="nb-alert nb-alert--error" role="alert">{{ error }}</div>
     <div v-if="loading" class="nb-panel nb-empty">Loading calendar...</div>
     <div v-else class="nb-calendar nb-panel">
       <div v-for="weekday in weekdays" :key="weekday" class="nb-calendar__weekday nb-mono">

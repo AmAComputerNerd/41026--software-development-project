@@ -1,25 +1,20 @@
-Review Target: {{REVIEW_TARGET}}
+Review Target: Docker Compose & Infrastructure
 
-The evidence below is parsed directly from the repo-root docker-compose.yml
-- the actual services, ports, volumes, dependencies, and networks defined
-today, not an assumed topology.
-
-Compose Evidence:
+Live Compose Evidence:
 {{VALIDATION_EVIDENCE}}
 
-Task:
-Analyze the evidence above. Identify ONE precise, evidence-backed
-observation about the compose architecture, covering at most one of:
-- A missing `depends_on` for a service that clearly needs another
-- A port conflict or an unpublished port for a service that likely needs one
-- A service with no volume where persistence looks required
-- A service not attached to a shared network when others are
+{{DOCUMENTATION_CONTEXT}}
 
-If nothing is supported by the evidence, that is a valid and good outcome
-- say exactly: "No evidence-backed improvement identified."
+Task:
+Analyze the docker-compose.yml configuration against the Architecture Documentation and AGENTS.md port map:
+- Service dependency declarations (depends_on conditions, health checks)
+- Port mappings (host ports 8080, 5101, 5103, 5105, 5110; internal-only ai-mode)
+- Environment variable injection and volume mounts
+- Network isolation
+
+If no issue is supported by the evidence, say exactly: "No evidence-backed improvement identified."
 
 Output Format:
-- Return exactly two bullet points (Issue + Recommendation), or the
-  no-evidence sentence.
+- Return exactly two bullet points (Issue + Recommendation), or the no-evidence sentence.
 - Maximum 100 words total.
 - No explanations, no reasoning.

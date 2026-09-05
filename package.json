@@ -4,7 +4,9 @@
     "shared/frontend",
     "shared/ui-kit",
     "student-1/frontend",
+    "student-2/frontend",
     "student-3/frontend",
-    "student-4/frontend"
+    "student-4/frontend",
+    "student-5/frontend"
   ]
 }

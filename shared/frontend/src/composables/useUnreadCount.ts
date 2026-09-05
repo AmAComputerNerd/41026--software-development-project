@@ -1,8 +1,9 @@
-import { ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { CURRENT_STUDENT_ID, NOTIFICATIONS_API_BASE_URL } from '@/config'
 
 export function useUnreadCount() {
   const count = ref(0)
+  let eventSource: EventSource | null = null
 
   async function load() {
     try {
@@ -16,6 +17,39 @@ export function useUnreadCount() {
       count.value = 0
     }
   }
+
+  function startStream() {
+    try {
+      const url = `${NOTIFICATIONS_API_BASE_URL}/notifications/stream?studentId=${CURRENT_STUDENT_ID}`
+      eventSource = new EventSource(url)
+      eventSource.onmessage = (e) => {
+        if (e.data) {
+          try {
+            const data = JSON.parse(e.data)
+            if (data && data.id) {
+              count.value++
+            }
+          } catch {
+            load()
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Notification SSE stream not available in shared shell:', err)
+    }
+  }
+
+  onMounted(() => {
+    load()
+    startStream()
+  })
+
+  onBeforeUnmount(() => {
+    if (eventSource) {
+      eventSource.close()
+      eventSource = null
+    }
+  })
 
   return { count, load }
 }

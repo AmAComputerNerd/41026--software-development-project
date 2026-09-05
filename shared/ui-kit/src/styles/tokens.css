@@ -15,6 +15,7 @@
   --nb-color-accent-yellow: #F2C94C; /* hazard-yellow accent (secondary tag, e.g. GRADE) */
   --nb-color-white: #FFFFFF; /* pure white, used for unread row backgrounds / AI tag */
   --nb-color-muted: #555555; /* secondary/meta text (timestamps, captions) */
+  --nb-color-shadow: var(--nb-color-ink); /* hard-shadow colour, independent of ink so dark mode shadows stay dark */
 
   /* Borders (solid ink, no radius) */
   --nb-border-width-sm: 2px;
@@ -24,7 +25,7 @@
 
   /* Shadows: hard offset, no blur/spread */
   --nb-shadow-offset: 6px;
-  --nb-shadow: var(--nb-shadow-offset) var(--nb-shadow-offset) 0 var(--nb-color-ink);
+  --nb-shadow: var(--nb-shadow-offset) var(--nb-shadow-offset) 0 var(--nb-color-shadow);
 
   /* Typography */
   --nb-font-display: 'Space Grotesk', system-ui, sans-serif;
@@ -43,12 +44,29 @@
   --nb-space-6: 24px;
   --nb-space-8: 32px;
   --nb-space-16: 64px;
+
+  /* Transitions & Animation curves */
+  --nb-duration-fast: 140ms;
+  --nb-duration-base: 220ms;
+  --nb-duration-slow: 320ms;
+  --nb-ease-standard: ease;
+  --nb-ease-out: ease-out;
+  --nb-ease-pop: cubic-bezier(0.2, 0.9, 0.25, 1.15);
+  --nb-transition-fast: var(--nb-duration-fast) var(--nb-ease-standard);
+  --nb-transition-base: var(--nb-duration-base) var(--nb-ease-standard);
 }
 
-/* Dark mode: swap ink/bg roles, keep accents punchy on the near-black base. */
+
+/* Dark mode: softened warm-neutral palette from the Notifications-Dark
+ * design (claude.ai/design project 5afc3379-890a-4fb9-8e8d-516a388c619a),
+ * swapping the stark near-black/near-white pairing for warm charcoal/bone
+ * tones. Cool blue/violet accents distinguish the night palette. */
 :root[data-theme='dark'] {
-  --nb-color-bg: #111111;
-  --nb-color-ink: #EDEBE6;
-  --nb-color-white: #1B1B1B;
-  --nb-color-muted: #9A9A9A;
+  --nb-color-bg: #161513;
+  --nb-color-ink: #C9C4B4;
+  --nb-color-accent-orange: #1E3A8A;
+  --nb-color-accent-yellow: #5B21B6;
+  --nb-color-white: #1E1C18;
+  --nb-color-muted: #85807A;
+  --nb-color-shadow: #050403;
 }

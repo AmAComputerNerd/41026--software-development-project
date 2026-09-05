@@ -14,7 +14,10 @@ public static class DtoExtensions
             SourceMicroservice: notification.SourceMicroservice,
             Message: notification.Message,
             IsRead: notification.IsRead,
-            CreatedAtUtc: notification.CreatedAtUtc
+            CreatedAtUtc: notification.CreatedAtUtc,
+            RelatedEntityType: notification.RelatedEntityType,
+            RelatedEntityId: notification.RelatedEntityId,
+            ActionPayload: notification.ActionPayload
         );
     }
 

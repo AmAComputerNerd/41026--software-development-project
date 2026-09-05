@@ -1,31 +1,74 @@
 <script lang="ts" setup>
-import { onMounted } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { Navbar, SERVICES } from '@better-canvas/ui-kit'
 import { useUnreadCount } from '@/composables/useUnreadCount'
+import { useNotifications } from '@/composables/useNotifications'
 import TileIcon from '@/components/TileIcon.vue'
+import NotificationDropdown from '@/components/NotificationDropdown.vue'
 
 const { count, load } = useUnreadCount()
+const { notifications, loading, error, load: loadNotifications } = useNotifications()
 
-onMounted(load)
+const bellWrap = ref<HTMLElement | null>(null)
+const dropdownOpen = ref(false)
+
+function toggleDropdown() {
+  dropdownOpen.value = !dropdownOpen.value
+  if (dropdownOpen.value) loadNotifications()
+}
+
+function onClickOutside(event: MouseEvent) {
+  if (dropdownOpen.value && bellWrap.value && !bellWrap.value.contains(event.target as Node)) {
+    dropdownOpen.value = false
+  }
+}
+
+onMounted(() => {
+  load()
+  document.addEventListener('click', onClickOutside)
+})
+
+onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
 </script>
 
 <template>
   <div class="shell-app">
     <Navbar :services="SERVICES">
       <template #actions>
-        <button class="nb-btn nb-btn--outline nb-navbar__bell" type="button" aria-label="Notifications">
-          <TileIcon name="bell" />
-          <span v-if="count > 0" class="nb-badge nb-navbar__bell-badge">{{ count > 99 ? '99+' : count }}</span>
-        </button>
+        <div ref="bellWrap" class="nb-navbar__bell-wrap">
+          <button
+            class="nb-btn nb-btn--outline nb-navbar__bell"
+            type="button"
+            aria-label="Notifications"
+            @click="toggleDropdown"
+          >
+            <TileIcon name="bell" />
+            <span v-if="count > 0" class="nb-badge nb-navbar__bell-badge">{{ count > 99 ? '99+' : count }}</span>
+          </button>
+          <NotificationDropdown
+            v-if="dropdownOpen"
+            :notifications="notifications"
+            :loading="loading"
+            :error="error"
+          />
+        </div>
       </template>
     </Navbar>
     <main>
-      <router-view />
+      <router-view v-slot="{ Component, route: currentRoute }">
+        <Transition name="page" mode="out-in" appear>
+          <component :is="Component" :key="currentRoute.name" />
+        </Transition>
+      </router-view>
     </main>
   </div>
 </template>
 
 <style scoped>
+.nb-navbar__bell-wrap {
+  position: relative;
+}
+
 .nb-navbar__bell {
   position: relative;
   display: inline-flex;
@@ -34,6 +77,14 @@ onMounted(load)
   width: 44px;
   height: 44px;
   padding: 0;
+  transition:
+    transform var(--nb-transition-fast),
+    box-shadow var(--nb-transition-fast);
+}
+
+.nb-navbar__bell:hover {
+  transform: translateY(-2px);
+  box-shadow: 2px 2px 0 var(--nb-color-ink);
 }
 
 .nb-navbar__bell-badge {
@@ -42,3 +93,4 @@ onMounted(load)
   right: -8px;
 }
 </style>
+

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import BaseDialog from '@/components/BaseDialog.vue'
 import { useTasks } from '@/composables/useTasks'
 import type { TaskItem, TaskPriority } from '@/types/task'
 
 interface Template {
   name: string
-  steps: string[]
+  prompt: string
 }
 
 const props = defineProps<{
@@ -21,40 +22,49 @@ const emit = defineEmits<{
 const templates: Template[] = [
   {
     name: 'Research assignment',
-    steps: ['Review requirements', 'Research and collect sources', 'Draft response', 'Edit and submit'],
+    prompt:
+      'Break this assignment into 4 to 6 steps covering requirements review, source research, drafting, editing and final submission.',
   },
   {
     name: 'Group project',
-    steps: ['Confirm roles and scope', 'Complete individual contribution', 'Combine project', 'Review and submit'],
+    prompt:
+      'Create a practical group-project plan with 4 to 7 steps covering scope, roles, individual work, integration, review and submission.',
   },
   {
     name: 'Exam preparation',
-    steps: ['Review topic list', 'Create study notes', 'Complete practice questions', 'Final review'],
+    prompt:
+      'Create a focused exam preparation plan with 4 to 7 steps covering topic review, study materials, practice and final revision.',
   },
-  { name: 'Blank plan', steps: [''] },
+  {
+    name: 'Custom plan',
+    prompt: 'Break this assignment into a short sequence of concrete, achievable sub-tasks.',
+  },
 ]
 
-const { add } = useTasks()
-const selectedTemplate = ref(templates[0]!)
-const steps = ref<string[]>([])
+const { generateBreakdown } = useTasks()
+const selectedTemplateName = ref(templates[0]!.name)
+const prompt = ref('')
 const priority = ref<TaskPriority>('Medium')
 const saving = ref(false)
 const error = ref('')
-const validSteps = computed(() => steps.value.map((step) => step.trim()).filter(Boolean))
+const canGenerate = computed(() => Boolean(props.assignment && prompt.value.trim()))
 
 watch(
   () => props.modelValue,
   (open) => {
     if (!open) return
-    selectedTemplate.value = templates[0]!
-    steps.value = [...selectedTemplate.value.steps]
+    selectedTemplateName.value = templates[0]!.name
+    prompt.value = templates[0]!.prompt
     priority.value = props.assignment?.priority ?? 'Medium'
     error.value = ''
   },
 )
 
-watch(selectedTemplate, (template) => {
-  steps.value = [...template.steps]
+watch(selectedTemplateName, (name) => {
+  const template = templates.find((item) => item.name === name)
+  if (template) {
+    prompt.value = template.prompt
+  }
 })
 
 function close() {
@@ -62,31 +72,22 @@ function close() {
 }
 
 async function createPlan() {
-  if (!props.assignment || !validSteps.value.length) {
-    error.value = 'Add at least one sub-task to this plan.'
+  if (!props.assignment || !prompt.value.trim()) {
+    error.value = 'Describe the plan you want the AI to create.'
     return
   }
 
   saving.value = true
   error.value = ''
   try {
-    for (const title of validSteps.value) {
-      await add({
-        title,
-        description: null,
-        dueDate: props.assignment.dueDate,
-        priority: priority.value,
-        courseId: props.assignment.courseId,
-        parentTaskId: props.assignment.id,
-      })
-    }
+    await generateBreakdown(props.assignment.id, {
+      prompt: prompt.value.trim(),
+      priority: priority.value,
+    })
     emit('saved')
     close()
   } catch (reason) {
-    error.value =
-      reason instanceof Error
-        ? `The plan was only partially created: ${reason.message}`
-        : 'The plan was only partially created.'
+    error.value = reason instanceof Error ? reason.message : 'Unable to generate this plan.'
   } finally {
     saving.value = false
   }
@@ -94,57 +95,58 @@ async function createPlan() {
 </script>
 
 <template>
-  <v-dialog
+  <BaseDialog
     :model-value="modelValue"
-    max-width="700"
+    labelled-by="breakdown-dialog-title"
+    width="700px"
     @update:model-value="emit('update:modelValue', $event)"
   >
-    <v-card class="nb-dialog">
+    <form @submit.prevent="createPlan">
       <div class="nb-dialog__header">
-        <span class="nb-mono">ASSIGNMENT TEMPLATE</span>
+        <span class="nb-mono">AI ASSIGNMENT PLAN</span>
         <button class="nb-icon-btn" type="button" aria-label="Close" @click="close">&times;</button>
       </div>
-      <v-card-text class="nb-dialog__body">
-        <h2>Break down {{ assignment?.title }}</h2>
-        <p>Start from a template, then tailor the sub-tasks before creating the plan.</p>
-        <v-alert v-if="error" type="error" variant="outlined" class="mb-4">{{ error }}</v-alert>
+      <div class="nb-dialog__body">
+        <h2 id="breakdown-dialog-title">Break down {{ assignment?.title }}</h2>
+        <p>Choose a prompt template, tailor it, then let AI create the sub-tasks.</p>
+        <div v-if="error" class="nb-alert nb-alert--error" role="alert">{{ error }}</div>
         <div class="nb-form-grid">
-          <v-select
-            v-model="selectedTemplate"
-            label="Template"
-            :items="templates"
-            item-title="name"
-            return-object
-          />
-          <v-select v-model="priority" label="Sub-task priority" :items="['Low', 'Medium', 'High']" />
+          <label class="nb-field">
+            <span>Template</span>
+            <select v-model="selectedTemplateName">
+              <option v-for="template in templates" :key="template.name" :value="template.name">
+                {{ template.name }}
+              </option>
+            </select>
+          </label>
+          <label class="nb-field">
+            <span>Sub-task priority</span>
+            <select v-model="priority">
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+            </select>
+          </label>
         </div>
-        <div class="nb-step-list">
-          <div v-for="(_, index) in steps" :key="index" class="nb-step-list__row">
-            <span class="nb-step-list__number nb-mono">{{ String(index + 1).padStart(2, '0') }}</span>
-            <v-text-field v-model="steps[index]" label="Sub-task" hide-details />
-            <button
-              class="nb-icon-btn"
-              type="button"
-              aria-label="Remove sub-task"
-              @click="steps.splice(index, 1)"
-            >
-              &times;
-            </button>
-          </div>
-        </div>
-        <button class="nb-text-btn" type="button" @click="steps.push('')">+ Add another step</button>
-      </v-card-text>
-      <v-card-actions class="nb-dialog__actions">
+        <label class="nb-field">
+          <span>Planning prompt</span>
+          <textarea v-model="prompt" rows="6" maxlength="2000" />
+          <small>{{ prompt.length }}/2000</small>
+        </label>
+        <p class="nb-helper nb-mono">
+          THE ASSIGNMENT AND COURSE CONTEXT COME FROM THE TRACKER. REVIEW GENERATED TASKS AFTER CREATION.
+        </p>
+      </div>
+      <div class="nb-dialog__actions">
         <button class="nb-btn nb-btn--outline" type="button" @click="close">Cancel</button>
         <button
           class="nb-btn nb-btn--accent"
-          type="button"
-          :disabled="saving || !validSteps.length"
-          @click="createPlan"
+          type="submit"
+          :disabled="saving || !canGenerate"
         >
-          {{ saving ? 'Creating...' : `Create ${validSteps.length} sub-tasks` }}
+          {{ saving ? 'AI is creating tasks...' : 'Generate sub-tasks' }}
         </button>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+      </div>
+    </form>
+  </BaseDialog>
 </template>

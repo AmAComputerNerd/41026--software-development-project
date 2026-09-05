@@ -3,15 +3,14 @@ using System.Text.Json.Nodes;
 
 namespace Api.Endpoints;
 
-public static class ChatEndpoints
+public static partial class ChatEndpoints
 {
-    private const string DefaultModel = "nvidia/nemotron-3-ultra-550b-a55b:free";
+    private const string DefaultModel = "minimax/minimax-m3:free";
     private const string OpenRouterEndpoint = "https://openrouter.ai/api/v1/chat/completions";
 
     public static IEndpointRouteBuilder MapChatEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/v1/chat/completions", PostChatCompletions);
-        endpoints.MapGet("/health", () => Results.Ok(new { status = "ok" }));
         return endpoints;
     }
 
@@ -27,22 +26,28 @@ public static class ChatEndpoints
         var apiKey = configuration["OpenRouter:ApiKey"];
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            logger.LogError("{Timestamp:O} OpenRouter:ApiKey is not configured", DateTime.UtcNow);
+            LogMissingApiKey(logger);
             return Results.Problem("OpenRouter:ApiKey configuration value is not set.", statusCode: StatusCodes.Status500InternalServerError);
         }
 
-        JsonNode? body;
+        JsonNode? parsedBody;
         try
         {
-            body = await JsonNode.ParseAsync(httpRequest.Body, cancellationToken: cancellationToken);
+            parsedBody = await JsonNode.ParseAsync(
+                httpRequest.Body,
+                cancellationToken: cancellationToken);
         }
         catch (System.Text.Json.JsonException)
         {
             return Results.BadRequest(new { error = "Request body must be valid JSON." });
         }
 
-        body ??= new JsonObject();
-        var model = body["model"]?.GetValue<string>();
+        if (parsedBody is not JsonObject body)
+        {
+            return Results.BadRequest(new { error = "Request body must be a JSON object." });
+        }
+
+        var model = body["model"]?.GetValue<string>()?.Trim();
         if (string.IsNullOrWhiteSpace(model))
         {
             model = DefaultModel;
@@ -64,18 +69,23 @@ public static class ChatEndpoints
         }
         catch (HttpRequestException ex)
         {
-            logger.LogError("{Timestamp:O} model={Model} success=false error={Error}", DateTime.UtcNow, model, ex.Message);
+            LogUpstreamRequestFailure(logger, model, ex.Message);
             return Results.Problem("Failed to reach OpenRouter.", statusCode: StatusCodes.Status502BadGateway);
         }
 
         using (upstreamResponse)
         {
             var responseBody = await upstreamResponse.Content.ReadAsStringAsync(cancellationToken);
-            var success = upstreamResponse.IsSuccessStatusCode;
+            var responseStatusCode = (int)upstreamResponse.StatusCode;
+            if (upstreamResponse.IsSuccessStatusCode &&
+                TryGetEmbeddedErrorStatusCode(responseBody, out var embeddedStatusCode))
+            {
+                responseStatusCode = embeddedStatusCode;
+            }
 
-            logger.LogInformation(
-                "{Timestamp:O} model={Model} status={Status} success={Success}",
-                DateTime.UtcNow, model, (int)upstreamResponse.StatusCode, success);
+            var success = responseStatusCode is >= 200 and < 300;
+
+            LogUpstreamResponse(logger, model, responseStatusCode, success);
 
             if (upstreamResponse.StatusCode == System.Net.HttpStatusCode.TooManyRequests
                 && upstreamResponse.Headers.RetryAfter is not null)
@@ -83,7 +93,69 @@ public static class ChatEndpoints
                 httpRequest.HttpContext.Response.Headers.RetryAfter = upstreamResponse.Headers.RetryAfter.ToString();
             }
 
-            return Results.Content(responseBody, "application/json", statusCode: (int)upstreamResponse.StatusCode);
+            return Results.Content(
+                responseBody,
+                "application/json",
+                statusCode: responseStatusCode);
         }
     }
+
+    private static bool TryGetEmbeddedErrorStatusCode(
+        string responseBody,
+        out int statusCode)
+    {
+        statusCode = StatusCodes.Status502BadGateway;
+
+        try
+        {
+            var body = JsonNode.Parse(responseBody);
+            if (body?["error"] is not JsonObject error)
+            {
+                return false;
+            }
+
+            if (error["code"] is JsonValue code)
+            {
+                if (code.TryGetValue<int>(out var numericCode) &&
+                    numericCode is >= 400 and <= 599)
+                {
+                    statusCode = numericCode;
+                }
+                else if (code.TryGetValue<string>(out var stringCode) &&
+                         int.TryParse(stringCode, out numericCode) &&
+                         numericCode is >= 400 and <= 599)
+                {
+                    statusCode = numericCode;
+                }
+            }
+
+            return true;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+    }
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "OpenRouter:ApiKey is not configured.")]
+    private static partial void LogMissingApiKey(ILogger logger);
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "model={Model} success=false error={Error}")]
+    private static partial void LogUpstreamRequestFailure(
+        ILogger logger,
+        string model,
+        string error);
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "model={Model} status={Status} success={Success}")]
+    private static partial void LogUpstreamResponse(
+        ILogger logger,
+        string model,
+        int status,
+        bool success);
 }

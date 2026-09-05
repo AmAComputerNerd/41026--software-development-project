@@ -22,13 +22,18 @@ Same request shape as OpenAI's chat completions API:
 }
 ```
 
-Response is the raw OpenRouter response, passed through as-is.
+The response body is passed through unchanged. If a provider embeds an
+`error` object inside an HTTP 200 response, the gateway converts its error
+code into the HTTP response status so callers can handle and retry it
+correctly.
 
 ## Model
 
-Defaults to Nemotron 3 Ultra (`nvidia/nemotron-3-ultra-550b-a55b:free`) if
+Defaults to MiniMax-M3 (`minimax/minimax-m3:free`) if
 you omit `model`. Override by setting `model` in request body.
 
 ## docker-compose
 
-Add `depends_on: ai-mode` to your backend service.
+Add a health check and use `depends_on: condition: service_healthy` for
+`ai-mode`. Its `/health/live` endpoint reports process liveness and
+`/health/ready` verifies that the OpenRouter key is configured.

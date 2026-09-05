@@ -1,6 +1,4 @@
-from pathlib import Path
-
-from dotenv import load_dotenv
+from __future__ import annotations
 
 from config.review_config import LAYERS, OWNERS, REPO_ROOT
 from core.ai_runner import AIRunner
@@ -44,10 +42,12 @@ def _run_all(ai: AIRunner) -> None:
 
 
 def main() -> None:
-    load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env")
-    ai = AIRunner()
+    ai = AIRunner(repo_root=REPO_ROOT)
 
-    print("AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review")
+    print("======================================================================")
+    print("SHARED TEAM AGENTIC AI LOOP: Plan -> Act -> Observe -> Adapt")
+    print("Authoritative Codebase Documentation & Multi-Agent Architecture Review")
+    print("======================================================================")
 
     while True:
         print_owner_menu(OWNERS)

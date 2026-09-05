@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { AiDigestDto } from '@/composables/useAiDigest'
+import MarkdownContent from './MarkdownContent.vue'
 
 const props = defineProps<{ digests: AiDigestDto[] }>()
 
@@ -19,7 +20,7 @@ const history = computed(() => props.digests)
     <p v-if="history.length === 0" class="nb-history__empty nb-mono">NO DIGESTS YET</p>
     <div v-for="d in history" :key="d.id" class="nb-history__row">
       <span class="nb-history__date">{{ formatDate(d.generatedAtUtc) }}</span>
-      <p class="nb-history__summary">{{ d.summary }}</p>
+      <MarkdownContent class="nb-history__summary" :source="d.summary" />
     </div>
   </div>
 </template>
@@ -27,6 +28,7 @@ const history = computed(() => props.digests)
 <style scoped>
 .nb-history {
   margin-top: 32px;
+  animation: nb-rise-in 400ms 180ms ease-out both;
 }
 
 .nb-history__heading {
@@ -45,3 +47,4 @@ const history = computed(() => props.digests)
   margin: 0;
 }
 </style>
+
