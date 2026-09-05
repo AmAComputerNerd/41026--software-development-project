@@ -2,12 +2,15 @@
 
 This document details the database architecture, schema management, and Entity Framework Core migration workflows for the microservices in this repository.
 
+For the complete extraction process, see
+[Playbook: Splitting a Backend into API and Database Services](../playbooks/split-database-service.md).
+
 ---
 
 ## 1. Database Architecture & Boundaries
 
 ### Strict Isolation Rule
-Each backend microservice maintains an **independent SQLite database**:
+Each persistence-owning service maintains an **independent SQLite database**:
 - `student-1/backend/Api`: `notifications.db` (or configured database name)
 - `student-3/database/Database`: `app.db` in Docker Compose
 - `student-5/backend/Api`: `grades.db`
@@ -36,7 +39,8 @@ dotnet ef migrations add <DescriptiveMigrationName> \
 ```
 
 ### Step 2: Review Generated Migration
-Check the newly generated migration file in `Api/Migrations/`. Verify:
+Check the newly generated migration file in the owning project's
+`Migrations/` directory. Verify:
 - Up and Down methods are symmetric and reversible.
 - Column types, foreign keys, and indexes match the intended design.
 - No unintended drops or schema truncations occurred.
