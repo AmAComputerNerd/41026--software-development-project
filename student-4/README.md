@@ -8,7 +8,9 @@
 
 ## 1. Planned Architecture
 
-- **Backend**: ASP.NET Core (.NET 10) Minimal API + EF Core SQLite (port `5104`).
+- **Backend**: ASP.NET Core (.NET 10) public API (port `5104`).
+- **Database**: Internal ASP.NET Core + EF Core SQLite service (`5204` standalone).
+- **Contracts**: Shared internal API/database transport records.
 - **Frontend**: Vue 3 + TypeScript + Vite + `@better-canvas/ui-kit` (proxied at `/account/`).
 - **Integration Points**:
   - Fetches authenticated user info from Canvas via `shared-backend` (`GET /api/canvas/users/self`).
@@ -18,5 +20,5 @@
 
 ## 2. Implementation Playbooks
 
-- To implement the backend, follow [Playbook: New Backend Microservice](../docs/playbooks/new-backend-microservice.md).
+- To implement the backend slice, follow [Playbook: New Backend Slice](../docs/playbooks/new-backend-microservice.md).
 - To implement the frontend, follow [Playbook: New Frontend Microservice](../docs/playbooks/new-frontend-microservice.md).

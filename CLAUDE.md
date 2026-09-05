@@ -40,7 +40,8 @@ docker compose down -v
 dotnet build
 dotnet test
 dotnet format --verify-no-changes
-dotnet ef migrations add <Name> --project Api/Api.csproj
+dotnet ef migrations add <Name> \
+  --project student-N/database/Database/Database.csproj
 
 # Frontend (npm workspaces)
 npm run dev --workspace=shared-frontend

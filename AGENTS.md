@@ -177,11 +177,13 @@ dotnet test
 # Format and check code standards
 dotnet format --verify-no-changes
 
-# Add an EF Core migration
-dotnet ef migrations add <MigrationName> --project Api/Api.csproj
+# Add an EF Core migration (run against the persistence-owning project)
+dotnet ef migrations add <MigrationName> \
+  --project student-N/database/Database/Database.csproj
 
-# Update database schema manually
-dotnet ef database update --project Api/Api.csproj
+# Update the owned database schema manually
+dotnet ef database update \
+  --project student-N/database/Database/Database.csproj
 ```
 
 ### Frontend Operations (from root or workspace directory)
@@ -263,7 +265,7 @@ npm run build --workspaces
   - Fix: Add origin to `Cors:AllowedOrigins` in `appsettings.Development.json` or `docker-compose.yml`.
 - **EF Core Database Drift / Missing Tables**:
   - Cause: Model entity changed without migration.
-  - Fix: Run `dotnet ef migrations add <Name> --project Api/Api.csproj` and restart the backend.
+  - Fix: Run `dotnet ef migrations add <Name> --project student-N/database/Database/Database.csproj` and restart the database service.
 - **Frontend Shows 404 / 502 for New Microservice**:
   - Cause: Nginx location block missing or commented out in `shared/frontend/nginx.conf`.
   - Fix: Uncomment/add the route block in `shared/frontend/nginx.conf` and ensure `shared-shell` has `depends_on` the new service.
@@ -280,5 +282,5 @@ npm run build --workspaces
 - [Testing & CI Guide](docs/development/testing-and-ci.md)
 - [Database & Migrations Guide](docs/development/database-and-migrations.md)
 - [Playbook: New Frontend Microservice](docs/playbooks/new-frontend-microservice.md)
-- [Playbook: New Backend Microservice](docs/playbooks/new-backend-microservice.md)
+- [Playbook: New Backend Slice](docs/playbooks/new-backend-microservice.md)
 - [Playbook: Agentic Loop Evaluation](docs/playbooks/agentic-loop-guide.md)

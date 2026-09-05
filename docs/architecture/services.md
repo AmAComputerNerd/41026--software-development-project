@@ -146,4 +146,4 @@ This document details every service in the repository, including responsibilitie
 - **Path**: `student-2/` and `student-4/`
 - **Owners**: Student 2 (Isaac Thomas) and Student 4 (Tristan Huang)
 - **Status**: Scaffolding / planned for Release 1.
-- **Integration Roadmap**: Follow [Playbook: New Backend Microservice](../playbooks/new-backend-microservice.md) and [Playbook: New Frontend Microservice](../playbooks/new-frontend-microservice.md).
+- **Integration Roadmap**: Follow [Playbook: New Backend Slice](../playbooks/new-backend-microservice.md) and [Playbook: New Frontend Microservice](../playbooks/new-frontend-microservice.md).

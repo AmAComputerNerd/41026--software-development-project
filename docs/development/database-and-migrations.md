@@ -26,16 +26,19 @@ Each persistence-owning service maintains an **independent SQLite database**:
 Whenever you modify an entity class or `DbContext` model configuration:
 
 ### Step 1: Create a Migration
-Navigate to the microservice's `backend` or `Api` directory:
+New slices place migrations in their dedicated database service:
 
 ```bash
-# Example: Adding a migration to student-1
-cd student-1/backend
-dotnet ef migrations add <DescriptiveMigrationName> --project Api/Api.csproj
-
-# Student 3
 dotnet ef migrations add <DescriptiveMigrationName> \
-  --project student-3/database/Database/Database.csproj
+  --project student-N/database/Database/Database.csproj
+```
+
+Existing legacy services continue using their current persistence-owning
+project until migrated. For example:
+
+```bash
+dotnet ef migrations add <DescriptiveMigrationName> \
+  --project student-1/backend/Api/Api.csproj
 ```
 
 ### Step 2: Review Generated Migration
@@ -47,7 +50,8 @@ Check the newly generated migration file in the owning project's
 
 ### Step 3: Apply Migration Locally
 ```bash
-dotnet ef database update --project Api/Api.csproj
+dotnet ef database update \
+  --project student-N/database/Database/Database.csproj
 ```
 
 In Docker Compose mode, migrations are typically applied automatically during application startup via `context.Database.Migrate()` or `DatabaseMigrator`.
@@ -70,7 +74,7 @@ through the internal HTTP API.
 
 - **Pending Model Changes Error (`InvalidOperationException`)**:
   - Cause: A model was modified without generating a matching migration.
-  - Fix: Run `dotnet ef migrations add <Name> --project Api/Api.csproj`.
+  - Fix: Run `dotnet ef migrations add <Name> --project student-N/database/Database/Database.csproj`.
 - **Database Lock / Busy Errors (`SQLite Error 5: 'database is locked'`)**:
   - Cause: Multiple processes accessing the SQLite file simultaneously without write-ahead logging (WAL).
   - Fix: Enable WAL mode in DbContext setup (`PRAGMA journal_mode=WAL;`).

@@ -1,7 +1,8 @@
 # Playbook: Splitting a Backend into API and Database Services
 
-Use this playbook when an existing ASP.NET Core backend directly owns Entity
-Framework Core and must be separated into:
+Use this migration playbook when a legacy ASP.NET Core backend directly owns
+Entity Framework Core and must be brought to the repository's default
+API/database architecture:
 
 - A public API and orchestration service.
 - An internal database service that exclusively owns EF Core and the database.
