@@ -48,11 +48,18 @@ The repository enforces CI checks on all Pull Requests targeting `main` and push
 
 | Workflow File | Trigger Paths | Key Jobs Executed |
 |---|---|---|
-| **`docker-ci.yml`** | `ai-services/**`, `shared/**`, `student-*/**`, `docker-compose.yml`, `package.json` | Full multi-service Docker build verification |
+| **`docker-ci.yml`** | `ai-services/**`, `shared/**`, `student-*/**`, `docker-compose.yml`, `package.json` | Compose contract validation, dynamically discovered parallel image builds, and focused integration smoke tests |
 | **`shared-ci.yml`** | `shared/**` | Frontend build, .NET build/test, `dotnet format` check, EF migrations check, NuGet vulnerability audit |
 | **`student-1-ci.yml`** | `student-1/**` | Notifications frontend typecheck/build, .NET build/test, format check, EF migration check |
 | **`student-3-ci.yml`** | `student-3/**` | Deadlines frontend typecheck/build, .NET build/test, format check, EF migration check |
 | **`student-5-ci.yml`** | `student-5/**` | Grades frontend typecheck/build, .NET build/test, format check |
+
+Docker image targets are discovered from the rendered Compose configuration
+rather than maintained as a second service list. Each image builds in a
+four-wide matrix with its own BuildKit GitHub Actions cache scope. The stable
+`Validate Compose & build images` aggregate check succeeds only when the
+Compose contract, every image build, and the Student 3 integration smoke test
+all pass.
 
 ---
 
