@@ -1,8 +1,8 @@
-using Api.Data;
+using Database.Data;
 using Microsoft.EntityFrameworkCore;
-using TaskStatus = Api.Models.TaskStatus;
+using TaskStatus = Database.Models.TaskStatus;
 
-namespace Api.Services;
+namespace Database.Services;
 
 public sealed class TaskHierarchyService(AppDbContext db)
 {

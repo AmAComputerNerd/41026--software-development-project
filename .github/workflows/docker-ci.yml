@@ -60,6 +60,21 @@ jobs:
       - name: Validate Compose configuration
         run: docker compose config --quiet
 
+      - name: Verify Student 3 database isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          config=$(docker compose config --format json)
+          jq --exit-status '
+            .networks["student-3-data"].internal == true and
+            (.services["student-3-database"].networks | keys == ["student-3-data"]) and
+            (.services["student-3-database"] | has("ports") | not) and
+            (.services["student-3-backend"].networks | has("default")) and
+            (.services["student-3-backend"].networks | has("student-3-data")) and
+            (.services["student-3-backend"].depends_on | has("student-1-backend") | not)
+          ' <<< "$config" > /dev/null
+
       - name: Build all service images
         run: docker compose build
 
@@ -68,10 +83,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          docker compose up --detach shared-backend ai-mode student-1-backend student-3-backend
+          docker compose up --detach shared-backend ai-mode student-1-backend student-3-database student-3-backend
 
           for _ in {1..30}; do
             if curl --fail --silent http://127.0.0.1:5101/health/live > /dev/null &&
+              docker compose exec -T student-3-database \
+                curl --fail --silent http://localhost:8080/health/ready > /dev/null &&
               curl --fail --silent http://127.0.0.1:5103/health/ready > /dev/null; then
               break
             fi
@@ -79,6 +96,8 @@ jobs:
           done
 
           curl --fail --silent http://127.0.0.1:5101/health/live > /dev/null
+          docker compose exec -T student-3-database \
+            curl --fail --silent http://localhost:8080/health/ready > /dev/null
           curl --fail --silent http://127.0.0.1:5103/health/ready > /dev/null
 
           docker compose stop ai-mode
@@ -97,14 +116,28 @@ jobs:
           docker compose start ai-mode
           for _ in {1..20}; do
             if curl --fail --silent http://127.0.0.1:5103/health/ready > /dev/null; then
-              exit 0
+              break
             fi
             sleep 1
           done
+          curl --fail --silent http://127.0.0.1:5103/health/ready > /dev/null
 
-          docker compose ps
-          docker compose logs shared-backend ai-mode student-1-backend student-3-backend
-          exit 1
+          docker compose stop student-3-database
+          for _ in {1..10}; do
+            status=$(
+              curl --silent --output /dev/null --write-out "%{http_code}" \
+                http://127.0.0.1:5103/health/ready
+            )
+            if [[ "$status" == "503" ]]; then
+              break
+            fi
+            sleep 1
+          done
+          test "$status" = "503"
+
+      - name: Show smoke-test logs on failure
+        if: failure()
+        run: docker compose logs shared-backend ai-mode student-1-backend student-3-database student-3-backend
 
       - name: Stop smoke-test services
         if: always()

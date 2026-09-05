@@ -1,7 +1,7 @@
-using Api.Data;
+using Database.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace Api.Extensions;
+namespace Database.Extensions;
 
 public static class DatabaseExtensions
 {

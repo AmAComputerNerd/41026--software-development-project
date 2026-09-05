@@ -25,7 +25,7 @@ This repository is an **LLM-enhanced microservices web platform** built on top o
 Any AI agent modifying or extending this codebase **must strictly follow these 5 rules**:
 
 ### Rule 1: Database Isolation (No Cross-Database Queries)
-- Each backend owns an independent SQLite database (`*.db`) via Entity Framework Core.
+- Each bounded context owns an independent SQLite database (`*.db`) via Entity Framework Core.
 - **NEVER** query another service's SQLite file or EF Core DbContext directly.
 - **All cross-service data exchange must occur over HTTP APIs** using defined DTO contracts.
 
@@ -63,7 +63,8 @@ Any AI agent modifying or extending this codebase **must strictly follow these 5
 | **`student-1-frontend`** | `student-1/frontend` | Vue 3 + TypeScript + Vite | *Proxied* | `http://student-1-frontend:80` | Notifications UI, SSE toast alerts, AI digest assistant (`/notifications/`, `/api/notifications/`) |
 | **`student-2-backend`** | `student-2/backend` | ASP.NET Core (.NET 10) + SQLite | `5102` | `http://student-2-backend:8080` | Automations service (planned / placeholder) |
 | **`student-2-frontend`** | `student-2/frontend` | Vue 3 + TypeScript + Vite | *Proxied* | `http://student-2-frontend:80` | Automations UI (`/automations/`, `/api/automations/`) |
-| **`student-3-backend`** | `student-3/backend` | ASP.NET Core (.NET 10) + SQLite | `5103` | `http://student-3-backend:8080` | Deadline & task tracker, Canvas sync, AI task planning, due-soon reminders (`/api/deadlines/*`, `/api/tasks/*`, `/api/canvas-sync`) |
+| **`student-3-backend`** | `student-3/backend` | ASP.NET Core (.NET 10) | `5103` | `http://student-3-backend:8080` | Public deadline/task API, Canvas and AI orchestration, due-soon reminders (`/api/deadlines/*`, `/api/tasks/*`, `/api/canvas-sync`) |
+| **`student-3-database`** | `student-3/database` | ASP.NET Core (.NET 10) + EF Core SQLite | *Internal only* (`5203` standalone) | `http://student-3-database:8080` | Exclusive owner of Student 3 persistence, migrations, seeding, and atomic task operations |
 | **`student-3-frontend`** | `student-3/frontend` | Vue 3 + TypeScript + Vite | *Proxied* | `http://student-3-frontend:80` | Deadlines & task management UI, calendar view (`/deadlines/`, `/api/deadlines/`) |
 | **`student-4-backend`** | `student-4/backend` | ASP.NET Core (.NET 10) + SQLite | `5104` | `http://student-4-backend:8080` | Account & profile service (planned / placeholder) |
 | **`student-4-frontend`** | `student-4/frontend` | Vue 3 + TypeScript + Vite | *Proxied* | `http://student-4-frontend:80` | Account UI (`/account/`, `/api/account/`) |
@@ -103,7 +104,9 @@ Any AI agent modifying or extending this codebase **must strictly follow these 5
 │   └── frontend/                      # Placeholder / scaffold
 │
 ├── student-3/                         # Deadlines & Tasks vertical slice (Jonathon Thomson)
-│   ├── backend/                       # DeadlineTaskTracker ASP.NET Core + SQLite + AI planner
+│   ├── backend/                       # Public API, Canvas/AI orchestration, reminders
+│   ├── database/                      # Internal EF Core/SQLite persistence service
+│   ├── contracts/                     # Shared internal persistence contracts
 │   └── frontend/                      # Vue 3 Deadlines & Task Tracker UI
 │
 ├── student-4/                         # Account vertical slice (Tristan Huang)
@@ -236,8 +239,8 @@ npm run build --workspaces
 ```
 
 ### Key Interactive Flows
-1. **Canvas Assignment Ingestion**: User/Job invokes `POST /api/canvas-sync` on `student-3-backend` → calls `shared-backend` → fetches Canvas assignments → sanitizes HTML to plain text → upserts task records in `student-3` SQLite.
-2. **Proactive Deadline Reminders**: `student-3-backend` background worker identifies tasks due soon → dispatches `POST /notifications/push` with payload (`RelatedEntityType: "Task"`, `RelatedEntityId: <id>`) to `student-1-backend`.
+1. **Canvas Assignment Ingestion**: User/Job invokes `POST /api/canvas-sync` on `student-3-backend` → calls `shared-backend` → fetches sanitized Canvas assignments → sends one snapshot command to `student-3-database` for an atomic SQLite upsert.
+2. **Proactive Deadline Reminders**: `student-3-backend` queries due candidates from `student-3-database` → dispatches `POST /notifications/push` to `student-1-backend` → records successful delivery through the database service.
 3. **Real-time SSE Notification Stream**: `student-1-frontend` establishes `GET /notifications/stream` (`text/event-stream`) → `NotificationStreamBroker` pushes live events to toasts and shell unread bell badge.
 4. **Cross-Service Action Buttons**:
    - `AI BREAK DOWN`: Notification on `student-1` triggers dialog calling `POST /api/deadlines/tasks/{id}/ai-breakdown` on `student-3`.

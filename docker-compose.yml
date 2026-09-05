@@ -81,22 +81,42 @@ services:
             ai-mode:
                 condition: service_healthy
 
-    student-3-backend:
+    student-3-database:
         build:
-            context: ./student-3/backend
-            dockerfile: Api/Dockerfile
-        ports:
-            - "5103:8080"
+            context: ./student-3
+            dockerfile: database/Database/Dockerfile
         volumes:
             - student-3-db:/app/Data
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+        networks:
+            - student-3-data
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 15s
+
+    student-3-backend:
+        build:
+            context: ./student-3
+            dockerfile: backend/Api/Dockerfile
+        ports:
+            - "5103:8080"
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+            DatabaseService__BaseUrl: http://student-3-database:8080
             SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__BaseUrl: http://ai-mode:8080
             NotificationService__BaseUrl: http://student-1-backend:8080
             DueSoonReminder__IntervalMinutes: "15"
             DueSoonReminder__HoursBeforeDue: "24"
             DueSoonReminder__FinalHoursBeforeDue: "3"
+        networks:
+            - default
+            - student-3-data
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -105,11 +125,11 @@ services:
             retries: 5
             start_period: 15s
         depends_on:
+            student-3-database:
+                condition: service_healthy
             shared-backend:
                 condition: service_healthy
             ai-mode:
-                condition: service_healthy
-            student-1-backend:
                 condition: service_healthy
 
     student-5-backend:
@@ -195,3 +215,8 @@ volumes:
     student-2-db:
     student-3-db:
     student-5-db:
+
+networks:
+    default:
+    student-3-data:
+        internal: true

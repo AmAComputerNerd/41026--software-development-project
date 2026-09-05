@@ -10,7 +10,7 @@ Keep `docs/architecture/overview.md` up to date with what's actually built.
 
 ## 1. Golden Architectural Rules
 
-1. **Database Boundaries**: Each student's `student-N/backend` owns its own isolated SQLite database. **Zero cross-database queries**; all communication is via HTTP APIs.
+1. **Database Boundaries**: Each student slice owns an isolated SQLite database. Student 3 delegates persistence to its internal `student-3-database` service. **Zero cross-database queries**; all communication is via HTTP APIs.
 2. **Canvas Gateway**: `shared/backend` exclusively owns Canvas API communication (`courses`, `assignments`, `users`). Assignments' untrusted HTML is sanitized into plain text at the gateway.
 3. **AI Gateway (`ai-mode`)**: Only `ai-mode` holds `OPENROUTER_API_KEY`. All microservices call `http://ai-mode:8080/v1/chat/completions`.
 4. **Design System**: Use `@better-canvas/ui-kit` (workspace package) with Vue 3 `<script setup>` and plain SCSS. Follow Neobrutalism tokens (`0px` radius, thick borders, raw drop shadows). No Vuetify in new slices.

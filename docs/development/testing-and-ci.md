@@ -21,8 +21,9 @@ dotnet format student-3/backend/DeadlineTaskTracker.sln --verify-no-changes
 dotnet format shared/backend/SharedBackend.sln --verify-no-changes
 
 # 3. Check for EF Core migration drift (ensure models match migrations)
-# (Run from the Api project directory)
-dotnet ef migrations has-pending-model-changes --project Api/Api.csproj
+# Student 3 EF Core is owned by its database service
+dotnet ef migrations has-pending-model-changes \
+  --project student-3/database/Database/Database.csproj
 ```
 
 ### Frontend Typechecking & Building
