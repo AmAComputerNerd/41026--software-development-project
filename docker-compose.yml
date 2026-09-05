@@ -127,6 +127,25 @@ services:
             ai-mode:
                 condition: service_healthy
 
+    student-4-backend:
+        build:
+            context: ./student-4/backend
+            dockerfile: Api/Dockerfile
+        ports:
+            - "5104:8080"
+        volumes:
+            - student-4-db:/app/Data
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+            AiGateway__BaseUrl: http://ai-mode:8080
+        depends_on:
+            - ai-mode
+
+    student-4-frontend:
+        build:
+            context: .
+            dockerfile: student-4/frontend/Dockerfile
+
     student-1-frontend:
         build:
             context: .
@@ -184,6 +203,10 @@ services:
                 condition: service_started
             student-3-backend:
                 condition: service_healthy
+            student-4-frontend:
+                condition: service_started
+            student-4-backend:
+                condition: service_healthy
             student-5-frontend:
                 condition: service_started
             student-5-backend:
@@ -194,4 +217,5 @@ volumes:
     student-1-db:
     student-2-db:
     student-3-db:
+    student-4-db:
     student-5-db:
