@@ -54,6 +54,7 @@ internal sealed record CanvasQuizResponse(
     [property: JsonPropertyName("id")] long Id,
     [property: JsonPropertyName("title")] string? Title,
     [property: JsonPropertyName("quiz_type")] string? QuizType,
+    [property: JsonPropertyName("has_access_code")] bool? HasAccessCode,
     [property: JsonPropertyName("time_limit")] int? TimeLimit,
     [property: JsonPropertyName("allowed_attempts")] int? AllowedAttempts,
     [property: JsonPropertyName("question_count")] int? QuestionCount,

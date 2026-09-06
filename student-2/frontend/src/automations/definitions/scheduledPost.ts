@@ -63,10 +63,11 @@ export default defineAutomationType({
     body: automation.body,
     groupConversation: automation.groupConversation,
   }),
-  automationTitle: (automation) => automation.subject,
+  automationTitle: (automation) => automation.subject || 'Scheduled post',
   automationDetail: (automation) =>
     `${formatDate(automation.postTime)} · ${automation.recipients.length} recipient${automation.recipients.length === 1 ? '' : 's'}`,
-  runTitle: (run) => run.subject,
+  runTitle: (run, automation) =>
+    `${automation?.subject || run.subject || 'Scheduled post'} · ${formatDate(run.postTime)}`,
   runDetail: (run) =>
     `${run.recipients.length} recipient${run.recipients.length === 1 ? '' : 's'}`,
 })

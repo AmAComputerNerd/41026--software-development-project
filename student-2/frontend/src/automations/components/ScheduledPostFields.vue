@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { getCanvasCourses, getCanvasRecipients } from '@/api/canvas'
+import { formatCourseLabel } from '@/automations/courseLabels'
 import type { ScheduledPostAutomationFormData } from '@/types/automation'
 import type { CanvasCourse, CanvasRecipient } from '@/types/canvas'
 
@@ -11,11 +12,13 @@ const search = ref('')
 const loadingCourses = ref(true)
 const loadingRecipients = ref(false)
 const error = ref('')
+const recipientField = ref<HTMLElement | null>(null)
+const recipientMenuOpen = ref(false)
 
 const selectedRecipients = computed(() => model.value.recipients.map((id) =>
   recipients.value.find((recipient) => recipient.id === id) ?? {
     id,
-    name: id,
+    name: 'Unavailable recipient',
     category: 'Unavailable',
     avatarUrl: null,
   },
@@ -44,8 +47,17 @@ const sendIndividually = computed({
     model.value.groupConversation = !value
   },
 })
+const savedCourseUnavailable = computed(() =>
+  Boolean(model.value.contextCode) &&
+  !courses.value.some((course) => `course_${course.id}` === model.value.contextCode),
+)
+const savedCourseLabel = computed(() => {
+  const courseId = getCourseId(model.value.contextCode)
+  return courseId ? `Course ${courseId} (currently unavailable)` : 'Saved course (currently unavailable)'
+})
 
 onMounted(async () => {
+  document.addEventListener('click', handleOutsideClick)
   try {
     courses.value = await getCanvasCourses()
     const courseId = getCourseId(model.value.contextCode)
@@ -57,6 +69,8 @@ onMounted(async () => {
   }
 })
 
+onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick))
+
 async function changeCourse(event: Event) {
   const contextCode = (event.target as HTMLSelectElement).value
   model.value.contextCode = contextCode
@@ -64,6 +78,7 @@ async function changeCourse(event: Event) {
   recipients.value = []
   search.value = ''
   error.value = ''
+  recipientMenuOpen.value = false
 
   const courseId = getCourseId(contextCode)
   if (courseId) await loadRecipients(courseId)
@@ -90,6 +105,12 @@ function toggleRecipient(id: string) {
     ? model.value.recipients.filter((recipientId) => recipientId !== id)
     : [...model.value.recipients, id]
 }
+
+function handleOutsideClick(event: MouseEvent) {
+  if (recipientMenuOpen.value && !recipientField.value?.contains(event.target as Node)) {
+    recipientMenuOpen.value = false
+  }
+}
 </script>
 
 <template>
@@ -102,8 +123,11 @@ function toggleRecipient(id: string) {
     <span>Course</span>
     <select :value="model.contextCode" :disabled="loadingCourses" required @change="changeCourse">
       <option value="" disabled>{{ loadingCourses ? 'Loading Canvas courses...' : 'Select a course' }}</option>
+      <option v-if="savedCourseUnavailable" :value="model.contextCode">
+        {{ savedCourseLabel }}
+      </option>
       <option v-for="course in courses" :key="course.id" :value="`course_${course.id}`">
-        {{ course.courseCode ? `${course.courseCode} — ` : '' }}{{ course.name }}
+        {{ formatCourseLabel(course.id, courses) }}
       </option>
     </select>
   </label>
@@ -113,7 +137,7 @@ function toggleRecipient(id: string) {
     <span>Send an individual message to each recipient</span>
   </label>
 
-  <fieldset class="nb-recipient-field" :disabled="!model.contextCode">
+  <fieldset ref="recipientField" class="nb-recipient-field" :disabled="!model.contextCode">
     <legend>To *</legend>
     <div class="nb-recipient-input">
       <button
@@ -131,10 +155,15 @@ function toggleRecipient(id: string) {
         type="search"
         :placeholder="model.contextCode ? 'Search names' : 'Select a course first'"
         aria-label="Search recipients"
+        aria-controls="scheduled-post-recipient-menu"
+        :aria-expanded="recipientMenuOpen"
+        @focus="recipientMenuOpen = true"
+        @click="recipientMenuOpen = true"
+        @keydown.esc.stop="recipientMenuOpen = false"
       />
     </div>
 
-    <div class="nb-recipient-menu">
+    <div v-if="recipientMenuOpen" id="scheduled-post-recipient-menu" class="nb-recipient-menu">
       <p v-if="loadingRecipients" class="nb-recipient-status nb-mono">LOADING RECIPIENTS...</p>
       <p v-else-if="model.contextCode && !groupedRecipients.length" class="nb-recipient-status nb-mono">
         NO RECIPIENTS FOUND
@@ -157,7 +186,7 @@ function toggleRecipient(id: string) {
   <p v-if="error" class="nb-alert nb-alert--error" role="alert">{{ error }}</p>
 
   <label class="nb-field">
-    <span>Subject</span>
+    <span>Message subject</span>
     <input v-model.trim="model.subject" type="text" maxlength="255" />
   </label>
   <label class="nb-field">

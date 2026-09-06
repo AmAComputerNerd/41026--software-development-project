@@ -3,6 +3,14 @@ import AssignmentExtensionRunDetails from '../components/AssignmentExtensionRunD
 import { defineAutomationType } from '../definition'
 import { getAssignmentExtensionReasonLabel } from '../reasons/assignmentExtension'
 
+function formatTitle(
+  automation: { subjectId: number | null; reason: Parameters<typeof getAssignmentExtensionReasonLabel>[0] },
+  subjectLabel?: string,
+) {
+  const subject = subjectLabel ?? (automation.subjectId ? `Course ${automation.subjectId}` : 'Any course')
+  return `${subject} · ${getAssignmentExtensionReasonLabel(automation.reason)}`
+}
+
 export default defineAutomationType({
   discriminator: 'assignmentExtension',
   label: 'Assignment extension',
@@ -44,9 +52,9 @@ export default defineAutomationType({
     reason: automation.reason,
     furtherDetails: automation.furtherDetails,
   }),
-  automationTitle: (automation) => getAssignmentExtensionReasonLabel(automation.reason),
-  automationDetail: (automation) =>
-    `${automation.subjectId ? `SUBJECT ${automation.subjectId}` : 'ANY SUBJECT'} · ${automation.bufferMinutes} MIN BUFFER`,
-  runTitle: (run) => `Assignment ${run.assignmentId}`,
-  runDetail: () => 'ASSIGNMENT EXTENSION',
+  automationTitle: (automation, subjectLabel) => formatTitle(automation, subjectLabel),
+  automationDetail: (automation) => `${automation.bufferMinutes} MIN BUFFER`,
+  runTitle: (run, automation, subjectLabel) =>
+    `${automation ? formatTitle(automation, subjectLabel) : subjectLabel || 'Course unavailable'} · ${run.assignmentTitle || 'Assignment unavailable'}`,
+  runDetail: () => 'DETAILS UNAVAILABLE',
 })

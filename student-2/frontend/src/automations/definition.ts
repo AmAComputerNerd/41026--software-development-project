@@ -29,9 +29,13 @@ interface TypedAutomationDefinition<T extends AutomationDiscriminator> {
     automation: AutomationFor<T>,
     enabled: boolean,
   ) => SaveAutomationInputFor<T>
-  automationTitle: (automation: AutomationFor<T>) => string
+  automationTitle: (automation: AutomationFor<T>, subjectLabel?: string) => string
   automationDetail: (automation: AutomationFor<T>) => string
-  runTitle: (run: AutomationRunFor<T>) => string
+  runTitle: (
+    run: AutomationRunFor<T>,
+    automation?: AutomationFor<T>,
+    subjectLabel?: string,
+  ) => string
   runDetail: (run: AutomationRunFor<T>) => string
 }
 
@@ -46,9 +50,9 @@ export interface AutomationDefinition {
   loadForm: (automation: Automation) => AutomationFormData
   buildInput: (form: AutomationFormData, studentId: string) => SaveAutomationInput
   buildUpdateInput: (automation: Automation, enabled: boolean) => SaveAutomationInput
-  automationTitle: (automation: Automation) => string
+  automationTitle: (automation: Automation, subjectLabel?: string) => string
   automationDetail: (automation: Automation) => string
-  runTitle: (run: AutomationRun) => string
+  runTitle: (run: AutomationRun, automation?: Automation, subjectLabel?: string) => string
   runDetail: (run: AutomationRun) => string
 }
 
@@ -62,9 +66,14 @@ export function defineAutomationType<T extends AutomationDiscriminator>(
       definition.buildInput(form as AutomationFormDataFor<T>, studentId),
     buildUpdateInput: (automation, enabled) =>
       definition.buildUpdateInput(automation as AutomationFor<T>, enabled),
-    automationTitle: (automation) => definition.automationTitle(automation as AutomationFor<T>),
+    automationTitle: (automation, subjectLabel) =>
+      definition.automationTitle(automation as AutomationFor<T>, subjectLabel),
     automationDetail: (automation) => definition.automationDetail(automation as AutomationFor<T>),
-    runTitle: (run) => definition.runTitle(run as AutomationRunFor<T>),
+    runTitle: (run, automation, subjectLabel) => definition.runTitle(
+      run as AutomationRunFor<T>,
+      automation as AutomationFor<T> | undefined,
+      subjectLabel,
+    ),
     runDetail: (run) => definition.runDetail(run as AutomationRunFor<T>),
   }
 }

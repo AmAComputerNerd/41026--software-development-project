@@ -159,12 +159,28 @@ public sealed class CanvasApiClient(
         var results = new List<CanvasQuizDto>();
         foreach (var quiz in quizzes)
         {
-            var submission = await SendJsonAsync<CanvasQuizSubmissionListResponse>(
-                HttpMethod.Get,
-                $"api/v1/courses/{courseId}/quizzes/{quiz.Id}/submission",
-                null,
-                cancellationToken);
-            results.Add(ToQuizDto(quiz, courseId, HasSubmitted(submission)));
+            var requiresAccessCode = quiz.HasAccessCode ?? false;
+            if (requiresAccessCode)
+            {
+                results.Add(ToQuizDto(quiz, courseId, false, true));
+                continue;
+            }
+
+            try
+            {
+                var submission = await SendJsonAsync<CanvasQuizSubmissionListResponse>(
+                    HttpMethod.Get,
+                    $"api/v1/courses/{courseId}/quizzes/{quiz.Id}/submission",
+                    null,
+                    cancellationToken);
+                results.Add(ToQuizDto(quiz, courseId, HasSubmitted(submission), false));
+            }
+            catch (CanvasApiException exception) when (
+                exception.StatusCode is System.Net.HttpStatusCode.Unauthorized or
+                    System.Net.HttpStatusCode.Forbidden)
+            {
+                results.Add(ToQuizDto(quiz, courseId, false, true));
+            }
         }
 
         return results;
@@ -210,7 +226,8 @@ public sealed class CanvasApiClient(
     private static CanvasQuizDto ToQuizDto(
         CanvasQuizResponse quiz,
         long courseId,
-        bool hasSubmitted)
+        bool hasSubmitted,
+        bool requiresAccessCode)
     {
         return new CanvasQuizDto(
             quiz.Id,
@@ -222,7 +239,8 @@ public sealed class CanvasApiClient(
             quiz.QuestionCount ?? 0,
             quiz.Published ?? false,
             quiz.LockedForUser ?? false,
-            hasSubmitted);
+            hasSubmitted,
+            requiresAccessCode);
     }
 
     public async Task<CanvasQuizSubmissionDto> StartQuizSubmissionAsync(

@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { getAutomationRuns } from '@/api/automations'
+import { getAutomationRuns, getAutomations } from '@/api/automations'
+import { getCanvasCourses } from '@/api/canvas'
+import { formatCourseLabel, getRunCourseId } from '@/automations/courseLabels'
 import { getAutomationDefinition } from '@/automations/registry'
 import { currentStudentId } from '@/config'
-import type { AutomationRun } from '@/types/automation'
+import type { Automation, AutomationRun } from '@/types/automation'
+import type { CanvasCourse } from '@/types/canvas'
 
 const runs = ref<AutomationRun[]>([])
+const automations = ref<Automation[]>([])
+const courses = ref<CanvasCourse[]>([])
 const loading = ref(true)
 const error = ref('')
 const resultFilter = ref<'All' | AutomationRun['result']>('All')
@@ -14,13 +19,19 @@ const expandedRunIds = ref(new Set<string>())
 const visibleRuns = computed(() =>
   resultFilter.value === 'All' ? runs.value : runs.value.filter((run) => run.result === resultFilter.value),
 )
+const automationsById = computed(() =>
+  new Map(automations.value.map((automation) => [automation.id, automation])),
+)
 const runRows = computed(() => visibleRuns.value.map((run) => {
   const definition = getAutomationDefinition(run.$type)
+  const automation = automationsById.value.get(run.automationId)
+  const courseLabel = formatCourseLabel(getRunCourseId(run), courses.value)
   return {
     run,
     definition,
-    title: definition.runTitle(run),
-    detail: definition.runDetail(run),
+    courseLabel,
+    title: definition.runTitle(run, automation, courseLabel),
+    detail: automation ? definition.automationDetail(automation) : definition.runDetail(run),
   }
 }))
 const resultFilters = [
@@ -32,7 +43,14 @@ const resultFilters = [
 
 onMounted(async () => {
   try {
-    runs.value = await getAutomationRuns(currentStudentId)
+    const [loadedRuns, loadedAutomations, loadedCourses] = await Promise.all([
+      getAutomationRuns(currentStudentId),
+      getAutomations(currentStudentId),
+      getCanvasCourses().catch(() => []),
+    ])
+    runs.value = loadedRuns
+    automations.value = loadedAutomations
+    courses.value = loadedCourses
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : 'Unable to load run history.'
   } finally {
@@ -87,7 +105,8 @@ function getResultLabel(result: AutomationRun['result']) {
       <article v-for="row in runRows" :key="row.run.id" class="nb-history-entry">
         <div class="nb-history-row">
           <span class="nb-result" :class="`nb-result--${row.run.result.toLowerCase()}`">{{ row.run.result }}</span>
-          <div>
+          <div class="nb-automation-row__type">
+            <span class="nb-tag" :class="`nb-tag--${row.definition.tagClass}`">{{ row.definition.label }}</span>
             <strong>{{ row.title }}</strong>
             <p class="nb-mono nb-detail">{{ row.detail }}</p>
           </div>
@@ -118,7 +137,11 @@ function getResultLabel(result: AutomationRun['result']) {
               <dd>{{ getResultLabel(row.run.result) }} ({{ row.run.result }})</dd>
             </div>
           </dl>
-          <component :is="row.definition.runDetailsComponent" :run="row.run" />
+          <component
+            :is="row.definition.runDetailsComponent"
+            :run="row.run"
+            :course-label="row.courseLabel"
+          />
         </div>
       </article>
     </div>

@@ -2,11 +2,15 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { automationDefinitions, getAutomationDefinition } from '@/automations/registry'
+import { formatCourseLabel, getAutomationCourseId } from '@/automations/courseLabels'
 import { currentStudentId } from '@/config'
 import { deleteAutomation, getAutomations, updateAutomation } from '@/api/automations'
+import { getCanvasCourses } from '@/api/canvas'
 import type { Automation } from '@/types/automation'
+import type { CanvasCourse } from '@/types/canvas'
 
 const automations = ref<Automation[]>([])
+const courses = ref<CanvasCourse[]>([])
 const loading = ref(true)
 const error = ref('')
 const showAll = ref(false)
@@ -24,7 +28,10 @@ const automationRows = computed(() => visibleAutomations.value.map((automation) 
   return {
     automation,
     definition,
-    title: definition.automationTitle(automation),
+    title: definition.automationTitle(
+      automation,
+      formatCourseLabel(getAutomationCourseId(automation), courses.value),
+    ),
     detail: definition.automationDetail(automation),
   }
 }))
@@ -35,7 +42,12 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    automations.value = await getAutomations(currentStudentId)
+    const [loadedAutomations, loadedCourses] = await Promise.all([
+      getAutomations(currentStudentId),
+      getCanvasCourses().catch(() => []),
+    ])
+    automations.value = loadedAutomations
+    courses.value = loadedCourses
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : 'Unable to load automations.'
   } finally {

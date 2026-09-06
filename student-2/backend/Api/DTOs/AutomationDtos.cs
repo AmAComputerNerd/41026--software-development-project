@@ -240,6 +240,8 @@ public abstract class AutomationRunDto
 public sealed class AssignmentExtensionAutomationRunDto : AutomationRunDto
 {
     public string AssignmentId { get; init; } = string.Empty;
+    public string AssignmentTitle { get; init; } = string.Empty;
+    public long? CourseId { get; init; }
 }
 
 [AutomationDiscriminator("scheduledPost")]

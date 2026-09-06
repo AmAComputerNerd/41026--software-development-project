@@ -10,7 +10,8 @@ public sealed record CanvasQuizDto(
     int QuestionCount,
     bool Published,
     bool LockedForUser,
-    bool HasSubmitted
+    bool HasSubmitted,
+    bool RequiresAccessCode
 );
 
 public sealed record CanvasQuizSubmissionDto(

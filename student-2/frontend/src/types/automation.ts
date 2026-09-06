@@ -131,7 +131,9 @@ interface AutomationRunBase {
 
 export interface AssignmentExtensionAutomationRun extends AutomationRunBase {
   $type: 'assignmentExtension'
+  courseId: number | null
   assignmentId: string
+  assignmentTitle: string
 }
 
 export interface ScheduledPostAutomationRun extends AutomationRunBase {

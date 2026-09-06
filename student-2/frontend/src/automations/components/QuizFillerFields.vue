@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { getCanvasCourses } from '@/api/canvas'
+import { formatCourseLabel } from '@/automations/courseLabels'
 import type { QuizFillerAutomationFormData } from '@/types/automation'
 import type { CanvasCourse } from '@/types/canvas'
 
@@ -13,7 +14,7 @@ onMounted(async () => {
   try {
     courses.value = await getCanvasCourses()
   } catch {
-    courseError.value = 'Canvas subjects are unavailable. Any subject is still supported.'
+    courseError.value = 'Canvas courses are unavailable. Any course is still supported.'
   } finally {
     loadingCourses.value = false
   }
@@ -22,11 +23,11 @@ onMounted(async () => {
 
 <template>
   <label class="nb-field">
-    <span>Subject</span>
+    <span>Course</span>
     <select v-model="model.subjectId" :disabled="loadingCourses">
-      <option :value="null">Any subject</option>
+      <option :value="null">Any course</option>
       <option v-for="course in courses" :key="course.id" :value="course.id">
-        {{ course.courseCode ? `${course.courseCode} - ` : '' }}{{ course.name }}
+        {{ formatCourseLabel(course.id, courses) }}
       </option>
     </select>
     <small v-if="courseError">{{ courseError }}</small>

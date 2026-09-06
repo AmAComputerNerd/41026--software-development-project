@@ -2,6 +2,10 @@ import QuizFillerFields from '../components/QuizFillerFields.vue'
 import QuizFillerRunDetails from '../components/QuizFillerRunDetails.vue'
 import { defineAutomationType } from '../definition'
 
+function formatSubject(subjectId: number | null, subjectLabel?: string) {
+  return subjectLabel ?? (subjectId ? `Course ${subjectId}` : 'Any course')
+}
+
 export default defineAutomationType({
   discriminator: 'quizFiller',
   label: 'Quiz filler',
@@ -47,15 +51,10 @@ export default defineAutomationType({
     numberOfAttemptsRequired: automation.numberOfAttemptsRequired,
     allowForNoTimeLimit: automation.allowForNoTimeLimit,
   }),
-  automationTitle: (automation) =>
-    [
-      automation.multipleChoice ? 'Multiple choice + true/false' : null,
-      automation.shortAnswer ? 'Short answer' : null,
-    ]
-      .filter(Boolean)
-      .join(' + ') || 'No question types',
+  automationTitle: (automation, subjectLabel) => formatSubject(automation.subjectId, subjectLabel),
   automationDetail: (automation) =>
-    `${automation.subjectId ? `SUBJECT ${automation.subjectId}` : 'ANY SUBJECT'} · ${automation.numberOfAttemptsRequired} ATTEMPTS${automation.allowForNoTimeLimit ? ' OR NO TIME LIMIT' : ''}`,
-  runTitle: (run) => run.quizTitle,
-  runDetail: (run) => `QUIZ ${run.quizId} · ${run.questionCount} QUESTIONS`,
+    `${automation.numberOfAttemptsRequired} ATTEMPTS${automation.allowForNoTimeLimit ? ' OR NO TIME LIMIT' : ''}`,
+  runTitle: (run, automation, subjectLabel) =>
+    `${subjectLabel || (automation ? formatSubject(automation.subjectId) : `Course ${run.courseId}`)} · ${run.quizId === 0 ? 'Quiz discovery failed' : run.quizTitle || 'Quiz unavailable'}`,
+  runDetail: (run) => `${run.questionCount} QUESTIONS`,
 })

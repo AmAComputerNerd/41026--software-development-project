@@ -6,6 +6,7 @@ import type { CanvasRecipient } from '@/types/canvas'
 
 const props = defineProps<{
   run: ScheduledPostAutomationRun
+  courseLabel: string
 }>()
 
 const recipients = ref<CanvasRecipient[]>([])
@@ -16,20 +17,22 @@ const resolvedRecipients = computed(() => props.run.recipients.map((id) => {
   const recipient = recipients.value.find((option) => option.id === id)
   return {
     id,
-    name: recipient?.name ?? id,
+    name: recipient?.name ?? 'Unavailable recipient',
     category: recipient?.category ?? null,
   }
 }))
 
 onMounted(async () => {
   const courseId = getCourseId(props.run.contextCode)
-  if (!courseId || props.run.recipients.length === 0) return
+  if (!courseId) return
+
+  if (props.run.recipients.length === 0) return
 
   resolvingRecipients.value = true
   try {
     recipients.value = await getCanvasRecipients(courseId)
   } catch {
-    recipientError.value = 'Recipient names are unavailable. Canvas IDs are shown.'
+    recipientError.value = 'Recipient names are unavailable.'
   } finally {
     resolvingRecipients.value = false
   }
@@ -48,8 +51,8 @@ function getCourseId(contextCode: string) {
       <dd>{{ new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(run.postTime)) }}</dd>
     </div>
     <div>
-      <dt>Course context</dt>
-      <dd>{{ run.contextCode }}</dd>
+      <dt>Course</dt>
+      <dd>{{ courseLabel }}</dd>
     </div>
     <div>
       <dt>Delivery</dt>
@@ -62,7 +65,6 @@ function getCourseId(contextCode: string) {
         <ul v-else class="nb-run-recipients">
           <li v-for="recipient in resolvedRecipients" :key="recipient.id">
             <strong>{{ recipient.name }}</strong>
-            <span v-if="recipient.name !== recipient.id" class="nb-mono">ID {{ recipient.id }}</span>
             <span v-if="recipient.category" class="nb-mono">{{ recipient.category }}</span>
           </li>
         </ul>
@@ -70,8 +72,8 @@ function getCourseId(contextCode: string) {
       </dd>
     </div>
     <div class="nb-run-fields__wide">
-      <dt>Subject</dt>
-      <dd>{{ run.subject || 'No subject' }}</dd>
+      <dt>Message subject</dt>
+      <dd>{{ run.subject || 'No message subject' }}</dd>
     </div>
     <div class="nb-run-fields__wide">
       <dt>Message</dt>

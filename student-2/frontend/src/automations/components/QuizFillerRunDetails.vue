@@ -3,6 +3,7 @@ import type { QuizFillerAutomationRun } from '@/types/automation'
 
 defineProps<{
   run: QuizFillerAutomationRun
+  courseLabel: string
 }>()
 </script>
 
@@ -13,12 +14,8 @@ defineProps<{
       <dd>{{ run.quizTitle }}</dd>
     </div>
     <div>
-      <dt>Quiz ID</dt>
-      <dd>{{ run.quizId }}</dd>
-    </div>
-    <div>
-      <dt>Course ID</dt>
-      <dd>{{ run.courseId }}</dd>
+      <dt>Course</dt>
+      <dd>{{ courseLabel }}</dd>
     </div>
     <div>
       <dt>Questions</dt>

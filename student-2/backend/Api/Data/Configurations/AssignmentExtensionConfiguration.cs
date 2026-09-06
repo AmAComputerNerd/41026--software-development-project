@@ -22,5 +22,6 @@ public sealed class AssignmentExtensionAutomationRunConfiguration
     public void Configure(EntityTypeBuilder<AssignmentExtensionAutomationRun> builder)
     {
         builder.ToTable("AssignmentExtensionAutomationRuns");
+        builder.Property(run => run.AssignmentTitle).HasMaxLength(255);
     }
 }

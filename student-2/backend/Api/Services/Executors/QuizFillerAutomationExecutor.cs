@@ -74,6 +74,7 @@ public sealed class QuizFillerAutomationExecutor(
     {
         return quiz.Published &&
             !quiz.LockedForUser &&
+            !quiz.RequiresAccessCode &&
             !quiz.HasSubmitted &&
             quiz.QuestionCount > 0 &&
             (HasEnoughAttempts(quiz.AllowedAttempts, automation.NumberOfAttemptsRequired) ||
@@ -124,7 +125,7 @@ public sealed class QuizFillerAutomationExecutor(
                 Result = AutomationRunResult.Running,
                 CourseId = courseId,
                 QuizId = 0,
-                QuizTitle = $"Quiz discovery failed for course {courseId}",
+                QuizTitle = "Quiz discovery failed",
                 QuestionCount = 0
             };
         }

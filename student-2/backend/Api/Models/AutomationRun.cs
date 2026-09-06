@@ -17,6 +17,8 @@ public abstract class AutomationRun
 public class AssignmentExtensionAutomationRun : AutomationRun
 {
     public string AssignmentId { get; set; } = string.Empty;
+    public string AssignmentTitle { get; set; } = string.Empty;
+    public long? CourseId { get; set; }
 
     public override AutomationRunDto ToDto()
     {
@@ -26,7 +28,9 @@ public class AssignmentExtensionAutomationRun : AutomationRun
             AutomationId = AutomationId,
             ExecutionTimeStamp = ExecutionTimeStamp,
             Result = Result,
-            AssignmentId = AssignmentId
+            AssignmentId = AssignmentId,
+            AssignmentTitle = AssignmentTitle,
+            CourseId = CourseId
         };
     }
 }
