@@ -1,43 +1,26 @@
-using Api.Data;
-using Api.DTOs;
-using Api.Models;
 using System.Globalization;
+using Database.Data;
+using Database.Models;
 using Microsoft.EntityFrameworkCore;
-using TaskStatus = Api.Models.TaskStatus;
+using Student3.Contracts;
+using TaskStatus = Database.Models.TaskStatus;
 
-namespace Api.Services;
+namespace Database.Services;
 
-public sealed class CanvasTaskSyncService(
-    ISharedCanvasClient canvasClient,
+public sealed class CanvasSnapshotService(
     AppDbContext db,
     TaskHierarchyService taskHierarchy)
 {
     private static readonly SemaphoreSlim SyncLock = new(1, 1);
 
-    public async Task<CanvasSyncResultDto> SyncAsync(CancellationToken cancellationToken)
+    public async Task<CanvasSyncResultRecord> ApplyAsync(
+        CanvasSnapshotCommand command,
+        CancellationToken cancellationToken)
     {
         await SyncLock.WaitAsync(cancellationToken);
         try
         {
-            var remoteCourses = await canvasClient.GetCoursesAsync(cancellationToken);
-            var snapshots = new List<CourseSnapshot>(remoteCourses.Count);
-
-            foreach (var course in remoteCourses)
-            {
-                var assignments = await canvasClient.GetAssignmentsAsync(
-                    course.Id,
-                    cancellationToken);
-
-                if (assignments.Any(assignment => assignment.CourseId != course.Id))
-                {
-                    throw new SharedServiceException(
-                        $"The shared service returned an assignment for the wrong course ({course.Id}).");
-                }
-
-                snapshots.Add(new CourseSnapshot(course, assignments));
-            }
-
-            return await ApplySnapshotAsync(snapshots, cancellationToken);
+            return await ApplySnapshotAsync(command.Courses, cancellationToken);
         }
         finally
         {
@@ -45,17 +28,17 @@ public sealed class CanvasTaskSyncService(
         }
     }
 
-    private async Task<CanvasSyncResultDto> ApplySnapshotAsync(
-        IReadOnlyCollection<CourseSnapshot> snapshots,
+    private async Task<CanvasSyncResultRecord> ApplySnapshotAsync(
+        IReadOnlyCollection<CanvasCourseSnapshot> snapshots,
         CancellationToken cancellationToken)
     {
         var duplicateCourseId = snapshots
-            .GroupBy(snapshot => snapshot.Course.Id)
+            .GroupBy(snapshot => snapshot.Id)
             .FirstOrDefault(group => group.Count() > 1)?.Key;
         if (duplicateCourseId is not null)
         {
-            throw new SharedServiceException(
-                $"The shared service returned duplicate Canvas course ID {duplicateCourseId}.");
+            throw new InvalidOperationException(
+                $"The snapshot contains duplicate Canvas course ID {duplicateCourseId}.");
         }
 
         var allAssignments = snapshots.SelectMany(snapshot => snapshot.Assignments).ToList();
@@ -64,8 +47,8 @@ public sealed class CanvasTaskSyncService(
             .FirstOrDefault(group => group.Count() > 1)?.Key;
         if (duplicateAssignmentId is not null)
         {
-            throw new SharedServiceException(
-                $"The shared service returned duplicate Canvas assignment ID {duplicateAssignmentId}.");
+            throw new InvalidOperationException(
+                $"The snapshot contains duplicate Canvas assignment ID {duplicateAssignmentId}.");
         }
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
@@ -95,16 +78,16 @@ public sealed class CanvasTaskSyncService(
 
         foreach (var snapshot in snapshots)
         {
-            seenCourseIds.Add(snapshot.Course.Id);
+            seenCourseIds.Add(snapshot.Id);
 
-            if (!existingCourses.TryGetValue(snapshot.Course.Id, out var course))
+            if (!existingCourses.TryGetValue(snapshot.Id, out var course))
             {
-                var matchingUnlinkedCourses = string.IsNullOrWhiteSpace(snapshot.Course.CourseCode)
+                var matchingUnlinkedCourses = string.IsNullOrWhiteSpace(snapshot.CourseCode)
                     ? []
                     : unlinkedCourses
                         .Where(candidate => string.Equals(
                             candidate.Code,
-                            snapshot.Course.CourseCode,
+                            snapshot.CourseCode,
                             StringComparison.OrdinalIgnoreCase))
                         .ToList();
 
@@ -118,29 +101,29 @@ public sealed class CanvasTaskSyncService(
                 {
                     course = new Course
                     {
-                        Code = snapshot.Course.CourseCode ??
-                            snapshot.Course.Id.ToString(CultureInfo.InvariantCulture),
-                        Name = snapshot.Course.Name
+                        Code = snapshot.CourseCode ??
+                            snapshot.Id.ToString(CultureInfo.InvariantCulture),
+                        Name = snapshot.Name
                     };
                     db.Courses.Add(course);
                     coursesCreated++;
                 }
 
-                course.Code = snapshot.Course.CourseCode ??
-                    snapshot.Course.Id.ToString(CultureInfo.InvariantCulture);
-                course.Name = snapshot.Course.Name;
-                course.CanvasCourseId = snapshot.Course.Id;
-                course.CanvasWorkflowState = snapshot.Course.WorkflowState;
+                course.Code = snapshot.CourseCode ??
+                    snapshot.Id.ToString(CultureInfo.InvariantCulture);
+                course.Name = snapshot.Name;
+                course.CanvasCourseId = snapshot.Id;
+                course.CanvasWorkflowState = snapshot.WorkflowState;
                 course.CanvasIsActive = true;
                 course.LastCanvasSyncAt = now;
-                existingCourses.Add(snapshot.Course.Id, course);
+                existingCourses.Add(snapshot.Id, course);
             }
             else
             {
-                course.Code = snapshot.Course.CourseCode ??
-                    snapshot.Course.Id.ToString(CultureInfo.InvariantCulture);
-                course.Name = snapshot.Course.Name;
-                course.CanvasWorkflowState = snapshot.Course.WorkflowState;
+                course.Code = snapshot.CourseCode ??
+                    snapshot.Id.ToString(CultureInfo.InvariantCulture);
+                course.Name = snapshot.Name;
+                course.CanvasWorkflowState = snapshot.WorkflowState;
                 course.CanvasIsActive = true;
                 course.LastCanvasSyncAt = now;
                 coursesUpdated++;
@@ -158,14 +141,14 @@ public sealed class CanvasTaskSyncService(
                         Description = assignment.Description,
                         DueDate = assignment.DueAt,
                         Priority = TaskPriority.Medium,
-                        Status = IsSubmitted(assignment.Submission)
+                        Status = assignment.IsSubmitted
                             ? TaskStatus.Completed
                             : TaskStatus.Todo,
                         Course = course,
                         CanvasAssignmentId = assignment.Id,
                         CanvasUpdatedAt = assignment.UpdatedAt,
                         CanvasWorkflowState = assignment.WorkflowState,
-                        CanvasSubmissionState = assignment.Submission?.WorkflowState,
+                        CanvasSubmissionState = assignment.SubmissionState,
                         CanvasIsActive = true,
                         CreatedAt = now,
                         UpdatedAt = now
@@ -176,7 +159,7 @@ public sealed class CanvasTaskSyncService(
                 }
                 else
                 {
-                    if (IsSubmitted(assignment.Submission))
+                    if (assignment.IsSubmitted)
                     {
                         task.Status = TaskStatus.Completed;
                         await taskHierarchy.CompleteDescendantsAsync(
@@ -184,13 +167,14 @@ public sealed class CanvasTaskSyncService(
                             now,
                             cancellationToken);
                     }
+
                     task.Title = assignment.Name;
                     task.Description = assignment.Description;
                     task.DueDate = assignment.DueAt;
                     task.Course = course;
                     task.CanvasUpdatedAt = assignment.UpdatedAt;
                     task.CanvasWorkflowState = assignment.WorkflowState;
-                    task.CanvasSubmissionState = assignment.Submission?.WorkflowState;
+                    task.CanvasSubmissionState = assignment.SubmissionState;
                     task.CanvasIsActive = true;
                     task.UpdatedAt = now;
                     tasksUpdated++;
@@ -221,7 +205,7 @@ public sealed class CanvasTaskSyncService(
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return new CanvasSyncResultDto(
+        return new CanvasSyncResultRecord(
             coursesCreated,
             coursesUpdated,
             coursesDeactivated,
@@ -229,13 +213,4 @@ public sealed class CanvasTaskSyncService(
             tasksUpdated,
             tasksDeactivated);
     }
-
-    private static bool IsSubmitted(SharedCanvasSubmissionDto? submission)
-    {
-        return submission?.WorkflowState is "submitted" or "graded";
-    }
-
-    private sealed record CourseSnapshot(
-        SharedCanvasCourseDto Course,
-        IReadOnlyList<SharedCanvasAssignmentDto> Assignments);
 }

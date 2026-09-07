@@ -1,11 +1,8 @@
-using Api.Data;
 using Api.DTOs;
 using Api.Extensions;
-using Api.Models;
 using Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TaskStatus = Api.Models.TaskStatus;
+using Student3.Contracts;
 
 namespace Api.Endpoints;
 
@@ -24,144 +21,85 @@ public static class TaskEndpoints
         return endpoints;
     }
 
-    private static async Task<IResult> GetTasks([AsParameters] TaskFilterDto filter, AppDbContext db)
+    private static async Task<IResult> GetTasks(
+        [AsParameters] TaskFilterDto filter,
+        IStudent3DatabaseClient database,
+        CancellationToken cancellationToken)
     {
-        var query = db.Tasks
-            .AsNoTracking()
-            .Include(t => t.Course)
-            .Include(t => t.ParentTask)
-            .AsQueryable();
-
-        if (filter.IncludeInactiveCanvas != true)
-        {
-            query = query.Where(t => t.CanvasIsActive != false);
-        }
-
-        if (!string.IsNullOrEmpty(filter.Status))
-        {
-            query = query.Where(t => t.Status.ToString() == filter.Status);
-        }
-
-        if (!string.IsNullOrEmpty(filter.Priority))
-        {
-            query = query.Where(t => t.Priority.ToString() == filter.Priority);
-        }
-
-        if (filter.CourseId.HasValue)
-        {
-            query = query.Where(t => t.CourseId == filter.CourseId.Value);
-        }
-
-        if (filter.ParentTaskId.HasValue)
-        {
-            query = query.Where(t => t.ParentTaskId == filter.ParentTaskId.Value);
-        }
-
-        if (filter.Overdue.HasValue)
-        {
-            var now = DateTime.UtcNow;
-            if (filter.Overdue == true)
-            {
-                query = query.Where(t => t.DueDate < now && t.Status != TaskStatus.Completed);
-            }
-            else
-            {
-                query = query.Where(t => t.DueDate > now && t.Status != TaskStatus.Completed);
-            }
-        }
-
-        var taskDtos = await query.Select(t => t.ToDto()).ToListAsync();
-
-        return Results.Ok(taskDtos);
+        var tasks = await database.GetTasksAsync(filter, cancellationToken);
+        return Results.Ok(tasks.Select(task => task.ToDto()));
     }
 
-    private static async Task<IResult> GetTask([FromRoute] Guid id, AppDbContext db)
+    private static async Task<IResult> GetTask(
+        [FromRoute] Guid id,
+        IStudent3DatabaseClient database,
+        CancellationToken cancellationToken)
     {
-        var task = await db.Tasks
-            .AsNoTracking()
-            .Include(t => t.Course)
-            .FirstOrDefaultAsync(t => t.Id == id);
-
-        return task == null ? Results.NotFound() : Results.Ok(task.ToDto());
+        var task = await database.GetTaskAsync(id, cancellationToken);
+        return task is null ? Results.NotFound() : Results.Ok(task.ToDto());
     }
 
-    private static async Task<IResult> AddTask(CreateTaskRequestDto requestDto, AppDbContext db)
+    private static async Task<IResult> AddTask(
+        CreateTaskRequestDto request,
+        IStudent3DatabaseClient database,
+        CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(requestDto.Title))
+        if (string.IsNullOrWhiteSpace(request.Title))
         {
             return Results.BadRequest("`title` is a required argument");
         }
 
-        if (!Enum.TryParse(requestDto.Priority, out TaskPriority resolvedTaskPriority))
+        if (!IsTaskPriority(request.Priority))
         {
-            return Results.BadRequest("`priority` could not be correlated with a valid TaskPriority");
+            return Results.BadRequest(
+                "`priority` could not be correlated with a valid TaskPriority");
         }
 
-        if (requestDto.CourseId.HasValue)
+        if (request.CourseId.HasValue &&
+            await database.GetCourseAsync(request.CourseId.Value, cancellationToken) is null)
         {
-            var courseExists = await db.Courses.AnyAsync(c => c.Id == requestDto.CourseId.Value);
-            if (!courseExists)
-            {
-                return Results.BadRequest("Specified course does not exist.");
-            }
+            return Results.BadRequest("Specified course does not exist.");
         }
 
-        if (requestDto.ParentTaskId.HasValue)
+        if (request.ParentTaskId.HasValue &&
+            await database.GetTaskAsync(request.ParentTaskId.Value, cancellationToken) is null)
         {
-            var parentTaskExists = await db.Tasks.AnyAsync(c => c.Id == requestDto.ParentTaskId.Value);
-            if (!parentTaskExists)
-            {
-                return Results.BadRequest("Specified parentTask does not exist.");
-            }
+            return Results.BadRequest("Specified parentTask does not exist.");
         }
 
-        var task = new TaskEntity
-        {
-            Title = requestDto.Title,
-            Description = requestDto.Description,
-            DueDate = requestDto.DueDate,
-            Priority = resolvedTaskPriority,
-            Status = TaskStatus.Todo,
-            CourseId = requestDto.CourseId,
-            ParentTaskId = requestDto.ParentTaskId,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var task = await database.CreateTaskAsync(
+            new CreateTaskCommand(
+                request.Title,
+                request.Description,
+                request.DueDate,
+                request.Priority,
+                request.CourseId,
+                request.ParentTaskId),
+            cancellationToken);
 
-        db.Tasks.Add(task);
-        await db.SaveChangesAsync();
-
-        await db.Entry(task)
-            .Reference(t => t.Course)
-            .LoadAsync();
-
-        return Results.Created(
-            $"/api/tasks/{task.Id}",
-            task.ToDto()
-        );
+        return Results.Created($"/api/tasks/{task.Id}", task.ToDto());
     }
 
     private static async Task<IResult> GenerateBreakdown(
         [FromRoute] Guid id,
-        GenerateTaskBreakdownRequestDto requestDto,
-        AppDbContext db,
+        GenerateTaskBreakdownRequestDto request,
+        IStudent3DatabaseClient database,
         IAiTaskService aiTaskService,
         CancellationToken cancellationToken)
     {
-        var prompt = requestDto.Prompt?.Trim();
+        var prompt = request.Prompt?.Trim();
         if (string.IsNullOrWhiteSpace(prompt) || prompt.Length > 2000)
         {
             return Results.BadRequest("`prompt` must contain between 1 and 2000 characters.");
         }
 
-        if (!Enum.TryParse(requestDto.Priority, out TaskPriority priority))
+        if (!IsTaskPriority(request.Priority))
         {
-            return Results.BadRequest("`priority` could not be correlated with a valid TaskPriority.");
+            return Results.BadRequest(
+                "`priority` could not be correlated with a valid TaskPriority.");
         }
 
-        var assignment = await db.Tasks
-            .Include(task => task.Course)
-            .FirstOrDefaultAsync(task => task.Id == id, cancellationToken);
+        var assignment = await database.GetTaskAsync(id, cancellationToken);
         if (assignment is null)
         {
             return Results.NotFound();
@@ -171,72 +109,55 @@ public static class TaskEndpoints
             new AiTaskContext(
                 assignment.Title,
                 assignment.Description,
-                assignment.Course?.Name,
+                assignment.CourseName,
                 null,
                 assignment.DueDate),
             prompt,
             cancellationToken);
-        var now = DateTime.UtcNow;
-        var tasks = generatedTasks
-            .Select(generated => new TaskEntity
-            {
-                Title = generated.Title,
-                Description = generated.Description,
-                DueDate = assignment.DueDate,
-                Priority = priority,
-                Status = TaskStatus.Todo,
-                CourseId = assignment.CourseId,
-                Course = assignment.Course,
-                ParentTaskId = assignment.Id,
-                ParentTask = assignment,
-                CreatedAt = now,
-                UpdatedAt = now
-            })
-            .ToList();
+        var tasks = await database.CreateSubtasksAsync(
+            assignment.Id,
+            new CreateSubtasksCommand(
+                request.Priority,
+                generatedTasks
+                    .Select(task => new GeneratedSubtaskRecord(task.Title, task.Description))
+                    .ToList()),
+            cancellationToken);
 
-        db.Tasks.AddRange(tasks);
-        await db.SaveChangesAsync(cancellationToken);
-
-        return Results.Created(
-            $"/api/tasks/{assignment.Id}",
-            tasks.Select(task => task.ToDto()).ToList());
+        return tasks is null
+            ? Results.NotFound()
+            : Results.Created(
+                $"/api/tasks/{assignment.Id}",
+                tasks.Select(task => task.ToDto()).ToList());
     }
 
     private static async Task<IResult> GenerateDescription(
-        GenerateTaskDescriptionRequestDto requestDto,
-        AppDbContext db,
+        GenerateTaskDescriptionRequestDto request,
+        IStudent3DatabaseClient database,
         IAiTaskService aiTaskService,
         CancellationToken cancellationToken)
     {
-        var title = requestDto.Title?.Trim();
+        var title = request.Title?.Trim();
         if (string.IsNullOrWhiteSpace(title) || title.Length > 200)
         {
             return Results.BadRequest("`title` must contain between 1 and 200 characters.");
         }
 
-        Course? course = null;
-        if (requestDto.CourseId.HasValue)
+        CourseRecord? course = null;
+        if (request.CourseId.HasValue)
         {
-            course = await db.Courses
-                .AsNoTracking()
-                .FirstOrDefaultAsync(
-                    item => item.Id == requestDto.CourseId.Value,
-                    cancellationToken);
+            course = await database.GetCourseAsync(request.CourseId.Value, cancellationToken);
             if (course is null)
             {
                 return Results.BadRequest("Specified course does not exist.");
             }
         }
 
-        TaskEntity? parentTask = null;
-        if (requestDto.ParentTaskId.HasValue)
+        TaskRecord? parentTask = null;
+        if (request.ParentTaskId.HasValue)
         {
-            parentTask = await db.Tasks
-                .AsNoTracking()
-                .Include(task => task.Course)
-                .FirstOrDefaultAsync(
-                    item => item.Id == requestDto.ParentTaskId.Value,
-                    cancellationToken);
+            parentTask = await database.GetTaskAsync(
+                request.ParentTaskId.Value,
+                cancellationToken);
             if (parentTask is null)
             {
                 return Results.BadRequest("Specified parentTask does not exist.");
@@ -248,7 +169,12 @@ public static class TaskEndpoints
                     "The specified course does not match the parent task.");
             }
 
-            course ??= parentTask.Course;
+            if (course is null && parentTask.CourseId.HasValue)
+            {
+                course = await database.GetCourseAsync(
+                    parentTask.CourseId.Value,
+                    cancellationToken);
+            }
         }
 
         var description = await aiTaskService.GenerateDescriptionAsync(
@@ -265,61 +191,52 @@ public static class TaskEndpoints
 
     private static async Task<IResult> UpdateTask(
         [FromRoute] Guid id,
-        ModifyTaskRequestDto requestDto,
-        AppDbContext db,
-        TaskHierarchyService taskHierarchy)
+        ModifyTaskRequestDto request,
+        IStudent3DatabaseClient database,
+        CancellationToken cancellationToken)
     {
-        var task = await db.Tasks
-            .FindAsync(id);
-
-        if (task is null)
+        var existing = await database.GetTaskAsync(id, cancellationToken);
+        if (existing is null)
         {
             return Results.NotFound();
         }
 
-        if (task.CanvasAssignmentId.HasValue &&
-            (requestDto.NewTitle is not null ||
-             requestDto.UpdateDescription ||
-             requestDto.UpdateDueDate))
+        if (existing.CanvasAssignmentId.HasValue &&
+            (request.NewTitle is not null ||
+             request.UpdateDescription ||
+             request.UpdateDueDate))
         {
             return Results.BadRequest(
                 "Canvas-synced task titles, descriptions, and due dates cannot be updated.");
         }
 
-        var hasNewPriority = Enum.TryParse(requestDto.NewPriority, out TaskPriority newPriority);
-        var hasNewStatus = Enum.TryParse(requestDto.NewStatus, out TaskStatus newStatus);
+        var task = await database.UpdateTaskAsync(
+            id,
+            new UpdateTaskCommand(
+                request.NewTitle,
+                request.UpdateDescription,
+                request.NewDescription,
+                request.UpdateDueDate,
+                request.NewDueDate,
+                request.NewPriority,
+                request.NewStatus),
+            cancellationToken);
 
-        task.Title = requestDto.NewTitle ?? task.Title;
-        task.Description = requestDto.UpdateDescription ? requestDto.NewDescription : task.Description;
-        task.DueDate = requestDto.UpdateDueDate ? requestDto.NewDueDate : task.DueDate;
-        task.Priority = hasNewPriority ? newPriority : task.Priority;
-        task.Status = hasNewStatus ? newStatus : task.Status;
-        var updatedAt = DateTime.UtcNow;
-        task.UpdatedAt = updatedAt;
-
-        if (hasNewStatus && newStatus == TaskStatus.Completed)
-        {
-            await taskHierarchy.CompleteDescendantsAsync(id, updatedAt);
-        }
-
-        await db.SaveChangesAsync();
-
-        return Results.Ok(task.ToDto());
+        return task is null ? Results.NotFound() : Results.Ok(task.ToDto());
     }
 
-    private static async Task<IResult> DeleteTask([FromRoute] Guid id, AppDbContext db)
+    private static async Task<IResult> DeleteTask(
+        [FromRoute] Guid id,
+        IStudent3DatabaseClient database,
+        CancellationToken cancellationToken)
     {
-        var task = await db.Tasks
-            .FindAsync(id);
+        return await database.DeleteTaskAsync(id, cancellationToken)
+            ? Results.Ok()
+            : Results.NotFound();
+    }
 
-        if (task is null)
-        {
-            return Results.NotFound();
-        }
-
-        db.Tasks.Remove(task);
-        await db.SaveChangesAsync();
-
-        return Results.Ok();
+    private static bool IsTaskPriority(string? value)
+    {
+        return value is "Low" or "Medium" or "High";
     }
 }

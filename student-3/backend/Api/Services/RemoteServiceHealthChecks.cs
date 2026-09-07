@@ -10,6 +10,7 @@ public abstract class RemoteServiceHealthCheck(
 {
     public const string SharedServiceClientName = "shared-service-health";
     public const string AiGatewayClientName = "ai-gateway-health";
+    public const string DatabaseServiceClientName = "database-service-health";
 
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
@@ -55,4 +56,11 @@ public sealed class AiGatewayHealthCheck(IHttpClientFactory httpClientFactory)
         httpClientFactory,
         AiGatewayClientName,
         "The AI gateway",
+        "health/ready");
+
+public sealed class DatabaseServiceHealthCheck(IHttpClientFactory httpClientFactory)
+    : RemoteServiceHealthCheck(
+        httpClientFactory,
+        DatabaseServiceClientName,
+        "The database service",
         "health/ready");

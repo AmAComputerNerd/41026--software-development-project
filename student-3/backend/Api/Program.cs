@@ -1,10 +1,8 @@
 using Api.Configuration;
-using Api.Data;
 using Api.Endpoints;
 using Api.Extensions;
 using Api.Services;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
@@ -14,6 +12,14 @@ var builder = WebApplication.CreateBuilder(args);
 // Services
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
+// Validation checks and binding for service options.
+builder.Services
+    .AddOptions<DatabaseServiceOptions>()
+    .Bind(builder.Configuration.GetSection(DatabaseServiceOptions.SectionName))
+    .Validate(
+        options => IsAbsoluteHttpUrl(options.BaseUrl),
+        "DatabaseService:BaseUrl must be an absolute HTTP or HTTPS URL.")
+    .ValidateOnStart();
 builder.Services
     .AddOptions<SharedServiceOptions>()
     .Bind(builder.Configuration.GetSection(SharedServiceOptions.SectionName))
@@ -35,17 +41,20 @@ builder.Services
         options => IsAbsoluteHttpUrl(options.BaseUrl),
         "NotificationService:BaseUrl must be an absolute HTTP or HTTPS URL.")
     .ValidateOnStart();
-builder.Services.AddDbContext<AppDbContext>(options =>
-{
-    options
-        .UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
-        .UseSeeding((db, _) => DbSeeder.SeedData((AppDbContext)db))
-        .UseAsyncSeeding((db, _, _) =>
-        {
-            DbSeeder.SeedData((AppDbContext)db);
-            return Task.CompletedTask;
-        });
-});
+// Http clients and retry behaviour
+builder.Services
+    .AddHttpClient<IStudent3DatabaseClient, Student3DatabaseClient>((services, client) =>
+        ConfigureClient(
+            client,
+            services.GetRequiredService<IOptions<DatabaseServiceOptions>>().Value.BaseUrl))
+    .AddStandardResilienceHandler(options =>
+    {
+        options.Retry.MaxRetryAttempts = 2;
+        options.Retry.Delay = TimeSpan.FromMilliseconds(250);
+        options.Retry.DisableForUnsafeHttpMethods();
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(35);
+    });
 builder.Services
     .AddHttpClient<ISharedCanvasClient, SharedCanvasClient>((services, client) =>
         ConfigureClient(
@@ -84,6 +93,16 @@ builder.Services
         options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
         options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(35);
     });
+// Health check services
+builder.Services.AddHttpClient(
+    RemoteServiceHealthCheck.DatabaseServiceClientName,
+    (services, client) =>
+    {
+        ConfigureClient(
+            client,
+            services.GetRequiredService<IOptions<DatabaseServiceOptions>>().Value.BaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(3);
+    });
 builder.Services.AddHttpClient(
     RemoteServiceHealthCheck.SharedServiceClientName,
     (services, client) =>
@@ -108,16 +127,20 @@ builder.Services
         "self",
         () => HealthCheckResult.Healthy(),
         tags: ["live"])
+    .AddCheck<DatabaseServiceHealthCheck>(
+        "database-service",
+        tags: ["ready"])
     .AddCheck<SharedServiceHealthCheck>(
         "shared-service",
         tags: ["ready"])
     .AddCheck<AiGatewayHealthCheck>(
         "ai-gateway",
         tags: ["ready"]);
-builder.Services.AddScoped<CanvasTaskSyncService>();
-builder.Services.AddScoped<TaskHierarchyService>();
+// Remote services
+builder.Services.AddScoped<CanvasSyncOrchestrator>();
 builder.Services.AddScoped<DueSoonReminderService>();
 builder.Services.AddHostedService<DueSoonReminderBackgroundService>();
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy => policy
@@ -129,7 +152,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// HTTP
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -137,8 +160,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 app.UseCors();
+app.UseApiExceptionHandling();
+app.UseHttpsRedirection();
 
 // API
 app.MapCourseEndpoints();
@@ -156,11 +180,6 @@ app.MapHealthChecks(
     {
         Predicate = registration => registration.Tags.Contains("ready")
     });
-
-// Infrastructure
-app.UseApiExceptionHandling();
-app.UseHttpsRedirection();
-await app.InitialiseDatabaseAsync();
 
 app.Run();
 

@@ -91,11 +91,14 @@ This document details every service in the repository, including responsibilitie
 
 ## 5. `student-3` (Deadlines & Task Tracker Microservice)
 
-- **Path**: `student-3/backend/` and `student-3/frontend/`
+- **Path**: `student-3/backend/`, `student-3/database/`,
+  `student-3/contracts/`, and `student-3/frontend/`
 - **Stack**:
-  - Backend: ASP.NET Core (.NET 10) + EF Core SQLite
+  - Backend: ASP.NET Core (.NET 10), public API and orchestration
+  - Database: ASP.NET Core (.NET 10) + EF Core SQLite, internal-only
   - Frontend: Vue 3 + TypeScript + Vite + `@better-canvas/ui-kit`
-- **Port (Host)**: `5103` (Backend), Proxied at `/deadlines/` (Frontend)
+- **Port (Host)**: `5103` (Backend), `5203` (database when run standalone),
+  Proxied at `/deadlines/` (Frontend)
 - **Owner**: Student 3 (Jonathon Thomson)
 
 ### Responsibilities
@@ -103,6 +106,11 @@ This document details every service in the repository, including responsibilitie
 - Ingests Canvas assignments via `POST /api/canvas-sync` through `shared-backend`.
 - Periodically runs `DueSoonReminderBackgroundService` to dispatch reminders to `student-1-backend`.
 - Provides AI-assisted subtask planning (`POST /api/deadlines/tasks/{id}/ai-breakdown`).
+- Delegates all persistence over HTTP to `student-3-database`, which
+  exclusively owns the `student-3-db` volume, migrations, and atomic writes.
+- Uses a private internal Docker network shared only by the Student 3 API and
+  database services. Notification delivery remains a runtime integration and
+  does not block `student-3-backend` startup.
 - Frontend offers list view, monthly calendar view, and upcoming deadlines widget.
 
 ### Key Endpoints
@@ -138,4 +146,4 @@ This document details every service in the repository, including responsibilitie
 - **Path**: `student-2/` and `student-4/`
 - **Owners**: Student 2 (Isaac Thomas) and Student 4 (Tristan Huang)
 - **Status**: Scaffolding / planned for Release 1.
-- **Integration Roadmap**: Follow [Playbook: New Backend Microservice](../playbooks/new-backend-microservice.md) and [Playbook: New Frontend Microservice](../playbooks/new-frontend-microservice.md).
+- **Integration Roadmap**: Follow [Playbook: New Backend Slice](../playbooks/new-backend-microservice.md) and [Playbook: New Frontend Microservice](../playbooks/new-frontend-microservice.md).

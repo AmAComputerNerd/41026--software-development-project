@@ -29,7 +29,8 @@ Welcome to the documentation suite for the **41026 Advanced Software Development
 
 ### 4. Playbooks & Workflows
 - [**Playbook: New Frontend Microservice**](playbooks/new-frontend-microservice.md) — How to scaffold a new Vue 3 frontend, integrate `@better-canvas/ui-kit`, configure Nginx proxying, and register dashboard tiles.
-- [**Playbook: New Backend Microservice**](playbooks/new-backend-microservice.md) — How to scaffold a new ASP.NET Core minimal API microservice, configure SQLite EF Core, CORS, Dockerfile, and docker-compose.
+- [**Playbook: New Backend Slice**](playbooks/new-backend-microservice.md) — How to scaffold a public ASP.NET Core API, private EF Core database service, shared contracts, Docker isolation, and CI.
+- [**Playbook: Split API and Database Services**](playbooks/split-database-service.md) — How to extract EF Core and database ownership into a private internal service while preserving public contracts, data, transactions, and Git history.
 - [**Playbook: Agentic Review Loop**](playbooks/agentic-loop-guide.md) — Guide to using `tools/agentic_loop`, adding custom feature context prompts, and running automated code evaluations.
 
 ---

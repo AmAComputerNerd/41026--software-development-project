@@ -40,6 +40,25 @@ public static class ExceptionHandlingExtensions
                         title: "The AI generation request failed"
                     ).ExecuteAsync(context);
                 }
+                else if (exception is DatabaseServiceException databaseException)
+                {
+                    var statusCode = databaseException.StatusCode is null
+                        ? StatusCodes.Status503ServiceUnavailable
+                        : (int)databaseException.StatusCode.Value;
+                    context.Response.StatusCode = statusCode;
+
+                    if (statusCode == StatusCodes.Status400BadRequest)
+                    {
+                        await Results.BadRequest(databaseException.Message).ExecuteAsync(context);
+                    }
+                    else
+                    {
+                        await Results.Problem(
+                            statusCode: statusCode,
+                            title: databaseException.Message
+                        ).ExecuteAsync(context);
+                    }
+                }
                 else if (exception is SharedServiceException or HttpRequestException or JsonException)
                 {
                     context.Response.StatusCode = StatusCodes.Status502BadGateway;

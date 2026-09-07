@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "student-3/backend/**"
+      - "student-3/contracts/**"
+      - "student-3/database/**"
       - "student-3/frontend/**"
       - "shared/ui-kit/**"
       - "package.json"
@@ -13,6 +15,8 @@ on:
   pull_request:
     paths:
       - "student-3/backend/**"
+      - "student-3/contracts/**"
+      - "student-3/database/**"
       - "student-3/frontend/**"
       - "shared/ui-kit/**"
       - "package.json"
@@ -29,7 +33,9 @@ env:
   NODE_VERSION: "22"
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  WORKING_DIR: student-3/backend/Api
+  DOTNET_SOLUTION: student-3/backend/DeadlineTaskTracker.sln
+  API_PROJECT: student-3/backend/Api/Api.csproj
+  DATABASE_PROJECT: student-3/database/Database/Database.csproj
 
 jobs:
   frontend-build:
@@ -67,21 +73,18 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('student-3/backend/**/*.csproj') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-3/**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
       - name: Restore
-        run: dotnet restore
-        working-directory: ${{ env.WORKING_DIR }}
+        run: dotnet restore "${{ env.DOTNET_SOLUTION }}"
 
       - name: Build (Release, warnings as errors)
-        run: dotnet build --configuration Release --no-restore -warnaserror
-        working-directory: ${{ env.WORKING_DIR }}
+        run: dotnet build "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-restore -warnaserror
 
       - name: Verify code formatting
-        run: dotnet format --verify-no-changes --severity warn
-        working-directory: ${{ env.WORKING_DIR }}
+        run: dotnet format "${{ env.DOTNET_SOLUTION }}" --verify-no-changes --severity warn
 
   frontend-backend-contract:
     name: API contract & browser CORS smoke test
@@ -96,23 +99,52 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore and build API
+      - name: Restore and build services
         run: |
-          dotnet restore
-          dotnet build --configuration Release --no-restore -warnaserror
-        working-directory: ${{ env.WORKING_DIR }}
+          dotnet restore "${{ env.DOTNET_SOLUTION }}"
+          dotnet build "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-restore -warnaserror
 
       - name: Verify frontend task contract and CORS
         shell: bash
-        working-directory: ${{ env.WORKING_DIR }}
         run: |
           set -euo pipefail
 
+          database_file="$RUNNER_TEMP/student-3-ci.db"
+          ASPNETCORE_URLS=http://127.0.0.1:5203 \
+          ASPNETCORE_ENVIRONMENT=Production \
+          ConnectionStrings__DefaultConnection="Data Source=$database_file" \
           dotnet run \
+            --project "${{ env.DATABASE_PROJECT }}" \
+            --configuration Release \
+            --no-build \
+            --no-launch-profile > database.log 2>&1 &
+          database_pid=$!
+
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5203/health/ready > /dev/null; then
+              break
+            fi
+            if ! kill -0 "$database_pid" 2>/dev/null; then
+              cat database.log
+              exit 1
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:5203/health/ready > /dev/null
+
+          ASPNETCORE_URLS=http://127.0.0.1:5103 \
+          ASPNETCORE_ENVIRONMENT=Production \
+          DatabaseService__BaseUrl=http://127.0.0.1:5203 \
+          SharedService__BaseUrl=http://127.0.0.1:5110 \
+          AiGateway__BaseUrl=http://127.0.0.1:5200 \
+          NotificationService__BaseUrl=http://127.0.0.1:5101 \
+          DueSoonReminder__IntervalMinutes=60 \
+          dotnet run \
+            --project "${{ env.API_PROJECT }}" \
             --configuration Release \
             --no-build \
             --no-launch-profile \
-            --urls http://127.0.0.1:5103 > api.log 2>&1 &
+            > api.log 2>&1 &
           api_pid=$!
           task_id=""
 
@@ -122,6 +154,7 @@ jobs:
                 "http://127.0.0.1:5103/api/tasks/$task_id" > /dev/null || true
             fi
             kill "$api_pid" 2>/dev/null || true
+            kill "$database_pid" 2>/dev/null || true
           }
           trap cleanup EXIT
 
@@ -219,13 +252,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('student-3/backend/**/*.csproj') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-3/**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
       - name: Restore
-        run: dotnet restore
-        working-directory: ${{ env.WORKING_DIR }}
+        run: dotnet restore "${{ env.DATABASE_PROJECT }}"
 
       - name: Install dotnet-ef (matching project's EF Core version)
         run: dotnet tool install --global dotnet-ef --version 10.0.11
@@ -234,8 +266,7 @@ jobs:
       # migration snapshot (e.g. an entity property changed without a
       # corresponding `dotnet ef migrations add`).
       - name: Check for pending model changes
-        run: dotnet ef migrations has-pending-model-changes
-        working-directory: ${{ env.WORKING_DIR }}
+        run: dotnet ef migrations has-pending-model-changes --project "${{ env.DATABASE_PROJECT }}"
 
   vulnerability-scan:
     name: NuGet vulnerability scan
@@ -250,17 +281,15 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore
-        run: dotnet restore
-        working-directory: ${{ env.WORKING_DIR }}
+        run: dotnet restore "${{ env.DOTNET_SOLUTION }}"
 
       # `dotnet list package --vulnerable` exits 0 even when vulnerabilities are
       # found, so grep the output to fail the job when any are reported.
       - name: Scan for known-vulnerable packages
         run: |
           set -o pipefail
-          dotnet list package --vulnerable --include-transitive | tee vuln-report.txt
+          dotnet list "${{ env.DOTNET_SOLUTION }}" package --vulnerable --include-transitive | tee vuln-report.txt
           if grep -qi "has the following vulnerable packages" vuln-report.txt; then
             echo "::error::Vulnerable NuGet packages detected. See log above."
             exit 1
           fi
-        working-directory: ${{ env.WORKING_DIR }}

@@ -1,7 +1,7 @@
-using Api.Models;
-using TaskStatus = Api.Models.TaskStatus;
+using Database.Models;
+using TaskStatus = Database.Models.TaskStatus;
 
-namespace Api.Data;
+namespace Database.Data;
 
 public static class DbSeeder
 {

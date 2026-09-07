@@ -1,11 +1,11 @@
 using Api.DTOs;
-using Api.Models;
+using Student3.Contracts;
 
 namespace Api.Extensions;
 
 public static class DtoExtensions
 {
-    public static TaskDto ToDto(this TaskEntity task)
+    public static TaskDto ToDto(this TaskRecord task)
     {
         return new TaskDto(
             Id: task.Id,
@@ -15,20 +15,18 @@ public static class DtoExtensions
             Priority: task.Priority.ToString(),
             Status: task.Status.ToString(),
             CourseId: task.CourseId,
-            CourseName: task.Course?.Name,
+            CourseName: task.CourseName,
             ParentTaskId: task.ParentTaskId,
-            ParentTaskTitle: task.ParentTask?.Title,
+            ParentTaskTitle: task.ParentTaskTitle,
             CanvasAssignmentId: task.CanvasAssignmentId,
             CanvasUpdatedAt: task.CanvasUpdatedAt,
             CanvasWorkflowState: task.CanvasWorkflowState,
             CanvasSubmissionState: task.CanvasSubmissionState,
-            CanvasIsActive: task.CanvasIsActive
-        );
+            CanvasIsActive: task.CanvasIsActive);
     }
 
-    public static CourseDto ToDto(this Course course)
+    public static CourseDto ToDto(this CourseRecord course)
     {
-        // Currently a copy of Course. Useful to keep as its own DTO for now to make things easier for when the Canvas API integration happens.
         return new CourseDto(
             Id: course.Id,
             Code: course.Code,
@@ -36,7 +34,6 @@ public static class DtoExtensions
             CanvasCourseId: course.CanvasCourseId,
             CanvasWorkflowState: course.CanvasWorkflowState,
             CanvasIsActive: course.CanvasIsActive,
-            LastCanvasSyncAt: course.LastCanvasSyncAt
-        );
+            LastCanvasSyncAt: course.LastCanvasSyncAt);
     }
 }

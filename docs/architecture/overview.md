@@ -34,8 +34,14 @@ The application is structured as a decentralized microservices architecture comp
       ┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐
       │   student-1-backend   │   │   student-3-backend   │   │   student-5-backend   │
       │   (Port 5101)         │◄──┤   (Port 5103)         │   │   (Port 5105)         │
-      │   [SQLite: notifs.db] │push│   [SQLite: tasks.db]  │   │   [SQLite: grades.db] │
+      │   [SQLite: notifs.db] │push│   [Public API]        │   │   [SQLite: grades.db] │
       └───────────┬───────────┘   └───────────┬───────────┘   └───────────────────────┘
+                  │                           │ HTTP
+                  │                           ▼
+                  │               ┌────────────────────────┐
+                  │               │ student-3-database     │
+                  │               │ [EF Core: /Data/app.db]│
+                  │               └───────────┬────────────┘
                   │                           │
                   │ Chat / Digest             │ Canvas sync
                   ▼                           ▼
@@ -62,7 +68,8 @@ The application is structured as a decentralized microservices architecture comp
 | **`student-1-frontend`** | `student-1/frontend` | Vue 3 + Vite | *Proxied* | `http://student-1-frontend:80` | Notifications page, real-time toast alerts, AI digest chat panel | `student-1-backend` |
 | **`student-2-backend`** | `student-2/backend` | ASP.NET Core + SQLite | `5102` | `http://student-2-backend:8080` | Assignment extensions, scheduled Canvas posts, AI quiz filling, periodic execution, run history | `shared-backend`, `ai-mode` |
 | **`student-2-frontend`** | `student-2/frontend` | Vue 3 + Vite | *Proxied* | `http://student-2-frontend:80` | Automation configuration and run-history UI | `student-2-backend` |
-| **`student-3-backend`** | `student-3/backend` | ASP.NET Core + SQLite | `5103` | `http://student-3-backend:8080` | Task tracker, course linkage, Canvas sync, due-soon reminder worker, AI subtask planning | `shared-backend`, `ai-mode`, `student-1-backend` |
+| **`student-3-backend`** | `student-3/backend` | ASP.NET Core | `5103` | `http://student-3-backend:8080` | Public task API, Canvas/AI orchestration, due-soon reminder worker | `student-3-database`, `shared-backend`, `ai-mode`, `student-1-backend` |
+| **`student-3-database`** | `student-3/database` | ASP.NET Core + EF Core SQLite | *Internal only* (`5203` standalone) | `http://student-3-database:8080` | Student 3 persistence API, migrations, seeding, transactional task operations | — |
 | **`student-3-frontend`** | `student-3/frontend` | Vue 3 + Vite | *Proxied* | `http://student-3-frontend:80` | Task manager, calendar view, upcoming task view, AI breakdown modal | `student-3-backend` |
 | **`student-4-backend`** | `student-4/backend` | ASP.NET Core + SQLite | `5104` | `http://student-4-backend:8080` | Account/profile service (placeholder/stub) | — |
 | **`student-4-frontend`** | `student-4/frontend` | Vue 3 + Vite | *Proxied* | `http://student-4-frontend:80` | Account UI (placeholder/stub) | `student-4-backend` |
@@ -104,9 +111,17 @@ The Nginx server running inside `shared-shell` is the sole entry point exposed o
 ## 4. Cross-Service Boundaries & Communication Rules
 
 ### Database Isolation
-Each microservice uses Entity Framework Core mapped to its own isolated SQLite file in a persistent Docker volume (`student1-data`, `student3-data`, `student5-data`, `shared-data`).
+Each persistence-owning service uses Entity Framework Core mapped to its own
+isolated SQLite file in a persistent Docker volume (`student-1-db`,
+`student-3-db`, `student-5-db`, `shared-db`).
 - No service reads or writes another service's database file.
 - Direct database connection strings point only to the local service database.
+- `student-3-database` exclusively mounts `student-3-db`; `student-3-backend`
+  uses its internal HTTP contract and contains no EF Core dependency.
+- `student-3-database` is attached only to the internal `student-3-data`
+  Docker network. `student-3-backend` joins both that private network and
+  the default application network; no other service can directly reach the
+  Student 3 persistence API.
 
 ### Canvas Data Boundary
 - `shared-backend` holds the `CANVAS_BASE_URL` and `CANVAS_API_TOKEN`.
