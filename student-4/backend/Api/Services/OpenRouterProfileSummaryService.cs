@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json.Serialization;
 using Student4.Contracts;
@@ -7,17 +9,19 @@ namespace Api.Services;
 
 public class OpenRouterProfileSummaryService : IAiProfileSummaryService
 {
+    public const string HttpClientName = "AiGateway";
+
     private const string Model = "nvidia/nemotron-3-ultra-550b-a55b:free";
     private const string DefaultBaseUrl = "http://ai-mode:8080";
 
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
 
     public OpenRouterProfileSummaryService(
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration)
     {
-        _httpClientFactory = httpClientFactory;
+        _httpClient = httpClientFactory.CreateClient(HttpClientName);
         _configuration = configuration;
     }
 
@@ -42,14 +46,78 @@ public class OpenRouterProfileSummaryService : IAiProfileSummaryService
             }
         });
 
-        using var httpClient = _httpClientFactory.CreateClient(nameof(OpenRouterProfileSummaryService));
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        HttpResponseMessage response;
+        try
+        {
+            response = await _httpClient.SendAsync(request, cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new AiGatewayException(
+                "Could not reach the AI gateway.",
+                upstreamStatusCode: null,
+                upstreamErrorBody: null,
+                rateLimitReset: null,
+                innerException: ex);
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await SafeReadBodyAsync(response, cancellationToken);
+            var reset = ExtractRateLimitReset(response.Headers);
+            throw new AiGatewayException(
+                BuildUpstreamErrorMessage(response.StatusCode, body, reset),
+                upstreamStatusCode: (int)response.StatusCode,
+                upstreamErrorBody: body,
+                rateLimitReset: reset);
+        }
 
         var result = await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(cancellationToken: cancellationToken);
 
         return result?.Choices?.FirstOrDefault()?.Message?.Content?.Trim()
             ?? string.Empty;
+    }
+
+    private static async Task<string> SafeReadBodyAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await response.Content.ReadAsStringAsync(cancellationToken);
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    private static DateTimeOffset? ExtractRateLimitReset(HttpResponseHeaders headers)
+    {
+        if (headers.TryGetValues("X-RateLimit-Reset", out var values))
+        {
+            var raw = values.FirstOrDefault();
+            if (long.TryParse(raw, out var unixMs))
+            {
+                return DateTimeOffset.FromUnixTimeMilliseconds(unixMs);
+            }
+        }
+        return null;
+    }
+
+    private static string BuildUpstreamErrorMessage(HttpStatusCode statusCode, string body, DateTimeOffset? reset)
+    {
+        if (statusCode == HttpStatusCode.TooManyRequests && reset is not null)
+        {
+            return $"AI gateway rate limit reached. Try again after {reset:yyyy-MM-dd HH:mm} UTC.";
+        }
+        if (statusCode == HttpStatusCode.TooManyRequests)
+        {
+            return "AI gateway rate limit reached. Try again later.";
+        }
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return $"AI gateway returned {(int)statusCode} {statusCode}.";
+        }
+        return $"AI gateway returned {(int)statusCode} {statusCode}: {body}";
     }
 
     private static string BuildPrompt(UserRecord user, StudentRecord? student, TeacherRecord? teacher)

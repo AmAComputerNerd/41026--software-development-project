@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
+using Polly;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,6 +54,26 @@ builder.Services
             client,
             services.GetRequiredService<IOptions<DatabaseServiceOptions>>().Value.BaseUrl);
         client.Timeout = TimeSpan.FromSeconds(3);
+    });
+
+builder.Services
+    .AddHttpClient(OpenRouterProfileSummaryService.HttpClientName, (services, client) =>
+    {
+        var baseUrl = services.GetRequiredService<IConfiguration>()["AiGateway:BaseUrl"] ?? "http://ai-mode:8080";
+        ConfigureClient(client, baseUrl);
+    })
+    .AddStandardResilienceHandler(options =>
+    {
+        // Retry transient 5xx from the AI gateway, but pass 429 (rate limit)
+        // through so the user sees the real upstream message instead of
+        // having us mask it as a retry.
+        options.Retry.ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+            .Handle<HttpRequestException>()
+            .HandleResult(r => (int)r.StatusCode >= 500);
+        options.Retry.MaxRetryAttempts = 2;
+        options.Retry.Delay = TimeSpan.FromMilliseconds(500);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(15);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
     });
 
 builder.Services.AddScoped<IAiProfileSummaryService, OpenRouterProfileSummaryService>();

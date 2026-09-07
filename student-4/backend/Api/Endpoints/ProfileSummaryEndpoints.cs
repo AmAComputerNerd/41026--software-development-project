@@ -56,5 +56,16 @@ public static class ProfileSummaryEndpoints
         {
             return Results.Problem(detail: ex.Message, statusCode: 503);
         }
+        catch (AiGatewayException ex)
+        {
+            return Results.Json(
+                new
+                {
+                    error = ex.Message,
+                    upstreamStatusCode = ex.UpstreamStatusCode,
+                    rateLimitReset = ex.RateLimitReset,
+                },
+                statusCode: StatusCodes.Status502BadGateway);
+        }
     }
 }

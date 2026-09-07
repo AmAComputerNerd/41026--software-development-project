@@ -6,12 +6,34 @@ export class ApiError extends Error {
   body: string
 
   constructor(status: number, statusText: string, body: string) {
-    super(`Account API request failed: ${status} ${statusText} - ${body}`)
+    const message = formatErrorMessage(status, statusText, body)
+    super(message)
     this.name = 'ApiError'
     this.status = status
     this.statusText = statusText
     this.body = body
   }
+}
+
+function formatErrorMessage(status: number, statusText: string, body: string): string {
+  if (!body) {
+    return `Account API request failed: ${status} ${statusText}`
+  }
+  try {
+    const parsed = JSON.parse(body) as { error?: string; title?: string; detail?: string }
+    if (typeof parsed.error === 'string') {
+      return parsed.error
+    }
+    if (typeof parsed.title === 'string') {
+      return parsed.title
+    }
+    if (typeof parsed.detail === 'string') {
+      return parsed.detail
+    }
+  } catch {
+    // body not JSON
+  }
+  return `Account API request failed: ${status} ${statusText} - ${body}`
 }
 
 export async function request(path: string, options: RequestInit = {}) {
