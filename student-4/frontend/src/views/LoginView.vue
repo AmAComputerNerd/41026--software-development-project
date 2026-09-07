@@ -140,7 +140,7 @@ function handleForgotPassword() {
 
 <template>
   <div class="nb-auth-page">
-    <div class="nb-panel nb-auth__card">
+    <div class="nb-panel nb-auth__card" padding="20px">
       <div class="nb-auth__header">
         <h1 class="nb-auth__title nb-mono">{{ isLoginMode ? 'LOG IN' : 'CREATE ACCOUNT' }}</h1>
         <p class="nb-auth__subtitle">

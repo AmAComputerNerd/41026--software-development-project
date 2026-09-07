@@ -72,13 +72,23 @@ app.UseApiExceptionHandling();
 app.UseHttpsRedirection();
 await app.InitialiseDatabaseAsync();
 
-// Run the seeder on every startup (not just during EF seeding) so
-// fix-ups and missing detail records are always applied.
-using (var scope = app.Services.CreateScope())
+// Health check endpoints for CI/CD and orchestration
+app.MapGet("/health/live", () => Results.Ok(new { status = "alive" }))
+   .AllowAnonymous();
+
+app.MapGet("/health/ready", async (AppDbContext db) =>
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    DbSeeder.SeedData(db);
-}
+    try
+    {
+        await db.Database.CanConnectAsync();
+        return Results.Ok(new { status = "ready" });
+    }
+    catch
+    {
+        return Results.StatusCode(503);
+    }
+})
+.AllowAnonymous();
 
 app.Run();
 

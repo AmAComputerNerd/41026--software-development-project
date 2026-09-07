@@ -68,11 +68,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          docker compose up --detach shared-backend ai-mode student-1-backend student-3-backend
+          docker compose up --detach shared-backend ai-mode student-1-backend student-3-backend student-4-backend
 
           for _ in {1..30}; do
             if curl --fail --silent http://127.0.0.1:5101/health/live > /dev/null &&
-              curl --fail --silent http://127.0.0.1:5103/health/ready > /dev/null; then
+              curl --fail --silent http://127.0.0.1:5103/health/ready > /dev/null &&
+              curl --fail --silent http://127.0.0.1:5104/health/live > /dev/null; then
               break
             fi
             sleep 2
@@ -80,6 +81,7 @@ jobs:
 
           curl --fail --silent http://127.0.0.1:5101/health/live > /dev/null
           curl --fail --silent http://127.0.0.1:5103/health/ready > /dev/null
+          curl --fail --silent http://127.0.0.1:5104/health/live > /dev/null
 
           docker compose stop ai-mode
           for _ in {1..10}; do
