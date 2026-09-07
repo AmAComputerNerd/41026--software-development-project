@@ -34,7 +34,7 @@ env:
   NODE_VERSION: "22"
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  DOTNET_SOLUTION: student-4/backend/DeadlineTaskTracker.sln
+  DOTNET_SOLUTION: student-4/backend/AccountService.sln
   API_PROJECT: student-4/backend/Api/Api.csproj
   DATABASE_PROJECT: student-4/database/Database/Database.csproj
 
