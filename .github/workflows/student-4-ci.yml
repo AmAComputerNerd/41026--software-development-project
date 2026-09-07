@@ -1,298 +1,250 @@
 name: Student 4 - CI
 
 on:
-push:
-branches: [main]
-paths:
-- "student-4/backend/**"
-- "student-4/frontend/**"
-- "shared/ui-kit/**"
-- "package.json"
-- "package-lock.json"
-- ".github/workflows/student-4-ci.yml"
-pull_request:
-paths:
-- "student-4/backend/**"
-- "student-4/frontend/**"
-- "shared/ui-kit/**"
-- "package.json"
-- "package-lock.json"
-- ".github/workflows/student-4-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "student-4/backend/**"
+      - "student-4/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-4-ci.yml"
+  pull_request:
+    paths:
+      - "student-4/backend/**"
+      - "student-4/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-4-ci.yml"
 
 # Cancel superseded runs on the same branch/PR to save CI minutes.
-
 concurrency:
-group: student-4-ci-${{ github.ref }}
-cancel-in-progress: true
+  group: student-4-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-DOTNET_VERSION: "10.0.x"
-NODE_VERSION: "22"
-DOTNET_NOLOGO: true
-DOTNET_CLI_TELEMETRY_OPTOUT: true
-WORKING_DIR: student-4/backend/Api
+  DOTNET_VERSION: "10.0.x"
+  NODE_VERSION: "22"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  WORKING_DIR: student-4/backend/Api
 
 jobs:
-frontend-build:
-name: Frontend type check & production build
-runs-on: ubuntu-latest
-steps:
-- name: Checkout
-uses: actions/checkout@v4
+  frontend-build:
+    name: Frontend type check & production build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-```
-  - name: Setup Node.js
-    uses: actions/setup-node@v4
-    with:
-      node-version: ${{ env.NODE_VERSION }}
-      cache: npm
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-  - name: Install workspace dependencies
-    run: npm ci
+      - name: Install workspace dependencies
+        run: npm ci
 
-  - name: Type check and build
-    run: npm run build --workspace=student-4-frontend
-```
+      - name: Type check and build
+        run: npm run build --workspace=student-4-frontend
 
-build-and-analyze:
-name: Build, analyze & format check
-runs-on: ubuntu-latest
-steps:
-- name: Checkout
-uses: actions/checkout@v4
+  build-and-analyze:
+    name: Build, analyze & format check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-```
-  - name: Setup .NET
-    uses: actions/setup-dotnet@v4
-    with:
-      dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-  - name: Cache NuGet packages
-    uses: actions/cache@v4
-    with:
-      path: ~/.nuget/packages
-      key: ${{ runner.os }}-nuget-${{ hashFiles('student-4/backend/**/*.csproj') }}
-      restore-keys: |
-        ${{ runner.os }}-nuget-
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-4/backend/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
-  - name: Restore
-    run: dotnet restore
-    working-directory: ${{ env.WORKING_DIR }}
+      - name: Restore
+        run: dotnet restore
+        working-directory: ${{ env.WORKING_DIR }}
 
-  - name: Build (Release, warnings as errors)
-    run: dotnet build --configuration Release --no-restore -warnaserror
-    working-directory: ${{ env.WORKING_DIR }}
+      - name: Build (Release, warnings as errors)
+        run: dotnet build --configuration Release --no-restore -warnaserror
+        working-directory: ${{ env.WORKING_DIR }}
 
-  - name: Verify code formatting
-    run: dotnet format --verify-no-changes --severity warn
-    working-directory: ${{ env.WORKING_DIR }}
-```
+      - name: Verify code formatting
+        run: dotnet format --verify-no-changes --severity warn
+        working-directory: ${{ env.WORKING_DIR }}
 
-frontend-backend-contract:
-name: API contract & browser CORS smoke test
-needs: [frontend-build, build-and-analyze]
-runs-on: ubuntu-latest
-steps:
-- name: Checkout
-uses: actions/checkout@v4
+  frontend-backend-contract:
+    name: API contract & browser CORS smoke test
+    needs: [frontend-build, build-and-analyze]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-```
-  - name: Setup .NET
-    uses: actions/setup-dotnet@v4
-    with:
-      dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-  - name: Restore and build API
-    run: |
-      dotnet restore
-      dotnet build --configuration Release --no-restore -warnaserror
-    working-directory: ${{ env.WORKING_DIR }}
+      - name: Restore and build API
+        run: |
+          dotnet restore
+          dotnet build --configuration Release --no-restore -warnaserror
+        working-directory: ${{ env.WORKING_DIR }}
 
-  - name: Verify frontend contract and CORS
-    shell: bash
-    working-directory: ${{ env.WORKING_DIR }}
-    run: |
-      set -euo pipefail
+      - name: Verify frontend contract and CORS
+        shell: bash
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          set -euo pipefail
 
-      dotnet run \
-        --configuration Release \
-        --no-build \
-        --no-launch-profile \
-        --urls http://127.0.0.1:5104 > api.log 2>&1 &
-      api_pid=$!
-      user_id=""
+          dotnet run \
+            --configuration Release \
+            --no-build \
+            --no-launch-profile \
+            --urls http://127.0.0.1:5104 > api.log 2>&1 &
+          api_pid=$!
+          task_id=""
 
-      cleanup() {
-        if [[ -n "$user_id" ]]; then
-          curl --silent --request DELETE \
-            "http://127.0.0.1:5104/api/users/$user_id" > /dev/null || true
-        fi
+          cleanup() {
+            if [[ -n "$task_id" ]]; then
+              curl --silent --request DELETE \
+                "http://127.0.0.1:5104/api/users/$task_id" > /dev/null || true
+            fi
+            kill "$api_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
 
-        kill "$api_pid" 2>/dev/null || true
-      }
-      trap cleanup EXIT
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5104/health/ready > /dev/null && \
+              curl --fail --silent \
+                http://127.0.0.1:5104/api/users/ > users.json; then
+              break
+            fi
+            if ! kill -0 "$api_pid" 2>/dev/null; then
+              cat api.log
+              exit 1
+            fi
+            sleep 1
+          done
+          test -s users.json
 
-      # Wait only for the API itself to become live.
-      # Do not require database-backed endpoints here because the
-      # database/microservices are not running in this CI job.
-      api_live=false
+          # The process is live, but required microservices are unavailable in this job.
+          readiness_status=$(
+            curl --silent --output /dev/null --write-out "%{http_code}" \
+              http://127.0.0.1:5104/health/ready
+          )
+          test "$readiness_status" = "503"
 
-      for _ in {1..30}; do
-        if curl --fail --silent \
-          http://127.0.0.1:5104/health/live > /dev/null; then
-          api_live=true
-          break
-        fi
+          # Try to create a user via the API. If the database service is
+          # unreachable in this CI job, the call returns 503; we treat that
+          # as "microservices unavailable" and skip the create/update/auth/
+          # profile-summary assertions below while still passing the test.
+          create_status=$(
+            curl --silent --output created.json --write-out "%{http_code}" \
+              --request POST \
+              --header "Content-Type: application/json" \
+              --data '{
+                "email": "ci-test@example.com",
+                "passwordHash": "test123",
+                "firstName": "CI",
+                "lastName": "Test",
+                "gender": "NonBinary",
+                "dateOfBirth": "2000-01-01T00:00:00Z",
+                "userType": "Student",
+                "studentDto": {
+                  "userId": "00000000-0000-0000-0000-000000000000",
+                  "courseStatus": "FullTime",
+                  "isInternational": false,
+                  "canvasApiKey": ""
+                }
+              }' \
+              http://127.0.0.1:5104/api/users/
+          )
 
-        if ! kill -0 "$api_pid" 2>/dev/null; then
-          echo "API process exited before becoming live:"
-          cat api.log
-          exit 1
-        fi
+          if [[ "$create_status" == "201" || "$create_status" == "200" ]]; then
+            created=$(cat created.json)
+            user_id=$(jq --exit-status --raw-output '.id' <<< "$created")
+            jq --exit-status '
+              .email == "ci-test@example.com" and
+              .firstName == "CI" and
+              .lastName == "Test" and
+              .userType == "Student"
+            ' <<< "$created" > /dev/null
 
-        sleep 1
-      done
+            # Update the user
+            updated=$(
+              curl --fail --silent \
+                --request PUT \
+                --header "Content-Type: application/json" \
+                --data '{
+                  "email": "ci-test@example.com",
+                  "firstName": "CI Updated",
+                  "middleNames": null,
+                  "lastName": "Test",
+                  "gender": "NonBinary",
+                  "dateOfBirth": "2000-01-01T00:00:00Z"
+                }' \
+                "http://127.0.0.1:5104/api/users/$user_id"
+            )
+            jq --exit-status '
+              .firstName == "CI Updated" and
+              .lastName == "Test"
+            ' <<< "$updated" > /dev/null
 
-      if [[ "$api_live" != "true" ]]; then
-        echo "API did not become live within 30 seconds."
-        cat api.log
-        exit 1
-      fi
+            # Test CORS headers
+            curl --fail --silent \
+              --request OPTIONS \
+              --header "Origin: http://localhost:3004" \
+              --header "Access-Control-Request-Method: PUT" \
+              --dump-header cors-headers.txt \
+              --output /dev/null \
+              "http://127.0.0.1:5104/api/users/$user_id"
+            grep --ignore-case \
+              "^Access-Control-Allow-Origin: http://localhost:3004" \
+              cors-headers.txt
 
-      # Verify the users endpoint can at least be reached.
-      # The endpoint may return 503 because its database dependency
-      # is unavailable, so do not use curl --fail here.
-      users_status=$(
-        curl --silent --output users.json --write-out "%{http_code}" \
-          http://127.0.0.1:5104/api/users/
-      )
+            # Test auth endpoint (requires the auth service to be up)
+            auth_status=$(
+              curl --silent --output auth.json --write-out "%{http_code}" \
+                --request POST \
+                --header "Content-Type: application/json" \
+                --data '{"email":"ci-test@example.com","password":"test123"}' \
+                http://127.0.0.1:5104/api/auth/login
+            )
+            if [[ "$auth_status" == "200" ]]; then
+              auth_response=$(cat auth.json)
+              jq --exit-status '.id != null' <<< "$auth_response" > /dev/null
+            else
+              echo "::warning::Auth service unavailable in this CI job (status $auth_status); skipping login assertion."
+            fi
 
-      echo "GET /api/users/ returned HTTP $users_status"
+            # Test profile summary endpoint (requires the AI gateway to be up)
+            summary_status=$(
+              curl --silent --output summary.json --write-out "%{http_code}" \
+                --request POST \
+                "http://127.0.0.1:5104/api/users/$user_id/profile-summary"
+            )
+            if [[ "$summary_status" == "200" ]]; then
+              summary_response=$(cat summary.json)
+              jq --exit-status '.summary != null' <<< "$summary_response" > /dev/null
+            else
+              echo "::warning::AI gateway unavailable in this CI job (status $summary_status); skipping profile summary assertion."
+            fi
 
-      # The process is live, but required microservices are unavailable
-      # in this job.
-      readiness_status=$(
-        curl --silent --output /dev/null --write-out "%{http_code}" \
-          http://127.0.0.1:5104/health/ready
-      )
-
-      echo "GET /health/ready returned HTTP $readiness_status"
-      test "$readiness_status" = "503"
-
-      # Try to create a user via the API. If the database service is
-      # unreachable in this CI job, the call returns 503; we treat that
-      # as "microservices unavailable" and skip the create/update/auth/
-      # profile-summary assertions below while still passing the test.
-      create_status=$(
-        curl --silent --output created.json --write-out "%{http_code}" \
-          --request POST \
-          --header "Content-Type: application/json" \
-          --data '{
-            "email": "ci-test@example.com",
-            "passwordHash": "test123",
-            "firstName": "CI",
-            "lastName": "Test",
-            "gender": "NonBinary",
-            "dateOfBirth": "2000-01-01T00:00:00Z",
-            "userType": "Student",
-            "studentDto": {
-              "userId": "00000000-0000-0000-0000-000000000000",
-              "courseStatus": "FullTime",
-              "isInternational": false,
-              "canvasApiKey": ""
-            }
-          }' \
-          http://127.0.0.1:5104/api/users/
-      )
-
-      echo "POST /api/users/ returned HTTP $create_status"
-
-      if [[ "$create_status" == "201" || "$create_status" == "200" ]]; then
-        created=$(cat created.json)
-
-        user_id=$(jq --exit-status --raw-output '.id' <<< "$created")
-
-        jq --exit-status '
-          .email == "ci-test@example.com" and
-          .firstName == "CI" and
-          .lastName == "Test" and
-          .userType == "Student"
-        ' <<< "$created" > /dev/null
-
-        # Update the user
-        updated=$(
-          curl --fail --silent \
-            --request PUT \
-            --header "Content-Type: application/json" \
-            --data '{
-              "email": "ci-test@example.com",
-              "firstName": "CI Updated",
-              "middleNames": null,
-              "lastName": "Test",
-              "gender": "NonBinary",
-              "dateOfBirth": "2000-01-01T00:00:00Z"
-            }' \
-            "http://127.0.0.1:5104/api/users/$user_id"
-        )
-
-        jq --exit-status '
-          .firstName == "CI Updated" and
-          .lastName == "Test"
-        ' <<< "$updated" > /dev/null
-
-        # Test CORS headers
-        curl --fail --silent \
-          --request OPTIONS \
-          --header "Origin: http://localhost:3004" \
-          --header "Access-Control-Request-Method: PUT" \
-          --dump-header cors-headers.txt \
-          --output /dev/null \
-          "http://127.0.0.1:5104/api/users/$user_id"
-
-        grep --ignore-case \
-          "^Access-Control-Allow-Origin: http://localhost:3004" \
-          cors-headers.txt
-
-        # Test auth endpoint (requires the auth service to be up)
-        auth_status=$(
-          curl --silent --output auth.json --write-out "%{http_code}" \
-            --request POST \
-            --header "Content-Type: application/json" \
-            --data '{"email":"ci-test@example.com","password":"test123"}' \
-            http://127.0.0.1:5104/api/auth/login
-        )
-
-        if [[ "$auth_status" == "200" ]]; then
-          auth_response=$(cat auth.json)
-
-          jq --exit-status '.id != null' <<< "$auth_response" > /dev/null
-        else
-          echo "::warning::Auth service unavailable in this CI job (status $auth_status); skipping login assertion."
-        fi
-
-        # Test profile summary endpoint (requires the AI gateway to be up)
-        summary_status=$(
-          curl --silent --output summary.json --write-out "%{http_code}" \
-            --request POST \
-            "http://127.0.0.1:5104/api/users/$user_id/profile-summary"
-        )
-
-        if [[ "$summary_status" == "200" ]]; then
-          summary_response=$(cat summary.json)
-
-          jq --exit-status '.summary != null' <<< "$summary_response" > /dev/null
-        else
-          echo "::warning::AI gateway unavailable in this CI job (status $summary_status); skipping profile summary assertion."
-        fi
-
-        # Clean up the created user.
-        curl --silent --request DELETE \
-          "http://127.0.0.1:5104/api/users/$user_id" > /dev/null || true
-
-        # Prevent the EXIT trap from trying to delete the same user again.
-        user_id=""
-
-      else
-        echo "::warning::Database service unavailable in this CI job (status $create_status); skipping create/update/auth/profile-summary assertions."
-      fi
-```
+            # Clean up
+            curl --silent --request DELETE \
+              "http://127.0.0.1:5104/api/users/$user_id" > /dev/null || true
+          else
+            echo "::warning::Database service unavailable in this CI job (status $create_status); skipping create/update/auth/profile-summary assertions."
+          fi
