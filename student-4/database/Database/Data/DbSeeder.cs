@@ -8,19 +8,8 @@ public static class DbSeeder
 {
     private static readonly Guid Course1Id = Guid.Parse("33333333-3333-3333-3333-333333333333");
 
-    // Plain-text seed passwords. The seeder hashes them on every run,
-    // so a fresh database stores BCrypt hashes from the start. If the
-    // seeder finds an existing user whose PasswordHash is not a BCrypt
-    // hash (i.e. a legacy plain-text value from before this change),
-    // it re-hashes the canonical password and overwrites the column.
-    // That gives us a one-time migration of dev accounts without
-    // requiring a separate data-fixup step.
     private const string StudentSeedPassword = "abc123";
     private const string TeacherSeedPassword = "123abc";
-
-    // Canonical seed-data emails. The seeder is idempotent: it always
-    // ensures these accounts exist with the correct type, but it won't
-    // blow away other data the user has created through the API.
 
     public static void SeedData(AppDbContext db)
     {
@@ -32,7 +21,6 @@ public static class DbSeeder
 
     private static bool IsHashedPassword(string value)
     {
-        // BCrypt hashes start with $2a$, $2b$, $2x$, or $2y$.
         return !string.IsNullOrEmpty(value) &&
             (value.StartsWith("$2a$", StringComparison.Ordinal) ||
              value.StartsWith("$2b$", StringComparison.Ordinal) ||
@@ -40,8 +28,7 @@ public static class DbSeeder
              value.StartsWith("$2y$", StringComparison.Ordinal));
     }
 
-    // ---- Bulk seed data ----
-
+    #region Bulk seed data
     private static readonly StudentSeed[] StudentSeeds =
     [
         new("test1",  "John",   "Student",  "NonBinary", new DateTime(2008, 5, 1),  CourseStatus.FullTime,  IsInternational: true),
@@ -71,9 +58,9 @@ public static class DbSeeder
         new("test10", "Ivan",   "Petrov",   "Male",     new DateTime(1986, 8, 5),   EmploymentStatus.PartTime),
         new("test11", "Jasmin", "Ali",      "Female",   new DateTime(1989, 3, 17),  EmploymentStatus.FullTime),
     ];
+    #endregion
 
-    // ---- Users ----
-
+    #region Users
     private static void SeedUsers(AppDbContext db)
     {
         bool anyChanges = false;
@@ -122,9 +109,6 @@ public static class DbSeeder
 
         bool changed = false;
 
-        // Fix-up: an account with the canonical seed email was created
-        // with the wrong type, or fields have drifted from the seed
-        // definition. Idempotently refresh them.
         if (existing.UserType != (isStudent ? UserType.Student : UserType.Teacher))
         {
             existing.UserType = isStudent ? UserType.Student : UserType.Teacher;
@@ -160,9 +144,9 @@ public static class DbSeeder
 
         return changed;
     }
+    #endregion
 
-    // ---- Role-specific tables ----
-
+    #region Role-specific tables
     private static void SeedStudents(AppDbContext db)
     {
         var pending = new List<Student>();
@@ -213,9 +197,9 @@ public static class DbSeeder
             db.SaveChanges();
         }
     }
+    #endregion
 
-    // ---- Enrolments ----
-
+    #region Enrolments
     private static void SeedUserCourse(AppDbContext db)
     {
         var pending = new List<UserCourse>();
@@ -236,10 +220,9 @@ public static class DbSeeder
             db.SaveChanges();
         }
     }
+    #endregion
 
-    // ---- Seed-record shapes (kept local so the seeder is the only
-    // place that has to know about them) ----
-
+    #region Seed-record shapes
     private abstract record UserSeed(
         string Email,
         string FirstName,
@@ -275,4 +258,5 @@ public static class DbSeeder
             LastName: LastName,
             Gender: Gender,
             DateOfBirth: DateOfBirth);
+    #endregion
 }

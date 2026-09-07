@@ -2,11 +2,6 @@ using System.Text.Json.Serialization;
 
 namespace Authentication.DTOs;
 
-// UserDto is what we hand back to clients from the auth endpoints.
-// PasswordHash is intentionally [JsonIgnore]-ed so it never leaves
-// the service. The contract record carries the password hash from
-// the database service for the login path, but the public DTO
-// never serializes it.
 public class UserDto
 {
     public Guid Id { get; init; }
@@ -22,7 +17,5 @@ public class UserDto
     public DateTime DateOfBirth { get; init; }
     public string UserType { get; init; } = "Student";
 
-    // AI-generated (or user-edited) profile summary. Nullable so the
-    // field is optional - a user without a summary just has null.
     public string? UserProfile { get; init; }
 }

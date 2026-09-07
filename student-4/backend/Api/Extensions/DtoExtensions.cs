@@ -3,10 +3,6 @@ using Student4.Contracts;
 
 namespace Api.Extensions;
 
-// Converts contract records (returned by IDatabaseClient) to the
-// public DTOs the API exposes. This is the boundary between the
-// internal persistence shape and the public contract — anything
-// crossing this line gets a fresh DTO with [JsonIgnore]s applied.
 public static class DtoExtensions
 {
     public static StudentDto ToDto(this StudentRecord record)

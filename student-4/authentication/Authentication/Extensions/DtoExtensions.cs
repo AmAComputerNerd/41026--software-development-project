@@ -3,9 +3,6 @@ using Student4.Contracts;
 
 namespace Authentication.Extensions;
 
-// Converts contract records (returned by the database service) to
-// the public DTOs this service exposes. This is the boundary
-// between the internal persistence shape and the public contract.
 public static class DtoExtensions
 {
     public static UserDto ToDto(this UserRecord record)

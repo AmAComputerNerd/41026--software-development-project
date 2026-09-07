@@ -5,10 +5,6 @@ using Microsoft.Extensions.Options;
 
 namespace Authentication.Services;
 
-// Generates a fresh password-reset token, hashes it for storage,
-// and renders the email body. The token format is a base64url string
-// of 32 random bytes (256 bits of entropy) - long enough to be
-// effectively unguessable, short enough to fit in a URL.
 public sealed class PasswordResetTokenGenerator(IOptions<EmailOptions> options)
 {
     private readonly EmailOptions _options = options.Value;

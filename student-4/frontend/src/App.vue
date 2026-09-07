@@ -13,8 +13,6 @@ const navLinks = [
   { to: { name: 'profile' }, label: '02 PROFILE', match: 'profile' },
 ]
 
-// Only show the profile tab when there's a signed-in user; the login tab
-// is the only one that makes sense for signed-out users.
 const visibleNavLinks = computed(() =>
   isAuthenticated.value
     ? navLinks.filter((link) => link.match !== 'login')

@@ -7,10 +7,7 @@ using Student4.Contracts;
 
 namespace Authentication.Services;
 
-// HTTP implementation of IAccountDatabaseClient scoped to the auth
-// surface (login, change-password, delete-account, password reset).
-// Uses the same Polly resilience pipeline and error-shape mapping as
-// the main API's database client.
+// HTTP implementation of IAccountDatabaseClient scoped to the auth surface.
 public sealed class AccountDatabaseClient(HttpClient httpClient) : IAccountDatabaseClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -104,8 +101,7 @@ public sealed class AccountDatabaseClient(HttpClient httpClient) : IAccountDatab
             cancellationToken);
     }
 
-    // ---- Helpers ----
-
+    #region Helpers
     private async Task<T> SendRequiredAsync<T>(
         HttpMethod method,
         string path,
@@ -193,4 +189,5 @@ public sealed class AccountDatabaseClient(HttpClient httpClient) : IAccountDatab
         throw new DatabaseServiceException(
             $"The database service returned {(int)response.StatusCode} {response.ReasonPhrase}: {body}");
     }
+    #endregion
 }

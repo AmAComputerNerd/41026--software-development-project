@@ -1,8 +1,5 @@
 namespace Authentication.Services;
 
-// Sends plain-text and HTML email. Implementations are expected to
-// fail soft (throw EmailSendException); the caller is responsible
-// for surfacing the failure to the user.
 public interface IEmailSender
 {
     Task SendAsync(

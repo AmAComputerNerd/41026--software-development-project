@@ -14,8 +14,6 @@ const router = createRouter({
       component: () => import('../views/ProfileView.vue'),
     },
     {
-      // Landed on from the password-reset email link. The token
-      // travels in the query string and is consumed by the view.
       path: '/reset-password',
       name: 'reset-password',
       component: () => import('../views/ResetPasswordView.vue'),

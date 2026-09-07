@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { resetPassword } from '@/api/users'
@@ -22,8 +22,6 @@ const isFormValid = computed(() => {
 })
 
 onMounted(() => {
-  // Read the token from the query string. If there's no token we
-  // show an error and don't let the user submit — the link is bad.
   const params = new URLSearchParams(window.location.search)
   token.value = params.get('token')
   if (!token.value) {
@@ -50,17 +48,13 @@ async function handleSubmit() {
   try {
     const result = await resetPassword(token.value, newPassword.value)
     success.value =
-      result.message ?? 'Password reset successfully. Redirecting to login…'
+      result.message ?? 'Password reset successfully. Redirecting to loginâ€¦'
 
-    // Give the user a moment to read the success message, then
-    // redirect to the login page.
     setTimeout(() => {
       router.push('/')
     }, 1500)
   } catch (err) {
     if (err instanceof ApiError && err.status === 400) {
-      // The server's "this link is invalid or has expired" message
-      // is already user-friendly; surface it verbatim.
       error.value =
         (await err.body) ||
         'This reset link is invalid or has expired. Please request a new one.'
@@ -135,7 +129,7 @@ async function handleSubmit() {
             class="nb-btn"
             :disabled="loading || !isFormValid"
           >
-            {{ loading ? 'RESETTING…' : 'RESET PASSWORD' }}
+            {{ loading ? 'RESETTINGâ€¦' : 'RESET PASSWORD' }}
           </button>
         </div>
       </form>
@@ -149,153 +143,3 @@ async function handleSubmit() {
   </div>
 </template>
 
-<style scoped>
-.nb-auth-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: calc(100vh - 140px);
-  padding: 24px;
-}
-
-.nb-auth__card {
-  width: 100%;
-  max-width: 480px;
-  padding: 20px;
-}
-
-.nb-auth__header {
-  text-align: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: var(--nb-border-width-md) solid var(--nb-color-ink);
-}
-
-.nb-auth__title {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0 0 8px;
-}
-
-.nb-auth__subtitle {
-  font-size: 14px;
-  color: var(--nb-color-muted);
-  margin: 0;
-}
-
-.nb-auth__error {
-  background: var(--nb-color-white);
-  color: var(--nb-color-accent-orange);
-  border-color: var(--nb-color-accent-orange);
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  text-align: center;
-}
-
-.nb-auth__success {
-  background: var(--nb-color-white);
-  color: var(--nb-color-ink);
-  border-color: var(--nb-color-ink);
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  text-align: center;
-}
-
-.nb-auth__section {
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: var(--nb-border-width-sm) solid var(--nb-color-ink);
-}
-
-.nb-auth__section:last-of-type {
-  border-bottom: none;
-  margin-bottom: 16px;
-  padding-bottom: 0;
-}
-
-.nb-auth__section-title {
-  font-size: 12px;
-  font-weight: var(--nb-font-weight-bold);
-  margin: 0 0 16px;
-  color: var(--nb-color-muted);
-}
-
-.nb-form-group {
-  margin-bottom: 16px;
-}
-
-.nb-form-label {
-  display: block;
-  font-size: 11px;
-  font-weight: var(--nb-font-weight-semibold);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-  color: var(--nb-color-ink);
-}
-
-.nb-input,
-.nb-select {
-  width: 100%;
-  border: var(--nb-border-width-md) solid var(--nb-color-ink);
-  background: var(--nb-color-bg);
-  color: var(--nb-color-ink);
-  font-family: var(--nb-font-display);
-  font-size: 14px;
-  padding: 10px 12px;
-  box-shadow: var(--nb-shadow);
-}
-
-.nb-input:focus,
-.nb-select:focus {
-  outline: none;
-  background: var(--nb-color-white);
-}
-
-.nb-input:disabled,
-.nb-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.nb-form-hint {
-  margin: 6px 0 0;
-  font-size: 11px;
-  color: var(--nb-color-muted);
-}
-
-.nb-form-error {
-  margin: 6px 0 0;
-  font-size: 11px;
-  color: var(--nb-color-accent-orange);
-}
-
-.nb-auth__actions {
-  margin-top: 24px;
-}
-
-.nb-auth__actions .nb-btn {
-  width: 100%;
-  padding: 14px 24px;
-  font-size: 13px;
-}
-
-.nb-auth__footer {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: var(--nb-border-width-md) solid var(--nb-color-ink);
-  text-align: center;
-}
-
-.nb-auth__footer p {
-  margin: 8px 0;
-  font-size: 12px;
-}
-
-.nb-link {
-  color: var(--nb-color-ink);
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
-}
-</style>

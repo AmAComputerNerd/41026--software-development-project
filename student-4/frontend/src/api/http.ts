@@ -1,11 +1,5 @@
-// Shared fetch-based client plumbing for the student-4 Account Service.
-// No axios: this is the only API surface the frontend needs so far.
-
-// Use relative URLs when proxying through Vite dev server
 export const BASE_URL = import.meta.env.VITE_ACCOUNT_API_BASE_URL || '/api'
 
-// Typed error so call sites can branch on HTTP status (e.g. handle 404
-// "user not found" without grepping the error message string).
 export class ApiError extends Error {
   status: number
   statusText: string

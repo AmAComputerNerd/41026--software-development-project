@@ -16,11 +16,7 @@ public static class AuthEndpoints
         group.MapPost("/change-password", ChangePassword);
         group.MapDelete("/delete-account", DeleteAccount);
 
-        // Password reset. Both endpoints are designed to be
-        // non-enumerating: /forgot-password always returns 200 OK
-        // even if the email is unknown, and /reset-password always
-        // returns 400 if the token is invalid (never 404, to avoid
-        // confirming token existence).
+        // Password Reset - forgot-password returns 200 OK and reset-password returns 400
         group.MapPost("/forgot-password", ForgotPassword);
         group.MapPost("/reset-password", ResetPassword);
 
@@ -44,8 +40,6 @@ public static class AuthEndpoints
                 Password: request.Password
             );
 
-            // Use the status-aware variant so a 401 from the database
-            // (bad password) maps to our own 401, not 503.
             var user = await db.LoginWithStatusAsync(command, cancellationToken);
             return user is null ? Results.Unauthorized() : Results.Ok(user.ToDto());
         }
@@ -122,8 +116,6 @@ public static class AuthEndpoints
         [FromBody] ForgotPasswordRequestDto request,
         CancellationToken cancellationToken)
     {
-        // Always return 200 with the same body - we don't want to
-        // leak whether the email is registered.
         if (string.IsNullOrWhiteSpace(request.Email))
         {
             return Results.Ok(new { message = "If that email is registered, a reset link has been sent." });
@@ -131,8 +123,6 @@ public static class AuthEndpoints
 
         try
         {
-            // Look up the user by email. We need their Id to create a
-            // token. If they don't exist, we silently return success.
             var users = await db.GetUsersAsync(cancellationToken);
             var user = users.FirstOrDefault(u =>
                 string.Equals(u.Email, request.Email, StringComparison.OrdinalIgnoreCase));
@@ -180,15 +170,11 @@ public static class AuthEndpoints
         }
         catch (DatabaseServiceException ex)
         {
-            // Even on a database blip, don't surface the error to the
-            // caller - log and return success.
             logger.LogError(ex, "forgot-password: database service unavailable.");
             return Results.Ok(new { message = "If that email is registered, a reset link has been sent." });
         }
         catch (EmailSendException ex)
         {
-            // Email failure: the user expects success, but operators
-            // need to know it failed. Log and still return success.
             logger.LogError(ex, "forgot-password: email send failed for {Email}.", request.Email);
             return Results.Ok(new { message = "If that email is registered, a reset link has been sent." });
         }
@@ -210,10 +196,6 @@ public static class AuthEndpoints
 
         try
         {
-            // Hash the raw token exactly the same way the database
-            // service stored it (and the same way we hashed on
-            // generation). The database service never sees the raw
-            // token, only the SHA-256 hash.
             var tokenHash = PasswordResetTokenGenerator.Hash(request.Token);
 
             var updatedUser = await db.ResetPasswordWithTokenAsync(

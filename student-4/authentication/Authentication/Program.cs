@@ -10,18 +10,15 @@ using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Services
+#region Services
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 
-// Serialize enums as their string names (matches the rest of the
-// account service surface).
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-// Validation and binding for the options this service needs.
 builder.Services
     .AddOptions<DatabaseServiceOptions>()
     .Bind(builder.Configuration.GetSection(DatabaseServiceOptions.SectionName))
@@ -33,7 +30,6 @@ builder.Services
     .AddOptions<EmailOptions>()
     .Bind(builder.Configuration.GetSection(EmailOptions.SectionName));
 
-// HTTP client + resilience for talking to the database service.
 builder.Services
     .AddHttpClient<IAccountDatabaseClient, AccountDatabaseClient>((services, client) =>
         ConfigureClient(
@@ -56,17 +52,14 @@ builder.Services
         client.Timeout = TimeSpan.FromSeconds(3);
     });
 
-// Email
 builder.Services.AddSingleton<IEmailSender, MailKitEmailSender>();
 builder.Services.AddSingleton<PasswordResetTokenGenerator>();
 
-// Health checks
 builder.Services
     .AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
     .AddCheck<DatabaseServiceHealthCheck>("database-service", tags: ["ready"]);
 
-// CORS
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy => policy
@@ -75,10 +68,11 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader()
         .AllowAnyMethod());
 });
+#endregion
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+#region Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -89,13 +83,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
-// Endpoints
 app.MapAuthEndpoints();
 
-// Infrastructure
 app.UseApiExceptionHandling();
 
-// Health check endpoints for CI/CD and orchestration
 app.MapHealthChecks(
     "/health/live",
     new HealthCheckOptions
@@ -108,6 +99,7 @@ app.MapHealthChecks(
     {
         Predicate = registration => registration.Tags.Contains("ready")
     });
+#endregion
 
 app.Run();
 

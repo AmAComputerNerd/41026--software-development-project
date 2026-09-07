@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
@@ -7,7 +7,6 @@ import { ApiError } from '@/api/http'
 
 const { fetchUser } = useAuth()
 
-// Form state
 const isLoginMode = ref(true)
 const email = ref('')
 const password = ref('')
@@ -24,20 +23,16 @@ const studentCanvasApiKey = ref('')
 const teacherEmploymentStatus = ref<'FullTime' | 'PartTime' | 'Inactive'>('FullTime')
 const teacherCanvasApiKey = ref('')
 
-// Forgot-password inline form. When `showForgot` is true, the main
-// form is hidden and a smaller email-only form takes its place.
 const showForgot = ref(false)
 const forgotEmail = ref('')
 const forgotLoading = ref(false)
 const forgotError = ref<string | null>(null)
 const forgotSuccess = ref<string | null>(null)
 
-// Error/success messages
 const error = ref<string | null>(null)
 const success = ref<string | null>(null)
 const loading = ref(false)
 
-// Validation
 const isFormValid = computed(() => {
   if (isLoginMode.value) {
     return email.value && password.value
@@ -50,7 +45,7 @@ const isFormValid = computed(() => {
     firstName.value &&
     lastName.value &&
     dateOfBirth.value &&
-    userType.value // Ensure account type is selected
+    userType.value
   )
 })
 
@@ -67,27 +62,20 @@ async function handleSubmit() {
 
   try {
     if (isLoginMode.value) {
-      // Call the backend's /api/auth/login endpoint, which validates
-      // email + password and returns the UserDto on success or 401
-      // on a mismatch.
       const user = await login(email.value, password.value)
 
-      // Hydrate the auth store and persist the user ID so the
-      // profile page (and any other page) knows who is signed in.
       await fetchUser(user.id)
       localStorage.setItem('userId', user.id)
 
       success.value = 'Login successful! Redirecting...'
 
-      // Redirect to profile after a short delay
       setTimeout(() => {
         window.location.href = '/account/profile'
       }, 1000)
     } else {
-      // Sign up
       const userData: CreateUserRequest = {
         email: email.value,
-        passwordHash: password.value, // In real app, hash this on backend
+        passwordHash: password.value,
         firstName: firstName.value,
         middleNames: middleNames.value || undefined,
         lastName: lastName.value,
@@ -98,7 +86,7 @@ async function handleSubmit() {
 
       if (userType.value === 'Student') {
         userData.studentDto = {
-          userId: '00000000-0000-0000-0000-000000000000', // Will be set by backend
+          userId: '00000000-0000-0000-0000-000000000000',
           courseStatus: studentCourseStatus.value,
           isInternational: studentIsInternational.value,
           canvasApiKey: studentCanvasApiKey.value,
@@ -112,25 +100,19 @@ async function handleSubmit() {
       }
 
       const newUser = await createUser(userData)
-      
-      // Persist the new user's ID so the profile page picks them up
-      // automatically — no second login round-trip required.
+
       localStorage.setItem('userId', newUser.id)
-      
+
       success.value = 'Account created successfully! Redirecting to your profile...'
-      
-      // Redirect straight to the profile after a short delay
+
       setTimeout(() => {
         window.location.href = '/account/profile'
       }, 1000)
     }
   } catch (err) {
-    // Map the 401 from the auth endpoint to a friendlier message —
-    // we don't want to surface "401 Unauthorized" to the user.
     if (isLoginMode.value && err instanceof ApiError && err.status === 401) {
       error.value = 'Invalid email or password.'
     } else if (isLoginMode.value && err instanceof Error && err.message.includes('401')) {
-      // Fallback if a non-ApiError somehow surfaces (defensive).
       error.value = 'Invalid email or password.'
     } else {
       error.value = err instanceof Error ? err.message : 'An error occurred'
@@ -142,7 +124,7 @@ async function handleSubmit() {
 
 function openForgotPassword() {
   showForgot.value = true
-  forgotEmail.value = email.value // pre-fill if the user already typed it
+  forgotEmail.value = email.value
   forgotError.value = null
   forgotSuccess.value = null
 }
@@ -164,9 +146,6 @@ async function handleForgotPassword() {
 
   forgotLoading.value = true
   try {
-    // The backend always returns 200 with the same body, so we just
-    // show a generic confirmation regardless of whether the email
-    // is registered. This avoids leaking which addresses exist.
     const result = await forgotPassword(forgotEmail.value)
     forgotSuccess.value =
       result.message ??
@@ -463,7 +442,7 @@ async function handleForgotPassword() {
               class="nb-btn"
               :disabled="forgotLoading || !forgotEmail"
             >
-              {{ forgotLoading ? 'SENDING…' : 'SEND RESET LINK' }}
+              {{ forgotLoading ? 'SENDINGâ€¦' : 'SEND RESET LINK' }}
             </button>
           </div>
         </form>
@@ -480,210 +459,3 @@ async function handleForgotPassword() {
   </div>
 </template>
 
-<style scoped>
-.nb-auth-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: calc(100vh - 140px);
-  padding: 24px;
-}
-
-.nb-auth__card {
-  width: 100%;
-  max-width: 480px;
-  padding: 20px;
-}
-
-.nb-auth__header {
-  text-align: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: var(--nb-border-width-md) solid var(--nb-color-ink);
-}
-
-.nb-auth__title {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0 0 8px;
-}
-
-.nb-auth__subtitle {
-  font-size: 14px;
-  color: var(--nb-color-muted);
-  margin: 0;
-}
-
-.nb-auth__error {
-  background: var(--nb-color-white);
-  color: var(--nb-color-accent-orange);
-  border-color: var(--nb-color-accent-orange);
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  text-align: center;
-}
-
-.nb-auth__success {
-  background: var(--nb-color-white);
-  color: var(--nb-color-ink);
-  border-color: var(--nb-color-ink);
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  text-align: center;
-}
-
-.nb-auth__section {
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: var(--nb-border-width-sm) solid var(--nb-color-ink);
-}
-
-.nb-auth__section:last-of-type {
-  border-bottom: none;
-  margin-bottom: 16px;
-  padding-bottom: 0;
-}
-
-.nb-auth__section-title {
-  font-size: 12px;
-  font-weight: var(--nb-font-weight-bold);
-  margin: 0 0 16px;
-  color: var(--nb-color-muted);
-}
-
-.nb-form-required {
-  color: var(--nb-color-accent-orange);
-  margin-left: 4px;
-}
-
-.nb-auth__hint {
-  font-size: 11px;
-  color: var(--nb-color-muted);
-  margin: 0 0 12px;
-}
-
-.nb-auth__radio-group {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.nb-auth__radio {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.nb-auth__radio input[type="radio"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--nb-color-accent-orange);
-  border: var(--nb-border-width-sm) solid var(--nb-color-ink);
-}
-
-.nb-auth__radio-label {
-  font-family: var(--nb-font-mono);
-  font-size: 12px;
-  font-weight: var(--nb-font-weight-semibold);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.nb-form-group {
-  margin-bottom: 16px;
-}
-
-.nb-form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.nb-form-label {
-  display: block;
-  font-size: 11px;
-  font-weight: var(--nb-font-weight-semibold);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-  color: var(--nb-color-ink);
-}
-
-.nb-input,
-.nb-select {
-  width: 100%;
-  border: var(--nb-border-width-md) solid var(--nb-color-ink);
-  background: var(--nb-color-bg);
-  color: var(--nb-color-ink);
-  font-family: var(--nb-font-display);
-  font-size: 14px;
-  padding: 10px 12px;
-  box-shadow: var(--nb-shadow);
-}
-
-.nb-input:focus,
-.nb-select:focus {
-  outline: none;
-  background: var(--nb-color-white);
-}
-
-.nb-input:disabled,
-.nb-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.nb-checkbox-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.nb-checkbox {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--nb-color-accent-orange);
-  border: var(--nb-border-width-sm) solid var(--nb-color-ink);
-  flex-shrink: 0;
-}
-
-.nb-form-error {
-  margin: 6px 0 0;
-  font-size: 11px;
-  color: var(--nb-color-accent-orange);
-}
-
-.nb-auth__actions {
-  margin-top: 24px;
-}
-
-.nb-auth__actions .nb-btn {
-  width: 100%;
-  padding: 14px 24px;
-  font-size: 13px;
-}
-
-.nb-auth__footer {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: var(--nb-border-width-md) solid var(--nb-color-ink);
-  text-align: center;
-}
-
-.nb-auth__footer p {
-  margin: 8px 0;
-  font-size: 12px;
-}
-
-.nb-auth__toggle {
-  margin-left: 12px;
-  padding: 6px 12px;
-  font-size: 11px;
-}
-
-.nb-auth__forgot .nb-btn {
-  padding: 6px 12px;
-  font-size: 11px;
-}
-</style>

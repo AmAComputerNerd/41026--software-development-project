@@ -14,7 +14,6 @@ import {
 } from '@/api/users'
 import { ApiError } from '@/api/http'
 
-// Module-level state shared by every call site
 const currentUser = ref<UserDto | null>(null)
 const currentStudent = ref<StudentDto | null>(null)
 const currentTeacher = ref<TeacherDto | null>(null)
@@ -24,8 +23,6 @@ const error = ref<string | null>(null)
 export function useAuth() {
   const isAuthenticated = computed(() => currentUser.value !== null)
   const userType = computed(() => currentUser.value?.userType ?? null)
-  // Case-insensitive comparison in case the backend returns a different
-  // casing (e.g., "student" vs "Student") due to JSON serializer settings.
   const isStudent = computed(() => userType.value?.toLowerCase() === 'student')
   const isTeacher = computed(() => userType.value?.toLowerCase() === 'teacher')
   const isAdmin = computed(() => userType.value?.toLowerCase() === 'admin')
@@ -37,10 +34,6 @@ export function useAuth() {
       try {
         currentUser.value = await getUser(userId)
       } catch (err) {
-        // 404 on the user record means our localStorage userId is stale
-        // (account was deleted, or backend was reset). Clear it so the
-        // app doesn't keep trying the same dead ID, and surface a
-        // friendlier message than the raw "404 Not Found".
         if (err instanceof ApiError && err.status === 404) {
           localStorage.removeItem('userId')
           logout()
@@ -51,15 +44,9 @@ export function useAuth() {
         throw err
       }
 
-      // Reset the role-specific profiles before re-fetching, so a user
-      // who switched role types doesn't keep stale data around.
       currentStudent.value = null
       currentTeacher.value = null
 
-      // The student/teacher lookups are best-effort: if a record hasn't
-      // been created yet (newly-registered user, or the backend returns
-      // 404 for some other reason), we don't want to fail the whole
-      // profile load. Log and continue.
       if (currentUser.value?.userType === 'Student') {
         try {
           currentStudent.value = await getStudent(userId)
@@ -82,7 +69,6 @@ export function useAuth() {
         }
       }
     } catch (err) {
-      // Error already captured above; re-throw so the caller can react.
       throw err
     } finally {
       loading.value = false

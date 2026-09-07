@@ -3,9 +3,6 @@ using Student4.Contracts;
 
 namespace Database.Extensions;
 
-// Converts internal EF entities to the contract records shared with
-// the public API. The contract records are what the API sees; the
-// database service is the only place that touches the entity types.
 public static class DtoExtensions
 {
     public static UserRecord ToRecord(this User user)

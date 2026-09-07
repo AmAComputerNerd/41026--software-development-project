@@ -22,10 +22,6 @@ public static class ProfileSummaryEndpoints
     {
         try
         {
-            // Load the user and any role-specific data through the
-            // database service. The AI service then uses these
-            // contract records to build the prompt — the API never
-            // touches EF Core types.
             var user = await db.GetUserAsync(userId, cancellationToken);
             if (user is null)
             {

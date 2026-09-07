@@ -7,12 +7,7 @@ using Student4.Contracts;
 
 namespace Api.Services;
 
-// HTTP client for the student-4-database service, scoped to the
-// profile-CRUD surface (users, students, teachers, profile summary).
-// The auth surface (login, change-password, delete-account, password
-// reset) lives in the standalone Authentication service, which has
-// its own scoped AccountDatabaseClient implementation that only
-// calls /internal/auth/* and /internal/password-reset-tokens/*.
+// HTTP client for the student-4-database service, scoped to the profile-CRUD surface.
 public sealed class AccountDatabaseClient(HttpClient httpClient) : IAccountDatabaseClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -76,8 +71,7 @@ public sealed class AccountDatabaseClient(HttpClient httpClient) : IAccountDatab
         return SendOptionalAsync<UserRecord>(HttpMethod.Post, $"internal/users/{userId}/profile-summary", command, cancellationToken);
     }
 
-    // ---- Helpers ----
-
+    #region Helpers
     private async Task<IReadOnlyList<T>> GetListAsync<T>(string path, CancellationToken cancellationToken)
     {
         using var response = await SendAsync(
@@ -174,4 +168,5 @@ public sealed class AccountDatabaseClient(HttpClient httpClient) : IAccountDatab
         throw new DatabaseServiceException(
             $"The database service returned {(int)response.StatusCode} {response.ReasonPhrase}: {body}");
     }
+    #endregion
 }

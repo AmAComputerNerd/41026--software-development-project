@@ -35,10 +35,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<UserCourse>()
             .HasKey(uc => new { uc.UserId, uc.CourseId });
 
-        // PasswordResetToken: the API looks rows up by TokenHash, so
-        // we need a unique index on it. Cascade-delete the rows when
-        // their owning user is removed so we don't accumulate
-        // orphans (e.g. when an account is deleted).
         modelBuilder.Entity<PasswordResetToken>()
             .HasIndex(t => t.TokenHash)
             .IsUnique();

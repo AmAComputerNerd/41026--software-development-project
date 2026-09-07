@@ -9,21 +9,25 @@ namespace Api.Services;
 // has its own scoped IAccountDatabaseClient implementation.
 public interface IAccountDatabaseClient
 {
-    // ---- Users ----
+    #region Users
     Task<IReadOnlyList<UserRecord>> GetUsersAsync(CancellationToken cancellationToken);
     Task<UserRecord?> GetUserAsync(Guid id, CancellationToken cancellationToken);
     Task<UserRecord> CreateUserAsync(CreateUserCommand command, CancellationToken cancellationToken);
     Task<UserRecord?> UpdateUserAsync(Guid id, UpdateUserCommand command, CancellationToken cancellationToken);
     Task<bool> DeleteUserAsync(Guid id, CancellationToken cancellationToken);
+    #endregion
 
-    // ---- Students ----
+    #region Students
     Task<StudentRecord?> GetStudentAsync(Guid userId, CancellationToken cancellationToken);
     Task<StudentRecord> UpdateStudentAsync(Guid userId, UpdateStudentCommand command, CancellationToken cancellationToken);
+    #endregion
 
-    // ---- Teachers ----
+    #region Teachers
     Task<TeacherRecord?> GetTeacherAsync(Guid userId, CancellationToken cancellationToken);
     Task<TeacherRecord> UpdateTeacherAsync(Guid userId, UpdateTeacherCommand command, CancellationToken cancellationToken);
+    #endregion
 
-    // ---- Profile summary ----
+    #region Profile summary
     Task<UserRecord?> UpdateProfileSummaryAsync(Guid userId, ProfileSummaryCommand command, CancellationToken cancellationToken);
+    #endregion
 }

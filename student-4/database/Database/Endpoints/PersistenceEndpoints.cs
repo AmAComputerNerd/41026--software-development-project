@@ -41,8 +41,7 @@ public static class PersistenceEndpoints
         return endpoints;
     }
 
-    // ---- Users ----
-
+    #region Users
     private static async Task<IResult> GetUsers(AppDbContext db, CancellationToken cancellationToken)
     {
         var users = await db.Users.AsNoTracking().ToListAsync(cancellationToken);
@@ -174,9 +173,9 @@ public static class PersistenceEndpoints
         await db.SaveChangesAsync(cancellationToken);
         return Results.Ok(user.ToRecord());
     }
+    #endregion
 
-    // ---- Students ----
-
+    #region Students
     private static async Task<IResult> GetStudent(
         [FromRoute] Guid userId,
         AppDbContext db,
@@ -196,7 +195,6 @@ public static class PersistenceEndpoints
         var student = await db.Students.FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
         if (student is null)
         {
-            // Verify user is a Student before upserting
             var userExists = await db.Users
                 .AnyAsync(u => u.Id == userId && u.UserType == UserType.Student, cancellationToken);
             if (!userExists)
@@ -225,9 +223,9 @@ public static class PersistenceEndpoints
         await db.SaveChangesAsync(cancellationToken);
         return Results.Ok(student.ToRecord());
     }
+    #endregion
 
-    // ---- Teachers ----
-
+    #region Teachers
     private static async Task<IResult> GetTeacher(
         [FromRoute] Guid userId,
         AppDbContext db,
@@ -272,9 +270,9 @@ public static class PersistenceEndpoints
         await db.SaveChangesAsync(cancellationToken);
         return Results.Ok(teacher.ToRecord());
     }
+    #endregion
 
-    // ---- Auth ----
-
+    #region Auth
     private static async Task<IResult> Login(
         AppDbContext db,
         [FromBody] LoginCommand request,
@@ -292,10 +290,6 @@ public static class PersistenceEndpoints
             return Results.Unauthorized();
         }
 
-        // BCrypt verifies the password against the stored hash. If the
-        // stored value is a legacy plain-text password, Verify returns
-        // false (the hasher swallows the parse error) and the user is
-        // prompted to reset.
         if (!PasswordHasher.Verify(request.Password, user.PasswordHash))
         {
             return Results.Unauthorized();
@@ -347,17 +341,9 @@ public static class PersistenceEndpoints
         await db.SaveChangesAsync(cancellationToken);
         return Results.Ok(new { message = "Account deleted successfully." });
     }
+    #endregion
 
-    // ---- Password reset ----
-    //
-    // The API hashes the raw token with SHA-256 before calling us, so
-    // `TokenHash` is what we look up. The raw token never crosses the
-    // internal boundary. Each call below is its own transaction; the
-    // redeem flow (lookup + mark used + update password) is the
-    // critical atomic operation and runs inside a single
-    // ExecuteUpdate/ExecuteDelete so a concurrent redemption can't
-    // double-spend a token.
-
+    #region Password reset
     private static async Task<IResult> CreatePasswordResetToken(
         AppDbContext db,
         [FromBody] CreatePasswordResetTokenCommand request,
@@ -379,9 +365,6 @@ public static class PersistenceEndpoints
             return Results.NotFound("User not found.");
         }
 
-        // Invalidate any prior outstanding tokens for this user. The
-        // request issues a brand-new token, so the old one(s) are
-        // stale by definition and should not be redeemable.
         await db.PasswordResetTokens
             .Where(t => t.UserId == request.UserId && t.UsedAtUtc == null)
             .ExecuteDeleteAsync(cancellationToken);
@@ -423,9 +406,6 @@ public static class PersistenceEndpoints
                 t => t.TokenHash == request.TokenHash,
                 cancellationToken);
 
-        // All the validity rules live here: must exist, must not be
-        // used, must not be expired. The API uses this to decide
-        // whether to show the "set a new password" form.
         if (token is null ||
             token.UsedAtUtc is not null ||
             token.ExpiresAtUtc <= DateTime.UtcNow)
@@ -455,15 +435,9 @@ public static class PersistenceEndpoints
             return Results.BadRequest("NewPasswordHash is required.");
         }
 
-        // Hash the supplied new password before persisting. The API
-        // passes the plain text; we do the BCrypt work here so the
-        // hashing rules stay in one place.
+        // BCrypt the new password before persisting
         var newHash = PasswordHasher.Hash(request.NewPasswordHash);
 
-        // Atomic redeem: mark the token as used, set the new password,
-        // and read back the user — all in a single SaveChanges. The
-        // unique index on TokenHash prevents two concurrent redemptions
-        // from both succeeding; one will fail and return NotFound.
         var token = await db.PasswordResetTokens
             .FirstOrDefaultAsync(
                 t => t.TokenHash == request.TokenHash
@@ -488,4 +462,5 @@ public static class PersistenceEndpoints
 
         return Results.Ok(user.ToRecord());
     }
+    #endregion
 }

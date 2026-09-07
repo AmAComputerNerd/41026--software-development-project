@@ -10,19 +10,14 @@ using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Services
+#region Services
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
-// Serialize enums as their string names (e.g. "Student") instead of
-// integer values, so the frontend doesn't have to map numeric codes
-// to friendly names for every UserType / Gender / CourseStatus /
-// EmploymentStatus field.
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-// Validation checks and binding for service options.
 builder.Services
     .AddOptions<DatabaseServiceOptions>()
     .Bind(builder.Configuration.GetSection(DatabaseServiceOptions.SectionName))
@@ -38,7 +33,6 @@ builder.Services
         "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL.")
     .ValidateOnStart();
 
-// Http clients and retry behaviour
 builder.Services
     .AddHttpClient<IAccountDatabaseClient, AccountDatabaseClient>((services, client) =>
         ConfigureClient(
@@ -61,16 +55,13 @@ builder.Services
         client.Timeout = TimeSpan.FromSeconds(3);
     });
 
-// AI service
 builder.Services.AddScoped<IAiProfileSummaryService, OpenRouterProfileSummaryService>();
 
-// Health check services
 builder.Services
     .AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
     .AddCheck<DatabaseServiceHealthCheck>("database-service", tags: ["ready"]);
 
-// CORS
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy => policy
@@ -79,6 +70,7 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader()
         .AllowAnyMethod());
 });
+#endregion
 
 var app = builder.Build();
 
@@ -87,7 +79,7 @@ if (string.IsNullOrWhiteSpace(builder.Configuration["AiGateway:BaseUrl"]))
     Log.AiGatewayBaseUrlNotSet(app.Logger);
 }
 
-// Configure the HTTP request pipeline.
+#region Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -98,17 +90,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
-// Endpoints (auth endpoints live in the separate Authentication service)
 app.MapUserEndpoints();
 app.MapStudentEndpoints();
 app.MapTeacherEndpoints();
 app.MapProfileSummaryEndpoints();
 
-// Infrastructure
 app.UseApiExceptionHandling();
 app.UseHttpsRedirection();
 
-// Health check endpoints for CI/CD and orchestration
 app.MapHealthChecks(
     "/health/live",
     new HealthCheckOptions
@@ -121,6 +110,7 @@ app.MapHealthChecks(
     {
         Predicate = registration => registration.Tags.Contains("ready")
     });
+#endregion
 
 app.Run();
 
