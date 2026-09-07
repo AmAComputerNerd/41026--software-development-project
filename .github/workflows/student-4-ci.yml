@@ -83,7 +83,6 @@ jobs:
         run: dotnet format --verify-no-changes --severity warn
         working-directory: ${{ env.WORKING_DIR }}
 
-  frontend-backend-contract:
     name: API contract & browser CORS smoke test
     needs: [frontend-build, build-and-analyze]
     runs-on: ubuntu-latest
