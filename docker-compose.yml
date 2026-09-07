@@ -12,6 +12,13 @@ services:
             ASPNETCORE_ENVIRONMENT: Development
             CANVAS_BASE_URL: ${CANVAS_BASE_URL}
             CANVAS_API_TOKEN: ${CANVAS_API_TOKEN}
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+            start_period: 15s
 
     student-1-backend:
         build:
@@ -23,6 +30,13 @@ services:
             - student-1-db:/app/Data
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+            start_period: 15s
 
     student-2-backend:
         build:
@@ -128,8 +142,6 @@ services:
             retries: 5
             start_period: 15s
         depends_on:
-            student-3-database:
-                condition: service_healthy
             shared-backend:
                 condition: service_healthy
             ai-mode:
@@ -156,6 +168,13 @@ services:
             dockerfile: Api/Dockerfile
         environment:
             OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+            start_period: 15s
 
     shared-shell:
         build:
@@ -174,6 +193,7 @@ services:
 volumes:
     shared-db:
     student-1-db:
+    student-2-db:
     student-3-db:
     student-4-db:
     student-5-db:
@@ -181,4 +201,6 @@ volumes:
 networks:
     default:
     student-3-data:
+        internal: true
+    student-4-data:
         internal: true

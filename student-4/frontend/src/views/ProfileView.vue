@@ -691,6 +691,7 @@ function formatDate(dateStr: string) {
 
 .nb-profile__section {
   margin-bottom: 24px;
+  padding: 20px;
 }
 
 .nb-profile__section-title {
