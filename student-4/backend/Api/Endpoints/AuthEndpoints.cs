@@ -1,10 +1,8 @@
-using System.Security.Cryptography;
-using System.Text;
-using Api.Data;
 using Api.DTOs;
 using Api.Extensions;
+using Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Student4.Contracts;
 
 namespace Api.Endpoints;
 
@@ -22,49 +20,35 @@ public static class AuthEndpoints
     }
 
     private static async Task<IResult> Login(
-        AppDbContext db,
-        [FromBody] LoginRequestDto request)
+        IAccountDatabaseClient db,
+        [FromBody] LoginRequestDto request,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
         {
             return Results.BadRequest("Email and password are required.");
         }
 
-        var user = await db.Users
-            .AsNoTracking()
-            .Where(u => u.Email == request.Email)
-            .Select(u => u.ToDto())
-            .FirstOrDefaultAsync();
-
-        if (user is null)
+        try
         {
-            // Don't reveal whether the email exists — return the same
-            // 401 either way. Still do a dummy hash compare so the
-            // response time is roughly constant.
-            CryptographicOperations.FixedTimeEquals(
-                Encoding.UTF8.GetBytes(string.Empty),
-                Encoding.UTF8.GetBytes(string.Empty));
-            return Results.Unauthorized();
+            var command = new LoginCommand(
+                Email: request.Email,
+                Password: request.Password
+            );
+
+            var user = await db.LoginAsync(command, cancellationToken);
+            return user is null ? Results.Unauthorized() : Results.Ok(user.ToDto());
         }
-
-        // Constant-time comparison to avoid leaking info via timing.
-        // Stored value is the raw password for now (see PasswordHash
-        // field on UserDto — to be replaced with a real hash later).
-        var storedBytes = Encoding.UTF8.GetBytes(user.PasswordHash);
-        var providedBytes = Encoding.UTF8.GetBytes(request.Password);
-
-        if (storedBytes.Length != providedBytes.Length ||
-            !CryptographicOperations.FixedTimeEquals(storedBytes, providedBytes))
+        catch (DatabaseServiceException ex)
         {
-            return Results.Unauthorized();
+            return Results.Problem(detail: ex.Message, statusCode: 503);
         }
-
-        return Results.Ok(user);
     }
 
     private static async Task<IResult> ChangePassword(
-        AppDbContext db,
-        [FromBody] ChangePasswordRequestDto request)
+        IAccountDatabaseClient db,
+        [FromBody] ChangePasswordRequestDto request,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Email) ||
             string.IsNullOrWhiteSpace(request.CurrentPassword) ||
@@ -73,71 +57,50 @@ public static class AuthEndpoints
             return Results.BadRequest("Email, current password, and new password are required.");
         }
 
-        var user = await db.Users
-            .FirstOrDefaultAsync(u => u.Email == request.Email);
-
-        if (user is null)
+        try
         {
-            // Don't reveal whether the email exists
-            CryptographicOperations.FixedTimeEquals(
-                Encoding.UTF8.GetBytes(string.Empty),
-                Encoding.UTF8.GetBytes(string.Empty));
-            return Results.Unauthorized();
+            var command = new ChangePasswordCommand(
+                Email: request.Email,
+                CurrentPassword: request.CurrentPassword,
+                NewPassword: request.NewPassword
+            );
+
+            var success = await db.ChangePasswordAsync(command, cancellationToken);
+            return success
+                ? Results.Ok(new { message = "Password changed successfully." })
+                : Results.Unauthorized();
         }
-
-        // Verify current password
-        var storedBytes = Encoding.UTF8.GetBytes(user.PasswordHash);
-        var providedBytes = Encoding.UTF8.GetBytes(request.CurrentPassword);
-
-        if (storedBytes.Length != providedBytes.Length ||
-            !CryptographicOperations.FixedTimeEquals(storedBytes, providedBytes))
+        catch (DatabaseServiceException ex)
         {
-            return Results.Unauthorized();
+            return Results.Problem(detail: ex.Message, statusCode: 503);
         }
-
-        // Update to new password (stored as-is for now; replace with BCrypt later)
-        user.PasswordHash = request.NewPassword;
-        await db.SaveChangesAsync();
-
-        return Results.Ok(new { message = "Password changed successfully." });
     }
 
     private static async Task<IResult> DeleteAccount(
-        AppDbContext db,
-        [FromBody] DeleteAccountRequestDto request)
+        IAccountDatabaseClient db,
+        [FromBody] DeleteAccountRequestDto request,
+        CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Email) ||
-            string.IsNullOrWhiteSpace(request.Password))
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
         {
             return Results.BadRequest("Email and password are required to delete account.");
         }
 
-        var user = await db.Users
-            .FirstOrDefaultAsync(u => u.Email == request.Email);
-
-        if (user is null)
+        try
         {
-            // Don't reveal whether the email exists
-            CryptographicOperations.FixedTimeEquals(
-                Encoding.UTF8.GetBytes(string.Empty),
-                Encoding.UTF8.GetBytes(string.Empty));
-            return Results.Unauthorized();
+            var command = new DeleteAccountCommand(
+                Email: request.Email,
+                Password: request.Password
+            );
+
+            var success = await db.DeleteAccountAsync(command, cancellationToken);
+            return success
+                ? Results.Ok(new { message = "Account deleted successfully." })
+                : Results.Unauthorized();
         }
-
-        // Verify password
-        var storedBytes = Encoding.UTF8.GetBytes(user.PasswordHash);
-        var providedBytes = Encoding.UTF8.GetBytes(request.Password);
-
-        if (storedBytes.Length != providedBytes.Length ||
-            !CryptographicOperations.FixedTimeEquals(storedBytes, providedBytes))
+        catch (DatabaseServiceException ex)
         {
-            return Results.Unauthorized();
+            return Results.Problem(detail: ex.Message, statusCode: 503);
         }
-
-        // Delete the user (cascades to Student/Teacher via EF Core relationships)
-        db.Users.Remove(user);
-        await db.SaveChangesAsync();
-
-        return Results.Ok(new { message = "Account deleted successfully." });
     }
 }

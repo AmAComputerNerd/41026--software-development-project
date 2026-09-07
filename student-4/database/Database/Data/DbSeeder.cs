@@ -1,7 +1,7 @@
-using Api.Models;
+using Database.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Api.Data;
+namespace Database.Data;
 
 public static class DbSeeder
 {

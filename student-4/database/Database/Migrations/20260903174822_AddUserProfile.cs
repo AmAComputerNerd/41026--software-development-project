@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Api.Migrations
+namespace Database.Data.Migrations
 {
     /// <inheritdoc />
     public partial class AddUserProfile : Migration

@@ -1,12 +1,11 @@
 using System.Text.Json.Serialization;
-using Api.Models;
 
 namespace Api.DTOs;
 
 // UserDto is what we hand back to clients. PasswordHash is intentionally
-// [JsonIgnore]-ed so it never leaves the server — the constructor still
-// accepts it so CreateUser can persist it, and ToDto() on the model
-// still passes it through.
+// [JsonIgnore]-ed so it never leaves the server. The contract record
+// carries the password hash from the database service for the login
+// path, but the public DTO never serializes it.
 public class UserDto
 {
     public Guid Id { get; init; }
@@ -18,9 +17,9 @@ public class UserDto
     public string FirstName { get; init; } = string.Empty;
     public string? MiddleNames { get; init; }
     public string LastName { get; init; } = string.Empty;
-    public Gender Gender { get; init; }
+    public string Gender { get; init; } = "Male";
     public DateTime DateOfBirth { get; init; }
-    public UserType UserType { get; init; }
+    public string UserType { get; init; } = "Student";
 
     // AI-generated (or user-edited) profile summary. Nullable so the
     // field is optional — a user without a summary just has null.

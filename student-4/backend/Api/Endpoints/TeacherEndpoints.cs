@@ -1,9 +1,8 @@
-using Api.Data;
 using Api.DTOs;
 using Api.Extensions;
-using Api.Models;
+using Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Student4.Contracts;
 
 namespace Api.Endpoints;
 
@@ -14,101 +13,47 @@ public static class TeacherEndpoints
     {
         var group = endpoints.MapGroup("/api/teachers");
 
-        group.MapGet("/", GetTeachers);
         group.MapGet("/{userId:guid}", GetTeacher);
         group.MapPut("/{userId:guid}", UpdateTeacher);
-        group.MapDelete("/{userId:guid}", DeleteTeacher);
 
         return endpoints;
     }
 
-    private static async Task<IResult> GetTeachers(AppDbContext db)
-    {
-        var teachers = await db.Teachers
-            .AsNoTracking()
-            .Select(t => t.ToDto())
-            .ToListAsync();
-
-        return Results.Ok(teachers);
-    }
-
     private static async Task<IResult> GetTeacher(
         Guid userId,
-        AppDbContext db)
+        IAccountDatabaseClient db,
+        CancellationToken cancellationToken)
     {
-        var teacher = await db.Teachers
-            .AsNoTracking()
-            .Where(t => t.UserId == userId)
-            .Select(t => t.ToDto())
-            .FirstOrDefaultAsync();
-
-        if (teacher is null)
+        try
         {
-            return Results.NotFound();
+            var teacher = await db.GetTeacherAsync(userId, cancellationToken);
+            return teacher is null ? Results.NotFound() : Results.Ok(teacher.ToDto());
         }
-
-        return Results.Ok(teacher);
+        catch (DatabaseServiceException ex)
+        {
+            return Results.Problem(detail: ex.Message, statusCode: 503);
+        }
     }
 
     private static async Task<IResult> UpdateTeacher(
         Guid userId,
+        IAccountDatabaseClient db,
         [FromBody] UpdateTeacherRequestDto request,
-        AppDbContext db)
+        CancellationToken cancellationToken)
     {
-        var teacher = await db.Teachers
-            .FirstOrDefaultAsync(t => t.UserId == userId);
-
-        // Upsert: if no Teacher record exists for this user yet, create
-        // one. This makes the PUT endpoint usable as a "save my profile
-        // details" call from the UI, regardless of whether the
-        // record was created at sign-up time.
-        if (teacher is null)
+        try
         {
-            // Verify the user actually exists and is a Teacher before
-            // we create a Teacher record for them.
-            var userExists = await db.Users
-                .AnyAsync(u => u.Id == userId && u.UserType == UserType.Teacher);
-            if (!userExists)
-            {
-                return Results.NotFound("User not found or is not a Teacher.");
-            }
+            var command = new UpdateTeacherCommand(
+                EmploymentStatus: request.EmploymentStatus,
+                CanvasApiKey: request.CanvasApiKey
+            );
 
-            teacher = new Teacher(userId)
-            {
-                EmploymentStatus = request.EmploymentStatus ?? EmploymentStatus.FullTime,
-                CanvasApiKey = request.CanvasApiKey ?? string.Empty,
-            };
-            db.Teachers.Add(teacher);
+            var teacher = await db.UpdateTeacherAsync(userId, command, cancellationToken);
+            return Results.Ok(teacher.ToDto());
         }
-        else
+        catch (DatabaseServiceException ex)
         {
-            // Only overwrite fields that are provided (non-null)
-            if (request.EmploymentStatus.HasValue)
-                teacher.EmploymentStatus = request.EmploymentStatus.Value;
-            if (request.CanvasApiKey is not null)
-                teacher.CanvasApiKey = request.CanvasApiKey;
+            return Results.Problem(detail: ex.Message, statusCode: 503);
         }
-
-        await db.SaveChangesAsync();
-
-        return Results.Ok(teacher.ToDto());
-    }
-
-    private static async Task<IResult> DeleteTeacher(
-        Guid userId,
-        AppDbContext db)
-    {
-        var teacher = await db.Teachers
-            .FirstOrDefaultAsync(t => t.UserId == userId);
-
-        if (teacher is null)
-        {
-            return Results.NotFound();
-        }
-
-        db.Teachers.Remove(teacher);
-        await db.SaveChangesAsync();
-
-        return Results.NoContent();
     }
 }

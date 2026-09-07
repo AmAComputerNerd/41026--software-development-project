@@ -1,9 +1,8 @@
-using Api.Data;
 using Api.DTOs;
 using Api.Extensions;
-using Api.Models;
+using Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Student4.Contracts;
 
 namespace Api.Endpoints;
 
@@ -19,215 +18,118 @@ public static class UserEndpoints
         group.MapPut("/{userId:guid}", UpdateUser);
         group.MapDelete("/{userId:guid}", DeleteUser);
 
-        group.MapGet("/{userId:guid}/courses", GetUserCourses);
-        group.MapPost(
-            "/{userId:guid}/courses/{courseId:guid}",
-            AddUserToCourse);
-        group.MapDelete(
-            "/{userId:guid}/courses/{courseId:guid}",
-            RemoveUserFromCourse);
-
         return endpoints;
     }
 
-    private static async Task<IResult> GetUsers(AppDbContext db)
+    private static async Task<IResult> GetUsers(
+        IAccountDatabaseClient db,
+        CancellationToken cancellationToken)
     {
-        var users = await db.Users
-            .AsNoTracking()
-            .Select(u => u.ToDto())
-            .ToListAsync();
-
-        return Results.Ok(users);
+        try
+        {
+            var users = await db.GetUsersAsync(cancellationToken);
+            return Results.Ok(users.Select(u => u.ToDto()));
+        }
+        catch (DatabaseServiceException ex)
+        {
+            return Results.Problem(detail: ex.Message, statusCode: 503);
+        }
     }
 
     private static async Task<IResult> GetUser(
         Guid userId,
-        AppDbContext db)
+        IAccountDatabaseClient db,
+        CancellationToken cancellationToken)
     {
-        var user = await db.Users
-            .AsNoTracking()
-            .Where(u => u.Id == userId)
-            .Select(u => u.ToDto())
-            .FirstOrDefaultAsync();
-
-        if (user is null)
+        try
         {
-            return Results.NotFound();
+            var user = await db.GetUserAsync(userId, cancellationToken);
+            return user is null ? Results.NotFound() : Results.Ok(user.ToDto());
         }
-
-        return Results.Ok(user);
+        catch (DatabaseServiceException ex)
+        {
+            return Results.Problem(detail: ex.Message, statusCode: 503);
+        }
     }
 
     private static async Task<IResult> CreateUser(
-        AppDbContext db,
-        [FromBody] CreateUserRequestDto request)
+        IAccountDatabaseClient db,
+        [FromBody] CreateUserRequestDto request,
+        CancellationToken cancellationToken)
     {
-        bool emailExists = await db.Users
-        .AnyAsync(u => u.Email == request.Email);
-
-        if (emailExists)
-            return Results.Conflict("A user with this email already exists.");
-
-        User user = new User
+        try
         {
-            Email = request.Email,
-            PasswordHash = request.PasswordHash,
-            FirstName = request.FirstName,
-            MiddleNames = request.MiddleNames,
-            LastName = request.LastName,
-            Gender = request.Gender,
-            DateOfBirth = request.DateOfBirth,
-            UserType = request.UserType,
-        };
+            var command = new CreateUserCommand(
+                Email: request.Email,
+                PasswordHash: request.PasswordHash,
+                FirstName: request.FirstName,
+                MiddleNames: request.MiddleNames,
+                LastName: request.LastName,
+                Gender: request.Gender,
+                DateOfBirth: request.DateOfBirth,
+                UserType: request.UserType,
+                Student: request.StudentDto is null
+                    ? null
+                    : new CreateStudentCommand(
+                        CourseStatus: request.StudentDto.CourseStatus,
+                        IsInternational: request.StudentDto.IsInternational,
+                        CanvasApiKey: request.StudentDto.CanvasApiKey),
+                Teacher: request.TeacherDto is null
+                    ? null
+                    : new CreateTeacherCommand(
+                        EmploymentStatus: request.TeacherDto.EmploymentStatus,
+                        CanvasApiKey: request.TeacherDto.CanvasApiKey)
+            );
 
-        db.Users.Add(user);
-
-        switch (request.UserType)
-        {
-            case UserType.Student:
-                if (request.StudentDto is null)
-                    return Results.BadRequest("Student details are required.");
-
-                db.Students.Add(new Student(user.Id)
-                {
-                    CourseStatus = request.StudentDto.CourseStatus,
-                    IsInternational = request.StudentDto.IsInternational,
-                    CanvasApiKey = request.StudentDto.CanvasApiKey
-                });
-                break;
-
-            case UserType.Teacher:
-                if (request.TeacherDto is null)
-                    return Results.BadRequest("Teacher details are required.");
-
-                db.Teachers.Add(new Teacher(user.Id)
-                {
-                    EmploymentStatus = request.TeacherDto.EmploymentStatus,
-                    CanvasApiKey = request.TeacherDto.CanvasApiKey
-                });
-                break;
-
-            case UserType.Admin:
-                break;
+            var user = await db.CreateUserAsync(command, cancellationToken);
+            return Results.Created($"/api/users/{user.Id}", user.ToDto());
         }
-
-        await db.SaveChangesAsync();
-
-        return Results.Created(
-            $"/api/users/{user.Id}",
-            user.ToDto());
+        catch (DatabaseServiceException ex)
+        {
+            return Results.Problem(detail: ex.Message, statusCode: 503);
+        }
     }
 
     private static async Task<IResult> UpdateUser(
         Guid userId,
+        IAccountDatabaseClient db,
         [FromBody] UpdateUserRequestDto request,
-        AppDbContext db)
+        CancellationToken cancellationToken)
     {
-        var user = await db.Users
-            .FirstOrDefaultAsync(u => u.Id == userId);
-
-        if (user is null)
+        try
         {
-            return Results.NotFound();
-        }
+            var command = new UpdateUserCommand(
+                Email: request.Email,
+                FirstName: request.FirstName,
+                MiddleNames: request.MiddleNames,
+                LastName: request.LastName,
+                Gender: request.Gender,
+                DateOfBirth: request.DateOfBirth,
+                UserProfile: request.UserProfile
+            );
 
-        user.Email = request.Email;
-        user.FirstName = request.FirstName;
-        user.MiddleNames = request.MiddleNames;
-        user.LastName = request.LastName;
-        user.Gender = request.Gender;
-        user.DateOfBirth = request.DateOfBirth;
-        // UserProfile is nullable — if provided, update it; if null,
-        // leave the existing value alone (don't clear it).
-        if (request.UserProfile is not null)
+            var user = await db.UpdateUserAsync(userId, command, cancellationToken);
+            return user is null ? Results.NotFound() : Results.Ok(user.ToDto());
+        }
+        catch (DatabaseServiceException ex)
         {
-            user.UserProfile = request.UserProfile;
+            return Results.Problem(detail: ex.Message, statusCode: 503);
         }
-
-        await db.SaveChangesAsync();
-
-        return Results.Ok(user.ToDto());
     }
 
     private static async Task<IResult> DeleteUser(
         Guid userId,
-        AppDbContext db)
+        IAccountDatabaseClient db,
+        CancellationToken cancellationToken)
     {
-        var user = await db.Users
-            .FirstOrDefaultAsync(u => u.Id == userId);
-
-        if (user is null)
+        try
         {
-            return Results.NotFound();
+            var deleted = await db.DeleteUserAsync(userId, cancellationToken);
+            return deleted ? Results.NoContent() : Results.NotFound();
         }
-
-        db.Users.Remove(user);
-        await db.SaveChangesAsync();
-
-        return Results.NoContent();
-    }
-
-    private static async Task<IResult> GetUserCourses(
-        Guid userId,
-        AppDbContext db)
-    {
-        var courses = await db.UserCourses
-            .AsNoTracking()
-            .Where(uc => uc.UserId == userId)
-            //.Select(uc => uc.Course.ToDto())
-            .ToListAsync();
-
-        return Results.Ok(courses);
-    }
-
-    private static async Task<IResult> AddUserToCourse(
-        Guid userId,
-        Guid courseId,
-        AppDbContext db)
-    {
-        var userExists = await db.Users
-            .AnyAsync(u => u.Id == userId);
-
-        if (!userExists)
+        catch (DatabaseServiceException ex)
         {
-            return Results.NotFound("User not found.");
+            return Results.Problem(detail: ex.Message, statusCode: 503);
         }
-
-        var userCourseExists = await db.UserCourses
-            .AnyAsync(uc =>
-                uc.UserId == userId &&
-                uc.CourseId == courseId);
-
-        if (userCourseExists)
-        {
-            return Results.Conflict("User is already enrolled in this course.");
-        }
-
-        db.UserCourses.Add(new UserCourse(userId, courseId));
-
-        await db.SaveChangesAsync();
-
-        return Results.NoContent();
-    }
-
-    private static async Task<IResult> RemoveUserFromCourse(
-        Guid userId,
-        Guid courseId,
-        AppDbContext db)
-    {
-        var userCourse = await db.UserCourses
-            .FirstOrDefaultAsync(uc =>
-                uc.UserId == userId &&
-                uc.CourseId == courseId);
-
-        if (userCourse is null)
-        {
-            return Results.NotFound();
-        }
-
-        db.UserCourses.Remove(userCourse);
-        await db.SaveChangesAsync();
-
-        return Results.NoContent();
     }
 }

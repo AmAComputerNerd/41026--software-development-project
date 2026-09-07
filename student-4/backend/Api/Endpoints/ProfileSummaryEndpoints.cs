@@ -1,8 +1,5 @@
-using Api.Data;
-using Api.DTOs;
-using Api.Models;
 using Api.Services;
-using Microsoft.EntityFrameworkCore;
+using Student4.Contracts;
 
 namespace Api.Endpoints;
 
@@ -19,31 +16,49 @@ public static class ProfileSummaryEndpoints
 
     private static async Task<IResult> GenerateProfileSummary(
         Guid userId,
+        IAccountDatabaseClient db,
         IAiProfileSummaryService aiService,
-        AppDbContext db,
         CancellationToken cancellationToken)
     {
-        var user = await db.Users
-            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
-
-        if (user is null)
+        try
         {
-            return Results.NotFound();
+            // Load the user and any role-specific data through the
+            // database service. The AI service then uses these
+            // contract records to build the prompt — the API never
+            // touches EF Core types.
+            var user = await db.GetUserAsync(userId, cancellationToken);
+            if (user is null)
+            {
+                return Results.NotFound();
+            }
+
+            StudentRecord? student = null;
+            TeacherRecord? teacher = null;
+            if (user.UserType == "Student")
+            {
+                student = await db.GetStudentAsync(userId, cancellationToken);
+            }
+            else if (user.UserType == "Teacher")
+            {
+                teacher = await db.GetTeacherAsync(userId, cancellationToken);
+            }
+
+            var summary = await aiService.GenerateSummaryAsync(
+                user,
+                student,
+                teacher,
+                cancellationToken);
+
+            var updated = await db.UpdateProfileSummaryAsync(
+                userId,
+                new ProfileSummaryCommand(summary),
+                cancellationToken);
+
+            return Results.Ok(new { summary = updated?.UserProfile ?? summary });
         }
-
-        // Load role-specific data for the prompt
-        var student = await db.Students
-            .FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
-        var teacher = await db.Teachers
-            .FirstOrDefaultAsync(t => t.UserId == userId, cancellationToken);
-
-        // Generate the AI summary
-        var summary = await aiService.GenerateSummaryAsync(user, student, teacher, cancellationToken);
-
-        // Persist the summary
-        user.UserProfile = summary;
-        await db.SaveChangesAsync(cancellationToken);
-
-        return Results.Ok(new { summary });
+        catch (DatabaseServiceException ex)
+        {
+            return Results.Problem(detail: ex.Message, statusCode: 503);
+        }
     }
 }

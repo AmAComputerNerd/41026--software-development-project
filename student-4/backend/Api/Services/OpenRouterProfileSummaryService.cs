@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json.Serialization;
-using Api.Models;
+using Student4.Contracts;
 
 namespace Api.Services;
 
@@ -22,9 +22,9 @@ public class OpenRouterProfileSummaryService : IAiProfileSummaryService
     }
 
     public async Task<string> GenerateSummaryAsync(
-        User user,
-        Student? student,
-        Teacher? teacher,
+        UserRecord user,
+        StudentRecord? student,
+        TeacherRecord? teacher,
         CancellationToken cancellationToken = default)
     {
         var baseUrl = _configuration["AiGateway:BaseUrl"] ?? DefaultBaseUrl;
@@ -52,7 +52,7 @@ public class OpenRouterProfileSummaryService : IAiProfileSummaryService
             ?? string.Empty;
     }
 
-    private static string BuildPrompt(User user, Student? student, Teacher? teacher)
+    private static string BuildPrompt(UserRecord user, StudentRecord? student, TeacherRecord? teacher)
     {
         var sb = new StringBuilder();
 
