@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
-using Api.Configuration;
-using Api.Endpoints;
-using Api.Extensions;
-using Api.Services;
+using Authentication.Configuration;
+using Authentication.Endpoints;
+using Authentication.Extensions;
+using Authentication.Services;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http.Resilience;
@@ -13,16 +13,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Services
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
-// Serialize enums as their string names (e.g. "Student") instead of
-// integer values, so the frontend doesn't have to map numeric codes
-// to friendly names for every UserType / Gender / CourseStatus /
-// EmploymentStatus field.
+
+// Serialize enums as their string names (matches the rest of the
+// account service surface).
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-// Validation checks and binding for service options.
+// Validation and binding for the options this service needs.
 builder.Services
     .AddOptions<DatabaseServiceOptions>()
     .Bind(builder.Configuration.GetSection(DatabaseServiceOptions.SectionName))
@@ -31,14 +30,10 @@ builder.Services
         "DatabaseService:BaseUrl must be an absolute HTTP or HTTPS URL.")
     .ValidateOnStart();
 builder.Services
-    .AddOptions<AiGatewayOptions>()
-    .Bind(builder.Configuration.GetSection(AiGatewayOptions.SectionName))
-    .Validate(
-        options => IsAbsoluteHttpUrl(options.BaseUrl),
-        "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL.")
-    .ValidateOnStart();
+    .AddOptions<EmailOptions>()
+    .Bind(builder.Configuration.GetSection(EmailOptions.SectionName));
 
-// Http clients and retry behaviour
+// HTTP client + resilience for talking to the database service.
 builder.Services
     .AddHttpClient<IAccountDatabaseClient, AccountDatabaseClient>((services, client) =>
         ConfigureClient(
@@ -61,10 +56,11 @@ builder.Services
         client.Timeout = TimeSpan.FromSeconds(3);
     });
 
-// AI service
-builder.Services.AddScoped<IAiProfileSummaryService, OpenRouterProfileSummaryService>();
+// Email
+builder.Services.AddSingleton<IEmailSender, MailKitEmailSender>();
+builder.Services.AddSingleton<PasswordResetTokenGenerator>();
 
-// Health check services
+// Health checks
 builder.Services
     .AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
@@ -82,11 +78,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-if (string.IsNullOrWhiteSpace(builder.Configuration["AiGateway:BaseUrl"]))
-{
-    Log.AiGatewayBaseUrlNotSet(app.Logger);
-}
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -98,15 +89,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
-// Endpoints (auth endpoints live in the separate Authentication service)
-app.MapUserEndpoints();
-app.MapStudentEndpoints();
-app.MapTeacherEndpoints();
-app.MapProfileSummaryEndpoints();
+// Endpoints
+app.MapAuthEndpoints();
 
 // Infrastructure
 app.UseApiExceptionHandling();
-app.UseHttpsRedirection();
 
 // Health check endpoints for CI/CD and orchestration
 app.MapHealthChecks(
@@ -134,12 +121,4 @@ static void ConfigureClient(HttpClient client, string baseUrl)
 {
     client.BaseAddress = new Uri($"{baseUrl.TrimEnd('/')}/", UriKind.Absolute);
     client.Timeout = Timeout.InfiniteTimeSpan;
-}
-
-internal static partial class Log
-{
-    [LoggerMessage(Level = LogLevel.Warning, Message =
-        "AiGateway:BaseUrl is not set. AI generation will fail until you set it " +
-        "(see student-4/backend/README.md).")]
-    public static partial void AiGatewayBaseUrlNotSet(ILogger logger);
 }

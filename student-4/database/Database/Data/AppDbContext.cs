@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Student> Students { get; set; } = null!;
     public DbSet<Teacher> Teachers { get; set; } = null!;
     public DbSet<UserCourse> UserCourses { get; set; } = null!;
+    public DbSet<PasswordResetToken> PasswordResetTokens { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -33,5 +34,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<UserCourse>()
             .HasKey(uc => new { uc.UserId, uc.CourseId });
+
+        // PasswordResetToken: the API looks rows up by TokenHash, so
+        // we need a unique index on it. Cascade-delete the rows when
+        // their owning user is removed so we don't accumulate
+        // orphans (e.g. when an account is deleted).
+        modelBuilder.Entity<PasswordResetToken>()
+            .HasIndex(t => t.TokenHash)
+            .IsUnique();
+
+        modelBuilder.Entity<PasswordResetToken>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

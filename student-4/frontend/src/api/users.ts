@@ -58,7 +58,7 @@ export async function login(email: string, password: string): Promise<UserDto> {
 }
 
 export async function getUsers(): Promise<UserDto[]> {
-  return request('/users')
+  return request('/users/')
 }
 
 export async function getUser(userId: string): Promise<UserDto> {
@@ -66,7 +66,7 @@ export async function getUser(userId: string): Promise<UserDto> {
 }
 
 export async function createUser(userData: CreateUserRequest): Promise<UserDto> {
-  return request('/users', {
+  return request('/users/', {
     method: 'POST',
     body: JSON.stringify(userData),
   })
@@ -137,5 +137,29 @@ export async function deleteAccount(
 export async function generateProfileSummary(userId: string): Promise<{ summary: string }> {
   return request(`/users/${userId}/profile-summary`, {
     method: 'POST',
+  })
+}
+
+// POST /api/auth/forgot-password — asks the server to email a reset
+// link. The response is always 200 with the same body, so we don't
+// catch the 4xx — instead the caller shows a generic "if that email
+// is registered, a link is on its way" message.
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  return request('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+// POST /api/auth/reset-password — exchanges the raw token from the
+// email link for a new password. Returns { message } on success or
+// throws a 400 ApiError if the token is invalid/expired.
+export async function resetPassword(
+  token: string,
+  newPassword: string
+): Promise<{ message: string }> {
+  return request('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
   })
 }

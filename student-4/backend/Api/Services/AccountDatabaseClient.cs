@@ -7,6 +7,12 @@ using Student4.Contracts;
 
 namespace Api.Services;
 
+// HTTP client for the student-4-database service, scoped to the
+// profile-CRUD surface (users, students, teachers, profile summary).
+// The auth surface (login, change-password, delete-account, password
+// reset) lives in the standalone Authentication service, which has
+// its own scoped AccountDatabaseClient implementation that only
+// calls /internal/auth/* and /internal/password-reset-tokens/*.
 public sealed class AccountDatabaseClient(HttpClient httpClient) : IAccountDatabaseClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -63,45 +69,6 @@ public sealed class AccountDatabaseClient(HttpClient httpClient) : IAccountDatab
     public Task<TeacherRecord> UpdateTeacherAsync(Guid userId, UpdateTeacherCommand command, CancellationToken cancellationToken)
     {
         return SendRequiredAsync<TeacherRecord>(HttpMethod.Put, $"internal/teachers/{userId}", command, cancellationToken);
-    }
-
-    public Task<UserRecord?> LoginAsync(LoginCommand command, CancellationToken cancellationToken)
-    {
-        return SendOptionalAsync<UserRecord>(HttpMethod.Post, "internal/auth/login", command, cancellationToken);
-    }
-
-    public async Task<bool> ChangePasswordAsync(ChangePasswordCommand command, CancellationToken cancellationToken)
-    {
-        using var response = await SendAsync(
-            new HttpRequestMessage(HttpMethod.Post, "internal/auth/change-password")
-            {
-                Content = JsonContent.Create(command, options: JsonOptions)
-            },
-            cancellationToken);
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
-        {
-            return false;
-        }
-
-        await EnsureSuccessAsync(response, cancellationToken);
-        return true;
-    }
-
-    public async Task<bool> DeleteAccountAsync(DeleteAccountCommand command, CancellationToken cancellationToken)
-    {
-        using var response = await SendAsync(
-            new HttpRequestMessage(HttpMethod.Delete, "internal/auth/delete-account")
-            {
-                Content = JsonContent.Create(command, options: JsonOptions)
-            },
-            cancellationToken);
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
-        {
-            return false;
-        }
-
-        await EnsureSuccessAsync(response, cancellationToken);
-        return true;
     }
 
     public Task<UserRecord?> UpdateProfileSummaryAsync(Guid userId, ProfileSummaryCommand command, CancellationToken cancellationToken)

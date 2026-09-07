@@ -165,7 +165,45 @@ services:
                 condition: service_healthy
             ai-mode:
                 condition: service_healthy
-                
+            mailhog:
+                condition: service_started
+
+    # Standalone authentication service. Owns login, change-password,
+    # delete-account, forgot-password, and reset-password. Talks to
+    # the database service over HTTP and to MailHog for outbound
+    # password-reset emails.
+    student-4-authentication:
+        build:
+            context: ./student-4
+            dockerfile: authentication/Authentication/Dockerfile
+        ports:
+            - "5114:8080"
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+            DatabaseService__BaseUrl: http://student-4-database:8080
+            Email__Smtp__Host: mailhog
+            Email__Smtp__Port: "1025"
+            Email__Smtp__UseSsl: "false"
+            Email__FromAddress: no-reply@student4.local
+            Email__FromName: Student 4 Account Service
+            Email__PasswordReset__BaseUrl: http://localhost:8080/account/reset-password
+            Email__PasswordReset__TokenLifetimeMinutes: "60"
+        networks:
+            - default
+            - student-4-data
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 15s
+        depends_on:
+            student-4-database:
+                condition: service_healthy
+            mailhog:
+                condition: service_started
+
     student-5-backend:
         build:
             context: ./student-5/backend/GradesManager
@@ -220,6 +258,16 @@ services:
             retries: 5
             start_period: 15s
 
+    # Catches all outgoing mail from services in dev. Web UI at
+    # http://localhost:8025 shows what was "sent"; SMTP on :1025.
+    # No volume — emails are intentionally ephemeral in dev.
+    mailhog:
+        image: mailhog/mailhog:latest
+        ports:
+            - "1025:1025"   # SMTP
+            - "8025:8025"   # Web UI
+        restart: unless-stopped
+
     shared-shell:
         build:
             context: .
@@ -242,6 +290,8 @@ services:
             student-4-frontend:
                 condition: service_started
             student-4-backend:
+                condition: service_healthy
+            student-4-authentication:
                 condition: service_healthy
             student-5-frontend:
                 condition: service_started

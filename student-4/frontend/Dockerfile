@@ -5,7 +5,14 @@ COPY package.json package-lock.json ./
 COPY shared/ui-kit ./shared/ui-kit
 COPY student-4/frontend ./student-4/frontend
 RUN npm ci
-ENV VITE_ACCOUNT_API_BASE_URL=/api/account
+# The frontend's API base URL is the path prefix that the shared-shell
+# nginx will route. With VITE_ACCOUNT_API_BASE_URL=/api, calls like
+# `login(...)` (POST /api/auth/login) and `createUser(...)`
+# (POST /api/users) line up with the shared-shell's `/api/auth/`,
+# `/api/users/`, `/api/students/`, `/api/teachers/` location blocks.
+# Using /api/account (the historical value) would 404 because the
+# shared-shell has no such route.
+ENV VITE_ACCOUNT_API_BASE_URL=/api
 RUN npx --workspace=student-4-frontend vite build
 
 # Serve stage

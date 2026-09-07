@@ -1,4 +1,4 @@
-namespace Api.DTOs;
+namespace Authentication.DTOs;
 
 // Body for DELETE /api/auth/delete-account.
 public record DeleteAccountRequestDto(

@@ -1,10 +1,10 @@
-using Api.DTOs;
-using Api.Extensions;
-using Api.Services;
+using Authentication.DTOs;
+using Authentication.Extensions;
+using Authentication.Services;
 using Microsoft.AspNetCore.Mvc;
 using Student4.Contracts;
 
-namespace Api.Endpoints;
+namespace Authentication.Endpoints;
 
 public static class AuthEndpoints
 {
@@ -122,7 +122,7 @@ public static class AuthEndpoints
         [FromBody] ForgotPasswordRequestDto request,
         CancellationToken cancellationToken)
     {
-        // Always return 200 with the same body — we don't want to
+        // Always return 200 with the same body - we don't want to
         // leak whether the email is registered.
         if (string.IsNullOrWhiteSpace(request.Email))
         {
@@ -140,7 +140,7 @@ public static class AuthEndpoints
             if (user is null)
             {
                 logger.LogInformation(
-                    "forgot-password requested for unknown email '{Email}' — silently returning success.",
+                    "forgot-password requested for unknown email '{Email}' - silently returning success.",
                     request.Email);
                 return Results.Ok(new { message = "If that email is registered, a reset link has been sent." });
             }
@@ -163,9 +163,9 @@ public static class AuthEndpoints
 
                 {link}
 
-                If you didn't request this, you can safely ignore the email — your password will stay the same.
+                If you didn't request this, you can safely ignore the email - your password will stay the same.
 
-                — Student 4 Account Service
+                - Student 4 Account Service
                 """;
 
             await email.SendAsync(
@@ -181,7 +181,7 @@ public static class AuthEndpoints
         catch (DatabaseServiceException ex)
         {
             // Even on a database blip, don't surface the error to the
-            // caller — log and return success.
+            // caller - log and return success.
             logger.LogError(ex, "forgot-password: database service unavailable.");
             return Results.Ok(new { message = "If that email is registered, a reset link has been sent." });
         }

@@ -1,6 +1,7 @@
 using Database.Data;
 using Database.Extensions;
 using Database.Models;
+using Database.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Student4.Contracts;
@@ -31,6 +32,11 @@ public static class PersistenceEndpoints
         auth.MapPost("/login", Login);
         auth.MapPost("/change-password", ChangePassword);
         auth.MapDelete("/delete-account", DeleteAccount);
+
+        var reset = endpoints.MapGroup("/internal/password-reset-tokens");
+        reset.MapPost("/", CreatePasswordResetToken);
+        reset.MapPost("/lookup", GetPasswordResetToken);
+        reset.MapPost("/redeem", RedeemPasswordResetToken);
 
         return endpoints;
     }
@@ -72,7 +78,7 @@ public static class PersistenceEndpoints
         var user = new User
         {
             Email = request.Email,
-            PasswordHash = request.PasswordHash,
+            PasswordHash = PasswordHasher.Hash(request.PasswordHash),
             FirstName = request.FirstName,
             MiddleNames = request.MiddleNames,
             LastName = request.LastName,
@@ -286,8 +292,11 @@ public static class PersistenceEndpoints
             return Results.Unauthorized();
         }
 
-        // Plain comparison (matches current backend behavior)
-        if (!string.Equals(user.PasswordHash, request.Password, StringComparison.Ordinal))
+        // BCrypt verifies the password against the stored hash. If the
+        // stored value is a legacy plain-text password, Verify returns
+        // false (the hasher swallows the parse error) and the user is
+        // prompted to reset.
+        if (!PasswordHasher.Verify(request.Password, user.PasswordHash))
         {
             return Results.Unauthorized();
         }
@@ -308,12 +317,12 @@ public static class PersistenceEndpoints
         }
 
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
-        if (user is null || !string.Equals(user.PasswordHash, request.CurrentPassword, StringComparison.Ordinal))
+        if (user is null || !PasswordHasher.Verify(request.CurrentPassword, user.PasswordHash))
         {
             return Results.Unauthorized();
         }
 
-        user.PasswordHash = request.NewPassword;
+        user.PasswordHash = PasswordHasher.Hash(request.NewPassword);
         await db.SaveChangesAsync(cancellationToken);
         return Results.Ok(new { message = "Password changed successfully." });
     }
@@ -329,7 +338,7 @@ public static class PersistenceEndpoints
         }
 
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
-        if (user is null || !string.Equals(user.PasswordHash, request.Password, StringComparison.Ordinal))
+        if (user is null || !PasswordHasher.Verify(request.Password, user.PasswordHash))
         {
             return Results.Unauthorized();
         }
@@ -337,5 +346,146 @@ public static class PersistenceEndpoints
         db.Users.Remove(user);
         await db.SaveChangesAsync(cancellationToken);
         return Results.Ok(new { message = "Account deleted successfully." });
+    }
+
+    // ---- Password reset ----
+    //
+    // The API hashes the raw token with SHA-256 before calling us, so
+    // `TokenHash` is what we look up. The raw token never crosses the
+    // internal boundary. Each call below is its own transaction; the
+    // redeem flow (lookup + mark used + update password) is the
+    // critical atomic operation and runs inside a single
+    // ExecuteUpdate/ExecuteDelete so a concurrent redemption can't
+    // double-spend a token.
+
+    private static async Task<IResult> CreatePasswordResetToken(
+        AppDbContext db,
+        [FromBody] CreatePasswordResetTokenCommand request,
+        CancellationToken cancellationToken)
+    {
+        if (request.UserId == Guid.Empty)
+        {
+            return Results.BadRequest("UserId is required.");
+        }
+        if (string.IsNullOrWhiteSpace(request.TokenHash))
+        {
+            return Results.BadRequest("TokenHash is required.");
+        }
+
+        var userExists = await db.Users
+            .AnyAsync(u => u.Id == request.UserId, cancellationToken);
+        if (!userExists)
+        {
+            return Results.NotFound("User not found.");
+        }
+
+        // Invalidate any prior outstanding tokens for this user. The
+        // request issues a brand-new token, so the old one(s) are
+        // stale by definition and should not be redeemable.
+        await db.PasswordResetTokens
+            .Where(t => t.UserId == request.UserId && t.UsedAtUtc == null)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        var now = DateTime.UtcNow;
+        var entity = new PasswordResetToken
+        {
+            UserId = request.UserId,
+            TokenHash = request.TokenHash,
+            CreatedAtUtc = now,
+            ExpiresAtUtc = request.ExpiresAtUtc,
+        };
+        db.PasswordResetTokens.Add(entity);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return Results.Created(
+            $"/internal/password-reset-tokens/{entity.Id}",
+            new PasswordResetTokenRecord(
+                entity.Id,
+                entity.UserId,
+                entity.CreatedAtUtc,
+                entity.ExpiresAtUtc,
+                entity.UsedAtUtc));
+    }
+
+    private static async Task<IResult> GetPasswordResetToken(
+        AppDbContext db,
+        [FromBody] RedeemPasswordResetTokenCommand request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.TokenHash))
+        {
+            return Results.BadRequest("TokenHash is required.");
+        }
+
+        var token = await db.PasswordResetTokens
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                t => t.TokenHash == request.TokenHash,
+                cancellationToken);
+
+        // All the validity rules live here: must exist, must not be
+        // used, must not be expired. The API uses this to decide
+        // whether to show the "set a new password" form.
+        if (token is null ||
+            token.UsedAtUtc is not null ||
+            token.ExpiresAtUtc <= DateTime.UtcNow)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(new PasswordResetTokenRecord(
+            token.Id,
+            token.UserId,
+            token.CreatedAtUtc,
+            token.ExpiresAtUtc,
+            token.UsedAtUtc));
+    }
+
+    private static async Task<IResult> RedeemPasswordResetToken(
+        AppDbContext db,
+        [FromBody] ResetPasswordWithTokenCommand request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.TokenHash))
+        {
+            return Results.BadRequest("TokenHash is required.");
+        }
+        if (string.IsNullOrWhiteSpace(request.NewPasswordHash))
+        {
+            return Results.BadRequest("NewPasswordHash is required.");
+        }
+
+        // Hash the supplied new password before persisting. The API
+        // passes the plain text; we do the BCrypt work here so the
+        // hashing rules stay in one place.
+        var newHash = PasswordHasher.Hash(request.NewPasswordHash);
+
+        // Atomic redeem: mark the token as used, set the new password,
+        // and read back the user — all in a single SaveChanges. The
+        // unique index on TokenHash prevents two concurrent redemptions
+        // from both succeeding; one will fail and return NotFound.
+        var token = await db.PasswordResetTokens
+            .FirstOrDefaultAsync(
+                t => t.TokenHash == request.TokenHash
+                    && t.UsedAtUtc == null
+                    && t.ExpiresAtUtc > DateTime.UtcNow,
+                cancellationToken);
+        if (token is null)
+        {
+            return Results.NotFound();
+        }
+
+        var user = await db.Users
+            .FirstOrDefaultAsync(u => u.Id == token.UserId, cancellationToken);
+        if (user is null)
+        {
+            return Results.NotFound();
+        }
+
+        token.UsedAtUtc = DateTime.UtcNow;
+        user.PasswordHash = newHash;
+        await db.SaveChangesAsync(cancellationToken);
+
+        return Results.Ok(user.ToRecord());
     }
 }

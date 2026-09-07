@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { createUser, login, type CreateUserRequest } from '@/api/users'
+import { createUser, login, forgotPassword, type CreateUserRequest } from '@/api/users'
 import { ApiError } from '@/api/http'
 
 const { fetchUser } = useAuth()
@@ -23,6 +23,14 @@ const studentIsInternational = ref(false)
 const studentCanvasApiKey = ref('')
 const teacherEmploymentStatus = ref<'FullTime' | 'PartTime' | 'Inactive'>('FullTime')
 const teacherCanvasApiKey = ref('')
+
+// Forgot-password inline form. When `showForgot` is true, the main
+// form is hidden and a smaller email-only form takes its place.
+const showForgot = ref(false)
+const forgotEmail = ref('')
+const forgotLoading = ref(false)
+const forgotError = ref<string | null>(null)
+const forgotSuccess = ref<string | null>(null)
 
 // Error/success messages
 const error = ref<string | null>(null)
@@ -132,9 +140,47 @@ async function handleSubmit() {
   }
 }
 
-function handleForgotPassword() {
-  // In a real app, this would trigger a password reset email
-  alert('Password reset functionality would be implemented here. This would send a reset link to your email.')
+function openForgotPassword() {
+  showForgot.value = true
+  forgotEmail.value = email.value // pre-fill if the user already typed it
+  forgotError.value = null
+  forgotSuccess.value = null
+}
+
+function cancelForgotPassword() {
+  showForgot.value = false
+  forgotError.value = null
+  forgotSuccess.value = null
+}
+
+async function handleForgotPassword() {
+  forgotError.value = null
+  forgotSuccess.value = null
+
+  if (!forgotEmail.value) {
+    forgotError.value = 'Please enter your email address.'
+    return
+  }
+
+  forgotLoading.value = true
+  try {
+    // The backend always returns 200 with the same body, so we just
+    // show a generic confirmation regardless of whether the email
+    // is registered. This avoids leaking which addresses exist.
+    const result = await forgotPassword(forgotEmail.value)
+    forgotSuccess.value =
+      result.message ??
+      'If that email is registered, a reset link has been sent. Check your inbox.'
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 503) {
+      forgotError.value =
+        'The account service is temporarily unavailable. Please try again shortly.'
+    } else {
+      forgotError.value = err instanceof Error ? err.message : 'Failed to send reset email.'
+    }
+  } finally {
+    forgotLoading.value = false
+  }
 }
 </script>
 
@@ -151,7 +197,7 @@ function handleForgotPassword() {
       <div v-if="error" class="nb-auth__error nb-panel nb-mono">{{ error }}</div>
       <div v-if="success" class="nb-auth__success nb-panel nb-mono">{{ success }}</div>
 
-      <form @submit.prevent="handleSubmit" class="nb-auth__form">
+      <form v-if="!showForgot" @submit.prevent="handleSubmit" class="nb-auth__form">
         <div v-if="!isLoginMode" class="nb-auth__section">
           <h2 class="nb-auth__section-title nb-mono">ACCOUNT TYPE <span class="nb-form-required">*</span></h2>
           <p class="nb-auth__hint nb-mono">SELECT THE TYPE THAT MATCHES YOUR ROLE</p>
@@ -360,19 +406,75 @@ function handleForgotPassword() {
         </div>
       </form>
 
-      <div class="nb-auth__footer">
+      <div v-if="!showForgot" class="nb-auth__footer">
         <p class="nb-mono">
           {{ isLoginMode ? "DON'T HAVE AN ACCOUNT?" : 'ALREADY HAVE AN ACCOUNT?' }}
           <button type="button" class="nb-btn nb-btn--outline nb-auth__toggle" @click="toggleMode">
             {{ isLoginMode ? 'SIGN UP' : 'LOG IN' }}
           </button>
         </p>
-        
+
         <p v-if="isLoginMode" class="nb-auth__forgot nb-mono">
-          <button type="button" class="nb-btn nb-btn--outline" @click="handleForgotPassword">
+          <button type="button" class="nb-btn nb-btn--outline" @click="openForgotPassword">
             FORGOT PASSWORD?
           </button>
         </p>
+      </div>
+
+      <!-- Inline "forgot password" form. Replaces the main form when
+           the user clicks the FORGOT PASSWORD button. After the
+           reset email is sent, the user sees a confirmation and a
+           "back to login" link. -->
+      <div v-else class="nb-auth__forgot-panel">
+        <div class="nb-auth__header">
+          <h1 class="nb-auth__title nb-mono">RESET PASSWORD</h1>
+          <p class="nb-auth__subtitle">
+            Enter your email and we'll send you a link to choose a new password.
+          </p>
+        </div>
+
+        <div v-if="forgotError" class="nb-auth__error nb-panel nb-mono">{{ forgotError }}</div>
+        <div v-if="forgotSuccess" class="nb-auth__success nb-panel nb-mono">{{ forgotSuccess }}</div>
+
+        <form
+          v-if="!forgotSuccess"
+          @submit.prevent="handleForgotPassword"
+          class="nb-auth__form"
+        >
+          <div class="nb-auth__section">
+            <h2 class="nb-auth__section-title nb-mono">YOUR EMAIL</h2>
+            <div class="nb-form-group">
+              <label for="forgotEmail" class="nb-form-label nb-mono">EMAIL</label>
+              <input
+                id="forgotEmail"
+                type="email"
+                v-model="forgotEmail"
+                class="nb-input"
+                :disabled="forgotLoading"
+                required
+                autocomplete="email"
+              />
+            </div>
+          </div>
+
+          <div class="nb-auth__actions">
+            <button
+              type="submit"
+              class="nb-btn"
+              :disabled="forgotLoading || !forgotEmail"
+            >
+              {{ forgotLoading ? 'SENDING…' : 'SEND RESET LINK' }}
+            </button>
+          </div>
+        </form>
+
+        <div class="nb-auth__footer">
+          <p class="nb-mono">
+            <button type="button" class="nb-btn nb-btn--outline" @click="cancelForgotPassword">
+              BACK TO LOG IN
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   </div>

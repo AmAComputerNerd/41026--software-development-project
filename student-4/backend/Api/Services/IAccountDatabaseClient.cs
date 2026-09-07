@@ -2,10 +2,11 @@ using Student4.Contracts;
 
 namespace Api.Services;
 
-// HTTP client for the student-4-database service. The public API
-// never touches EF Core directly; all persistence goes through this
-// interface so the API can stay focused on routing, CORS, auth, and
-// external integrations.
+// HTTP client for the student-4-database service, scoped to the
+// profile-CRUD surface (users, students, teachers, profile summary).
+// The auth surface (login, change-password, delete-account, password
+// reset) lives in the standalone Authentication service, which
+// has its own scoped IAccountDatabaseClient implementation.
 public interface IAccountDatabaseClient
 {
     // ---- Users ----
@@ -22,11 +23,6 @@ public interface IAccountDatabaseClient
     // ---- Teachers ----
     Task<TeacherRecord?> GetTeacherAsync(Guid userId, CancellationToken cancellationToken);
     Task<TeacherRecord> UpdateTeacherAsync(Guid userId, UpdateTeacherCommand command, CancellationToken cancellationToken);
-
-    // ---- Auth ----
-    Task<UserRecord?> LoginAsync(LoginCommand command, CancellationToken cancellationToken);
-    Task<bool> ChangePasswordAsync(ChangePasswordCommand command, CancellationToken cancellationToken);
-    Task<bool> DeleteAccountAsync(DeleteAccountCommand command, CancellationToken cancellationToken);
 
     // ---- Profile summary ----
     Task<UserRecord?> UpdateProfileSummaryAsync(Guid userId, ProfileSummaryCommand command, CancellationToken cancellationToken);

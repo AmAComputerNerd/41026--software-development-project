@@ -1,10 +1,12 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "Api\Api.csproj", "{A1B2C3D4-E5F6-4789-90AB-CDEF12345678}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Contracts", "..\contracts\Contracts\Contracts.csproj", "{B2C3D4E5-F6A7-4890-91BC-DEF123456789}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Database", "..\database\Database\Database.csproj", "{C3D4E5F6-A7B8-4901-92CD-EF1234567890}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Authentication", "..\authentication\Authentication\Authentication.csproj", "{332C5A23-175C-46A4-A0DA-A37DA6C7103A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -52,6 +54,18 @@ Global
 		{C3D4E5F6-A7B8-4901-92CD-EF1234567890}.Release|x64.Build.0 = Release|Any CPU
 		{C3D4E5F6-A7B8-4901-92CD-EF1234567890}.Release|x86.ActiveCfg = Release|Any CPU
 		{C3D4E5F6-A7B8-4901-92CD-EF1234567890}.Release|x86.Build.0 = Release|Any CPU
+		{332C5A23-175C-46A4-A0DA-A37DA6C7103A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{332C5A23-175C-46A4-A0DA-A37DA6C7103A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{332C5A23-175C-46A4-A0DA-A37DA6C7103A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{332C5A23-175C-46A4-A0DA-A37DA6C7103A}.Debug|x64.Build.0 = Debug|Any CPU
+		{332C5A23-175C-46A4-A0DA-A37DA6C7103A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{332C5A23-175C-46A4-A0DA-A37DA6C7103A}.Debug|x86.Build.0 = Debug|Any CPU
+		{332C5A23-175C-46A4-A0DA-A37DA6C7103A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{332C5A23-175C-46A4-A0DA-A37DA6C7103A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{332C5A23-175C-46A4-A0DA-A37DA6C7103A}.Release|x64.ActiveCfg = Release|Any CPU
+		{332C5A23-175C-46A4-A0DA-A37DA6C7103A}.Release|x64.Build.0 = Release|Any CPU
+		{332C5A23-175C-46A4-A0DA-A37DA6C7103A}.Release|x86.ActiveCfg = Release|Any CPU
+		{332C5A23-175C-46A4-A0DA-A37DA6C7103A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

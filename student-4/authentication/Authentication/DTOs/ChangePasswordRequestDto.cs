@@ -1,4 +1,4 @@
-namespace Api.DTOs;
+namespace Authentication.DTOs;
 
 // Body for POST /api/auth/change-password.
 public record ChangePasswordRequestDto(
