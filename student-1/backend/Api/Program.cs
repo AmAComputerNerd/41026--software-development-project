@@ -42,7 +42,7 @@ builder.Services
     .AddCheck(
         "self",
         () => HealthCheckResult.Healthy(),
-        tags: ["live"]);
+        tags: ["live", "ready"]);
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy => policy
@@ -80,6 +80,12 @@ app.MapHealthChecks(
     new HealthCheckOptions
     {
         Predicate = registration => registration.Tags.Contains("live")
+    });
+app.MapHealthChecks(
+    "/health/ready",
+    new HealthCheckOptions
+    {
+        Predicate = registration => registration.Tags.Contains("ready")
     });
 app.MapHealthChecks(
     "/health",
