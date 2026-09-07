@@ -6,10 +6,18 @@ using MimeKit;
 namespace Authentication.Services;
 
 // Sends email via SMTP using MailKit.
-public sealed class MailKitEmailSender(
+public sealed partial class MailKitEmailSender(
     IOptions<EmailOptions> options,
     ILogger<MailKitEmailSender> logger) : IEmailSender
 {
+    [LoggerMessage(LogLevel.Information, "Sent email to {To} with subject '{Subject}' via {Host}:{Port}.")]
+    private static partial void LogEmailSent(
+        ILogger logger,
+        string to,
+        string subject,
+        string host,
+        int port);
+
     private readonly EmailOptions _options = options.Value;
     private readonly ILogger<MailKitEmailSender> _logger = logger;
 
@@ -65,9 +73,7 @@ public sealed class MailKitEmailSender(
             await client.SendAsync(message, cancellationToken);
             await client.DisconnectAsync(quit: true, cancellationToken);
 
-            _logger.LogInformation(
-                "Sent email to {To} with subject '{Subject}' via {Host}:{Port}.",
-                toAddress, subject, smtp.Host, smtp.Port);
+            LogEmailSent(_logger, toAddress, subject, smtp.Host, smtp.Port);
         }
         catch (Exception ex)
         {

@@ -83,7 +83,7 @@ public sealed class AccountDatabaseClient(HttpClient httpClient) : IAccountDatab
         CreatePasswordResetTokenCommand command,
         CancellationToken cancellationToken)
     {
-        return SendRequiredAsync<PasswordResetTokenRecord>(
+        return SendOptionalAsync<PasswordResetTokenRecord>(
             HttpMethod.Post,
             "internal/password-reset-tokens",
             command,

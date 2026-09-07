@@ -6,8 +6,17 @@ using Student4.Contracts;
 
 namespace Authentication.Endpoints;
 
-public static class AuthEndpoints
+public static partial class AuthEndpoints
 {
+    [LoggerMessage(LogLevel.Information, "forgot-password requested for unknown email '{Email}' - silently returning success.")]
+    private static partial void LogUnknownEmail(ILogger logger, string email);
+
+    [LoggerMessage(LogLevel.Error, "forgot-password: database service unavailable.")]
+    private static partial void LogDatabaseUnavailable(ILogger logger, Exception exception);
+
+    [LoggerMessage(LogLevel.Error, "forgot-password: email send failed for {Email}.")]
+    private static partial void LogEmailSendFailed(ILogger logger, Exception exception, string email);
+
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/auth");
@@ -129,9 +138,7 @@ public static class AuthEndpoints
 
             if (user is null)
             {
-                logger.LogInformation(
-                    "forgot-password requested for unknown email '{Email}' - silently returning success.",
-                    request.Email);
+                LogUnknownEmail(logger, request.Email);
                 return Results.Ok(new { message = "If that email is registered, a reset link has been sent." });
             }
 
@@ -170,12 +177,12 @@ public static class AuthEndpoints
         }
         catch (DatabaseServiceException ex)
         {
-            logger.LogError(ex, "forgot-password: database service unavailable.");
+            LogDatabaseUnavailable(logger, ex);
             return Results.Ok(new { message = "If that email is registered, a reset link has been sent." });
         }
         catch (EmailSendException ex)
         {
-            logger.LogError(ex, "forgot-password: email send failed for {Email}.", request.Email);
+            LogEmailSendFailed(logger, ex, request.Email);
             return Results.Ok(new { message = "If that email is registered, a reset link has been sent." });
         }
     }

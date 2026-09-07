@@ -17,7 +17,7 @@ public sealed class SmtpOptions
     public int Port { get; init; } = 1025;
     public string? Username { get; init; }
     public string? Password { get; init; }
-    public bool UseSsl { get; init; } = false;
+    public bool UseSsl { get; init; }
 }
 
 public sealed class PasswordResetOptions
