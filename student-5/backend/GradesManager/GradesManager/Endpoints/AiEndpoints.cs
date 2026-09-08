@@ -1,7 +1,7 @@
-﻿using GradesManager.Data;
+﻿using GradesManager.Contracts;
 using GradesManager.DTOs;
-using GradesManager.Models;
 using GradesManager.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace GradesManager.Endpoints
 {
@@ -16,14 +16,17 @@ namespace GradesManager.Endpoints
 
         private static async Task<IResult> GenerateRecommendation(
             GenerateRecommendationRequestDto requestDto,
-            AppDbContext db,
+            IDatabaseClient databaseClient,
             IAiTaskService aiTaskService,
-            CancellationToken cancallationToken)
+            CancellationToken cancellationToken)
         {
+            // Get assignments from database service
+            var assignments = await databaseClient.GetAssignmentsAsync(cancellationToken);
+            
             var recommendation = await aiTaskService.GenerateRecommendationAsync(
-                new AiRecommendationContext(
-                    requestDto.Assignments),
-                cancallationToken);
+                new AiRecommendationContext((assignments ?? new List<AssignmentRecord>()).ToList()),
+                cancellationToken);
+            
             return Results.Ok(new GeneratedRecommendationDto(recommendation));
         }
     }

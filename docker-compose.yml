@@ -237,18 +237,47 @@ services:
             mailhog:
                 condition: service_started
 
-    student-5-backend:
+    student-5-database:
         build:
-            context: ./student-5/backend/GradesManager
-            dockerfile: GradesManager/Dockerfile
-        ports:
-            - "5105:8080"
+            context: ./student-5
+            dockerfile: database/Database/Dockerfile
         volumes:
             - student-5-db:/app/Data
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+        networks:
+            - student-5-data
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 15s
+
+    student-5-backend:
+        build:
+            context: ./student-5
+            dockerfile: backend/GradesManager/GradesManager/Dockerfile
+        ports:
+            - "5105:8080"
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+            DatabaseService__BaseUrl: http://student-5-database:8080
             AiGateway__BaseUrl: http://ai-mode:8080
+        networks:
+            - default
+            - student-5-data
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 15s
         depends_on:
+            student-5-database:
+                condition: service_healthy
             ai-mode:
                 condition: service_healthy
 
@@ -345,4 +374,6 @@ networks:
     student-3-data:
         internal: true
     student-4-data:
+        internal: true
+    student-5-data:
         internal: true

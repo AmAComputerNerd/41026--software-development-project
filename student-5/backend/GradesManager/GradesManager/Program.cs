@@ -1,9 +1,6 @@
 using GradesManager.Configuration;
-using GradesManager.Data;
 using GradesManager.Endpoints;
-using GradesManager.Extensions;
 using GradesManager.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 
@@ -19,17 +16,16 @@ builder.Services
         options => IsAbsoluteHttpUrl(options.BaseUrl),
         "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL.")
     .ValidateOnStart();
-builder.Services.AddDbContext<AppDbContext>(options =>
+
+// Database client
+builder.Services.AddHttpClient<IDatabaseClient, HttpDatabaseClient>((services, client) =>
 {
-    options
-        .UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
-        .UseSeeding((db, _) => DbSeeder.SeedData((AppDbContext)db))
-        .UseAsyncSeeding((db, _, _) =>
-        {
-            DbSeeder.SeedData((AppDbContext)db);
-            return Task.CompletedTask;
-        });
+    var config = services.GetRequiredService<IConfiguration>();
+    var baseUrl = config["DatabaseService__BaseUrl"] ?? "http://student-5-database:8080";
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
 });
+
 builder.Services
     .AddHttpClient<IAiTaskService, AiTaskService>((services, client) =>
         ConfigureClient(
@@ -44,6 +40,7 @@ builder.Services
         options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(120);
         options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(190);
     });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -54,14 +51,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//map endpoints
+// Map endpoints
 app.MapCourseEndpoints();
 app.MapStudentEndpoints();
 app.MapAssignmentEndpoints();
 app.MapAiEndpoints();
 
 app.UseHttpsRedirection();
-await app.InitialiseDatabaseAsync();
 
 app.Run();
 

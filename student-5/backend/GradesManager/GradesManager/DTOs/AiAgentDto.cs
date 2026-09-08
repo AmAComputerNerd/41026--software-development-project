@@ -1,10 +1,10 @@
-﻿using GradesManager.Models;
+﻿using GradesManager.Contracts;
 
 namespace GradesManager.DTOs
 {
     public record GenerateRecommendationRequestDto
     (
-        List<Assignment> Assignments
+        List<AssignmentRecord> Assignments
     );
 
     public record GeneratedRecommendationDto(
