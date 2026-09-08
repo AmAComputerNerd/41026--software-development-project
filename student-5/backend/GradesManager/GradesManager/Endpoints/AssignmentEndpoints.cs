@@ -111,21 +111,26 @@ namespace GradesManager.Endpoints
             var studentAssignments = await databaseClient.GetStudentMarksAsync(modifyTempMarkDto.StudentId, cancellationToken);
             var existing = studentAssignments?.FirstOrDefault(sa => sa.AssignmentId == modifyTempMarkDto.AssignmentId);
 
-            if (existing == null)
+            if (existing != null)
             {
-                return Results.NotFound();
-            }
+                if (existing.TempMark.HasValue)
+                {
+                    return Results.BadRequest("Temporary mark already exists. Use the update endpoint to modify it.");
+                }
 
-            if (existing.TempMark.HasValue)
-            {
-                return Results.BadRequest("Temporary mark already exists. Use the update endpoint to modify it.");
+                var updated = await databaseClient.UpdateStudentAssignmentAsync(new UpdateStudentAssignmentCommand(
+                    modifyTempMarkDto.StudentId, modifyTempMarkDto.AssignmentId, modifyTempMarkDto.TempMark, null), cancellationToken);
+
+                return updated == null
+                    ? Results.NotFound()
+                    : Results.Ok(new StudentAssignmentDto(updated.StudentId, updated.AssignmentId, updated.TempMark, updated.FinalMark));
             }
 
             var created = await databaseClient.CreateStudentAssignmentAsync(new CreateStudentAssignmentCommand(
                 modifyTempMarkDto.StudentId, modifyTempMarkDto.AssignmentId, modifyTempMarkDto.TempMark, null), cancellationToken);
 
             return created == null
-                ? Results.NotFound()
+                ? Results.BadRequest("Could not create student assignment.")
                 : Results.Ok(new StudentAssignmentDto(created.StudentId, created.AssignmentId, created.TempMark, created.FinalMark));
         }
 
