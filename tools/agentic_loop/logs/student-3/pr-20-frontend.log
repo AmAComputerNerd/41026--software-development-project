@@ -13,9 +13,3 @@ RUNNING: student-3/frontend
 OBSERVE FAILED: 'student-3/frontend' does not declare both 'vue' and 'vuetify' in package.json. Frontend review is only implemented for that stack today - add a collector for this stack if it differs.
 
 Loop closed.
-
-# Note: same known gap as the previous run against this owner - the
-# vue+vuetify-only frontend collector on main at this point in time can't
-# see the @better-canvas/ui-kit frontend (NotificationDropdown, resilient
-# fetch, etc. added in this PR). Not addressed by this PR; tracked for
-# whoever picks up the ui-kit-aware collector later.

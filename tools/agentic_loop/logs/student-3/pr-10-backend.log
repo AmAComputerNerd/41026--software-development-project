@@ -1,8 +1,7 @@
 $ python tools/agentic_loop.py
 AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
 
-# Run 1 - 2026-08-24 ~22:55 (working tree at "Canvas API resync for
-# Deadline and Task Tracker backend", before the DateTimeOffset fix)
+# Run 1
 
 Choose a target: 3
 Reviewing: student-3
@@ -31,14 +30,9 @@ REVIEW: Agree this is a legitimate, evidence-backed risk rather than a style pre
 [student-3/backend][DONE] Review complete
 Loop closed.
 
-# Follow-up commit: ffce0cd "Use DateTime instead of DateTimeOffset"
-# (2026-08-24 22:56:44Z, ~1 minute after the run above) switched
-# `TaskEntity`, `Course`, the Canvas DTOs, and `DbSeeder` from
-# `DateTimeOffset` to `DateTime` across both `shared/backend` and
-# `student-3/backend` - directly addressing the concern flagged above.
+# Follow-up commit hash: ffce0cd
 
-# Run 2 - 2026-08-24 ~23:05 (after the DateTime fix, this PR's final
-# merged state)
+# Run 2
 
 $ python tools/agentic_loop.py
 AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review

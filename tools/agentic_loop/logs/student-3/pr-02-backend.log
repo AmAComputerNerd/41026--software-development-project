@@ -1,9 +1,7 @@
 $ python tools/agentic_loop.py
 AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
 
-# Run 1 - 2026-08-17 ~21:15 (working tree at 'Create backend API project,
-# add database models (EF), add CRUD endpoints...', before the ParentTask
-# schema change)
+# Run 1
 
 Choose a target: 3
 Reviewing: student-3
@@ -32,15 +30,9 @@ REVIEW: Confirmed - this is a real, evidence-backed gap (grep of `Models/TaskEnt
 [student-3/backend][DONE] Review complete
 Loop closed.
 
-# Follow-up commit: b2bbe25 "Change Task schema to add ParentTask, modify
-# DTOs and API accordingly, other small API fixes" (2026-08-17 22:01 +1000)
-# added `ParentTaskId`/`ParentTask`/`ChildrenTasks` to `TaskEntity`, updated
-# `AppDbContext` and all three Task DTOs, and added a fresh
-# `20260817112734_InitialCreate` migration reflecting the new FK - directly
-# addressing the gap flagged above.
+# Follow-up commit hash: b2bbe25
 
-# Run 2 - 2026-08-17 ~22:20 (after the ParentTask fix, this PR's final
-# merged state)
+# Run 2
 
 $ python tools/agentic_loop.py
 AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
