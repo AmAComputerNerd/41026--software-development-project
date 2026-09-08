@@ -58,7 +58,7 @@ npm install
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173` (or next available port).
+The app will be available at `http://localhost:5104` (or next available port).
 
 ### Build
 
