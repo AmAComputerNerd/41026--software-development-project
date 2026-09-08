@@ -180,7 +180,7 @@ public class OpenRouterProfileSummaryService : IAiProfileSummaryService
 		sb.AppendLine("Return only valid JSON in this exact shape: {\"newSummary\":\"A concise professional profile summary\"}");
 		sb.AppendLine("Do not include Markdown, explanations, additional fields, or text outside the JSON object.");
 
-        return sb.ToString();
+		return sb.ToString();
 	}
 
 	private sealed class SummaryResponse
