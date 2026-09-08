@@ -107,7 +107,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          fail() { echo "::error::$1"; cat database.log api.log 2>/dev/null; exit 1; }
 
+          echo "── Starting database service …"
           database_file="$RUNNER_TEMP/student-5-ci.db"
           ASPNETCORE_URLS=http://127.0.0.1:5205 \
           ASPNETCORE_ENVIRONMENT=Production \
@@ -120,17 +122,15 @@ jobs:
           database_pid=$!
 
           for _ in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:5205/health/ready > /dev/null; then
-              break
-            fi
-            if ! kill -0 "$database_pid" 2>/dev/null; then
-              cat database.log
-              exit 1
-            fi
+            if curl --fail --silent http://127.0.0.1:5205/health/ready > /dev/null; then break; fi
+            if ! kill -0 "$database_pid" 2>/dev/null; then fail "Database process died"; fi
             sleep 1
           done
-          curl --fail --silent http://127.0.0.1:5205/health/ready > /dev/null
+          curl --fail --silent http://127.0.0.1:5205/health/ready > /dev/null \
+            || fail "Database health check failed after 30 s"
+          echo "  ✓ database ready"
 
+          echo "── Starting API service …"
           ASPNETCORE_URLS=http://127.0.0.1:5105 \
           ASPNETCORE_ENVIRONMENT=Production \
           DatabaseService__BaseUrl=http://127.0.0.1:5205 \
@@ -150,108 +150,75 @@ jobs:
           trap cleanup EXIT
 
           for _ in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:5105/api/courses/ > courses.json; then
-              break
-            fi
-            if ! kill -0 "$api_pid" 2>/dev/null; then
-              cat api.log
-              exit 1
-            fi
+            if curl --fail --silent http://127.0.0.1:5105/api/courses/ > courses.json; then break; fi
+            if ! kill -0 "$api_pid" 2>/dev/null; then fail "API process died"; fi
             sleep 1
           done
-          test -s courses.json
+          test -s courses.json || fail "courses.json empty – API did not respond"
+          echo "  ✓ API ready"
 
-          # ── Course contract ──────────────────────────────────────────
+          echo "── Course contract"
           jq --exit-status '
-            type == "array" and
-            (length > 0) and
-            .[0] | has("courseId") and has("code") and has("name") and
-            has("canvasCourseId") and has("canvasIsActive") and has("lastCanvasSyncAt")
-          ' courses.json > /dev/null
+            type == "array" and (length > 0) and
+            .[0] | has("courseId","code","name","canvasCourseId","canvasIsActive","lastCanvasSyncAt")
+          ' courses.json || fail "Course contract failed: $(head -c200 courses.json)"
 
-          # ── Student contract ─────────────────────────────────────────
-          students_json=$(
-            curl --fail --silent http://127.0.0.1:5105/api/students/
-          )
+          echo "── Student contract"
+          students_json=$(curl --fail --silent http://127.0.0.1:5105/api/students/) \
+            || fail "GET /api/students/ failed"
           jq --exit-status '
-            type == "array" and
-            (length > 0) and
-            .[0] | has("studentId") and has("name") and has("idealMark")
-          ' <<< "$students_json" > /dev/null
-
+            type == "array" and (length > 0) and
+            .[0] | has("studentId","name","idealMark")
+          ' <<< "$students_json" || fail "Student contract failed: $students_json"
           student_id=$(jq --exit-status --raw-output '.[0].studentId' <<< "$students_json")
-          test -n "$student_id"
+          echo "  student_id=$student_id"
 
-          # ── Student assignments contract ─────────────────────────────
-          assignments_json=$(
-            curl --fail --silent \
-              "http://127.0.0.1:5105/api/assignment/student/$student_id"
-          )
+          echo "── Assignment contract"
+          assignments_json=$(curl --fail --silent "http://127.0.0.1:5105/api/assignment/student/$student_id") \
+            || fail "GET /api/assignment/student/$student_id failed"
           jq --exit-status '
-            type == "array" and
-            (length > 0) and
-            .[0] | has("assignmentId") and has("courseId") and has("name") and
-            has("weight") and has("maxMark") and has("completed")
-          ' <<< "$assignments_json" > /dev/null
-
+            type == "array" and (length > 0) and
+            .[0] | has("assignmentId","courseId","name","weight","maxMark","completed")
+          ' <<< "$assignments_json" || fail "Assignment contract failed: $assignments_json"
           assignment_id=$(jq --exit-status --raw-output '.[0].assignmentId' <<< "$assignments_json")
-          test -n "$assignment_id"
+          echo "  assignment_id=$assignment_id"
 
-          # ── Student marks contract ───────────────────────────────────
-          marks_json=$(
-            curl --fail --silent \
-              "http://127.0.0.1:5105/api/assignment/marks/$student_id"
-          )
+          echo "── Marks contract"
+          marks_json=$(curl --fail --silent "http://127.0.0.1:5105/api/assignment/marks/$student_id") \
+            || fail "GET /api/assignment/marks/$student_id failed"
           jq --exit-status '
-            type == "array" and
-            (length > 0) and
-            .[0] | has("studentId") and has("assignmentId") and
-            has("tempMark") and has("finalMark")
-          ' <<< "$marks_json" > /dev/null
+            type == "array" and (length > 0) and
+            .[0] | has("studentId","assignmentId","tempMark","finalMark")
+          ' <<< "$marks_json" || fail "Marks contract failed: $marks_json"
 
-          # ── POST temp mark contract (setTemporaryMark, exists=false) ─
-          post_result=$(
-            curl --fail --silent \
-              --request POST \
+          echo "── POST temp mark"
+          post_result=$(curl --fail --silent --request POST \
               --header "Content-Type: application/json" \
-              --data '{
-                "studentId": "'"$student_id"'",
-                "assignmentId": "'"$assignment_id"'",
-                "tempMark": 85
-              }' \
-              http://127.0.0.1:5105/api/assignment/marks/
-          )
+              --data '{"studentId":"'"$student_id"'","assignmentId":"'"$assignment_id"'","tempMark":85}' \
+              http://127.0.0.1:5105/api/assignment/marks/) \
+            || fail "POST /api/assignment/marks/ failed"
           jq --exit-status '
-            has("studentId") and has("assignmentId") and
-            has("tempMark") and has("finalMark") and
-            .tempMark == 85
-          ' <<< "$post_result" > /dev/null
+            has("studentId","assignmentId","tempMark","finalMark") and .tempMark == 85
+          ' <<< "$post_result" || fail "POST contract failed: $post_result"
 
-          # ── PUT temp mark contract (setTemporaryMark, exists=true) ───
-          put_result=$(
-            curl --fail --silent \
-              --request PUT \
+          echo "── PUT temp mark"
+          put_result=$(curl --fail --silent --request PUT \
               --header "Content-Type: application/json" \
-              --data '{
-                "studentId": "'"$student_id"'",
-                "assignmentId": "'"$assignment_id"'",
-                "tempMark": 92
-              }' \
-              http://127.0.0.1:5105/api/assignment/marks/
-          )
+              --data '{"studentId":"'"$student_id"'","assignmentId":"'"$assignment_id"'","tempMark":92}' \
+              http://127.0.0.1:5105/api/assignment/marks/) \
+            || fail "PUT /api/assignment/marks/ failed"
           jq --exit-status '
-            has("studentId") and has("assignmentId") and
-            has("tempMark") and has("finalMark") and
-            .tempMark == 92
-          ' <<< "$put_result" > /dev/null
+            has("studentId","assignmentId","tempMark","finalMark") and .tempMark == 92
+          ' <<< "$put_result" || fail "PUT contract failed: $put_result"
 
-          # ── DELETE temp mark contract ────────────────────────────────
-          delete_status=$(
-            curl --silent --output /dev/null --write-out "%{http_code}" \
+          echo "── DELETE temp mark"
+          delete_status=$(curl --silent --output /dev/null --write-out "%{http_code}" \
               --request DELETE \
-              "http://127.0.0.1:5105/api/assignment/marks/$student_id/$assignment_id"
-          )
-          test "$delete_status" = "204"
+              "http://127.0.0.1:5105/api/assignment/marks/$student_id/$assignment_id")
+          test "$delete_status" = "204" \
+            || fail "DELETE returned $delete_status (expected 204)"
+
+          echo "── All contract assertions passed ✓"
 
   ef-core-migrations-check:
     name: EF Core migrations drift check
