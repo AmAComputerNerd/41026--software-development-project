@@ -1,0 +1,31 @@
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+Choose a target: 1
+Reviewing: student-1
+Choose a layer: 3
+
+[student-1/database][START] Starting review flow
+[student-1/database][OBSERVE] Collecting evidence
+[student-1/database][OBSERVE] Complete
+[student-1/database][PROMPTS] Loading prompt set
+[student-1/database][PROMPTS] Loaded implementation prompt set (context from: prompts/owners/student-1/context_prompt.txt)
+[student-1/database][LLM] Running implementation model
+[student-1/database][LLM] Complete
+[student-1/database][REVIEW-PROMPTS] Loading review prompt set
+[student-1/database][REVIEW-LLM] Running review model
+[student-1/database][REVIEW-LLM] Complete
+[student-1/database][DONE] Review complete
+
+RUNNING: student-1/database
+OBSERVE: Table 'Notifications' (12 row(s), primary key: yes): columns=[Id TEXT PK NOT NULL, StudentId TEXT NOT NULL, Type INTEGER NOT NULL, SourceMicroservice TEXT NOT NULL, Message TEXT NOT NULL, IsRead INTEGER NOT NULL, CreatedAtUtc TEXT NOT NULL, RelatedEntityType TEXT, RelatedEntityId TEXT, ActionPayload TEXT]; foreign keys=[none]
+Table 'NotificationPreferences' (10 row(s), primary key: yes): columns=[Id TEXT PK NOT NULL, StudentId TEXT NOT NULL, Type INTEGER NOT NULL, Channel INTEGER NOT NULL, Enabled INTEGER NOT NULL, CreatedAtUtc TEXT NOT NULL, UpdatedAtUtc TEXT NOT NULL]; foreign keys=[none]
+Table 'AiDigests' (1 row(s), primary key: yes): columns=[Id TEXT PK NOT NULL, StudentId TEXT NOT NULL, Summary TEXT NOT NULL, GeneratedAtUtc TEXT NOT NULL, PeriodStartUtc TEXT NOT NULL, PeriodEndUtc TEXT NOT NULL, NotificationCount INTEGER NOT NULL]; foreign keys=[none]
+Table 'CanvasAssignmentWatermarks' (12 row(s), primary key: yes): columns=[Id TEXT PK NOT NULL, CanvasAssignmentId INTEGER NOT NULL, LastSeenAtUtc TEXT NOT NULL, LastDueDate TEXT, LastSubmissionState TEXT, LastWorkflowState TEXT]; foreign keys=[none]
+
+IMPLEMENTATION: Schema migration `AddCanvasAssignmentWatermarks` and column `ActionPayload` on `Notifications` have been applied cleanly. `CanvasAssignmentWatermarks` maintains idempotent state for Canvas sync events without violating service isolation boundaries. Primary keys and data types are well-defined across all 4 tables.
+
+REVIEW: Verified against Rule 1. All watermark state is stored strictly in student-1's local SQLite database. No external database dependencies exist.
+
+[student-1/database][DONE] Review complete
+Loop closed.

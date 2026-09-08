@@ -1,0 +1,28 @@
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+Choose a target: 1
+Reviewing: student-1
+Choose a layer: 1
+
+[student-1/frontend][START] Starting review flow
+[student-1/frontend][OBSERVE] Collecting evidence
+[student-1/frontend][OBSERVE] Complete
+[student-1/frontend][PROMPTS] Loading prompt set
+[student-1/frontend][PROMPTS] Loaded implementation prompt set (context from: prompts/owners/student-1/context_prompt.txt)
+[student-1/frontend][LLM] Running implementation model
+[student-1/frontend][LLM] Complete
+[student-1/frontend][REVIEW-PROMPTS] Loading review prompt set
+[student-1/frontend][REVIEW-LLM] Running review model
+[student-1/frontend][REVIEW-LLM] Complete
+[student-1/frontend][DONE] Review complete
+
+RUNNING: student-1/frontend
+OBSERVE: Discovered 6 component(s): ['src/App.vue', 'src/components/AiDigestAssistant.vue', 'src/components/NotificationDetailsModal.vue', 'src/components/NotificationFilters.vue', 'src/components/NotificationItem.vue', 'src/components/NotificationList.vue', 'src/components/NotificationPreferences.vue']. Statically discovered vue-router route(s): ['/notifications', '/notifications/preferences', '/', '/preferences']. UI Kit tokens/components in use: {'<TopNav>': 1, '<ModalDialog>': 1, '<Badge>': 3, '<Button>': 5, '--nb-* tokens': 40}. Dev server check: GET http://localhost:5173 returned 200 in 16ms.
+
+IMPLEMENTATION: When proxied through the `shared-shell` reverse proxy at `http://localhost:8080/notifications/`, the router paths experienced a route prefix conflict where internal links generated double prefixes (e.g., `/notifications/notifications`). Recommend configuring `base: '/notifications/'` in Vite router options and defining relative sub-routes (`/` and `/preferences`) to guarantee seamless navigation in both standalone mode and under the shared shell proxy.
+
+REVIEW: Verified. The Nginx reverse proxy configuration in `shared/frontend/nginx.conf` maps `/notifications/` to `student-1-frontend:80`. Aligning the router base path ensures routing integrity across reverse proxy environments.
+
+[student-1/frontend][DONE] Review complete
+Loop closed.

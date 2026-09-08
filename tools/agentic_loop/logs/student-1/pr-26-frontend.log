@@ -1,0 +1,28 @@
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+Choose a target: 1
+Reviewing: student-1
+Choose a layer: 1
+
+[student-1/frontend][START] Starting review flow
+[student-1/frontend][OBSERVE] Collecting evidence
+[student-1/frontend][OBSERVE] Complete
+[student-1/frontend][PROMPTS] Loading prompt set
+[student-1/frontend][PROMPTS] Loaded implementation prompt set (context from: prompts/owners/student-1/context_prompt.txt)
+[student-1/frontend][LLM] Running implementation model
+[student-1/frontend][LLM] Complete
+[student-1/frontend][REVIEW-PROMPTS] Loading review prompt set
+[student-1/frontend][REVIEW-LLM] Running review model
+[student-1/frontend][REVIEW-LLM] Complete
+[student-1/frontend][DONE] Review complete
+
+RUNNING: student-1/frontend
+OBSERVE: Discovered 8 component(s): ['src/App.vue', 'src/components/AiDigestAssistant.vue', 'src/components/NotificationDetailsModal.vue', 'src/components/NotificationFilters.vue', 'src/components/NotificationItem.vue', 'src/components/NotificationList.vue', 'src/components/NotificationPreferences.vue', 'src/components/NotificationToast.vue']. Statically discovered vue-router route(s): ['/', '/preferences']. UI Kit tokens/components in use: {'<TopNav>': 1, '<ModalDialog>': 1, '<Badge>': 3, '<Button>': 6, '<NotificationToast>': 1, '--nb-* tokens': 46}. Dev server check: GET http://localhost:5173 returned 200 in 14ms.
+
+IMPLEMENTATION: Interactive UI components have been added for real-time SSE notification toasts (`NotificationToast.vue`) and interactive conversational chat (`AiDigestAssistant.vue`). Cross-service action buttons (`AI BREAK DOWN`, `GRADE IMPACT`) trigger respective microservice modals or task status updates over HTTP. Design tokens and Neobrutalism styles are rigorously applied across all 8 components.
+
+REVIEW: Confirmed compliance with Rule 4. The components render with zero border-radius, 4px solid borders, hard drop shadows, and brutalist color palettes. SSE event handling cleanly mounts and unmounts on lifecycle hooks.
+
+[student-1/frontend][DONE] Review complete
+Loop closed.
