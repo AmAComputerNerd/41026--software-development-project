@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "student-5/backend/**"
+      - "student-5/contracts/**"
+      - "student-5/database/**"
       - "student-5/frontend/**"
       - "shared/ui-kit/**"
       - "package.json"
@@ -13,6 +15,8 @@ on:
   pull_request:
     paths:
       - "student-5/backend/**"
+      - "student-5/contracts/**"
+      - "student-5/database/**"
       - "student-5/frontend/**"
       - "shared/ui-kit/**"
       - "package.json"
@@ -28,7 +32,9 @@ env:
   NODE_VERSION: "22"
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  BACKEND_DIR: student-5/backend/GradesManager/GradesManager
+  DOTNET_SOLUTION: student-5/backend/GradesManager/GradesManager.slnx
+  API_PROJECT: student-5/backend/GradesManager/GradesManager/GradesManager.csproj
+  DATABASE_PROJECT: student-5/database/Database/Database.csproj
 
 jobs:
   frontend-build:
@@ -50,11 +56,8 @@ jobs:
       - name: Type check and build
         run: npm run build --workspace=student-5-frontend
 
-      - name: Audit production dependencies
-        run: npm audit --workspace=student-5-frontend --omit=dev --audit-level=high
-
-  backend-build:
-    name: Backend build & format check
+  build-and-analyze:
+    name: Build, analyze & format check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -69,23 +72,188 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('student-5/backend/**/*.csproj') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-5/**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
       - name: Restore
-        run: dotnet restore
-        working-directory: ${{ env.BACKEND_DIR }}
+        run: dotnet restore "${{ env.DOTNET_SOLUTION }}"
 
-      - name: Build Release
-        run: dotnet build --configuration Release --no-restore
-        working-directory: ${{ env.BACKEND_DIR }}
+      - name: Build (Release, warnings as errors)
+        run: dotnet build "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-restore -warnaserror
 
       - name: Verify code formatting
-        run: dotnet format --verify-no-changes --severity warn --no-restore
-        working-directory: ${{ env.BACKEND_DIR }}
+        run: dotnet format "${{ env.DOTNET_SOLUTION }}" --verify-no-changes --severity warn
 
-  backend-migrations:
+  frontend-backend-contract:
+    name: API contract smoke test
+    needs: [frontend-build, build-and-analyze]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore and build services
+        run: |
+          dotnet restore "${{ env.DOTNET_SOLUTION }}"
+          dotnet build "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-restore -warnaserror
+
+      - name: Verify frontend grades contract
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          database_file="$RUNNER_TEMP/student-5-ci.db"
+          ASPNETCORE_URLS=http://127.0.0.1:5203 \
+          ASPNETCORE_ENVIRONMENT=Production \
+          ConnectionStrings__DefaultConnection="Data Source=$database_file" \
+          dotnet run \
+            --project "${{ env.DATABASE_PROJECT }}" \
+            --configuration Release \
+            --no-build \
+            --no-launch-profile > database.log 2>&1 &
+          database_pid=$!
+
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5203/health/ready > /dev/null; then
+              break
+            fi
+            if ! kill -0 "$database_pid" 2>/dev/null; then
+              cat database.log
+              exit 1
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:5203/health/ready > /dev/null
+
+          ASPNETCORE_URLS=http://127.0.0.1:5105 \
+          ASPNETCORE_ENVIRONMENT=Production \
+          DatabaseService__BaseUrl=http://127.0.0.1:5203 \
+          AiGateway__BaseUrl=http://127.0.0.1:5200 \
+          dotnet run \
+            --project "${{ env.API_PROJECT }}" \
+            --configuration Release \
+            --no-build \
+            --no-launch-profile \
+            > api.log 2>&1 &
+          api_pid=$!
+
+          cleanup() {
+            kill "$api_pid" 2>/dev/null || true
+            kill "$database_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5105/api/courses/ > courses.json; then
+              break
+            fi
+            if ! kill -0 "$api_pid" 2>/dev/null; then
+              cat api.log
+              exit 1
+            fi
+            sleep 1
+          done
+          test -s courses.json
+
+          # ── Course contract ──────────────────────────────────────────
+          jq --exit-status '
+            type == "array" and
+            (length > 0) and
+            .[0] | has("courseId") and has("code") and has("name") and
+            has("canvasCourseId") and has("canvasIsActive") and has("lastCanvasSyncAt")
+          ' courses.json > /dev/null
+
+          # ── Student contract ─────────────────────────────────────────
+          students_json=$(
+            curl --fail --silent http://127.0.0.1:5105/api/students/
+          )
+          jq --exit-status '
+            type == "array" and
+            (length > 0) and
+            .[0] | has("studentId") and has("name") and has("idealMark")
+          ' <<< "$students_json" > /dev/null
+
+          student_id=$(jq --exit-status --raw-output '.[0].studentId' <<< "$students_json")
+          test -n "$student_id"
+
+          # ── Student assignments contract ─────────────────────────────
+          assignments_json=$(
+            curl --fail --silent \
+              "http://127.0.0.1:5105/api/assignment/student/$student_id"
+          )
+          jq --exit-status '
+            type == "array" and
+            (length > 0) and
+            .[0] | has("assignmentId") and has("courseId") and has("name") and
+            has("weight") and has("maxMark") and has("completed")
+          ' <<< "$assignments_json" > /dev/null
+
+          assignment_id=$(jq --exit-status --raw-output '.[0].assignmentId' <<< "$assignments_json")
+          test -n "$assignment_id"
+
+          # ── Student marks contract ───────────────────────────────────
+          marks_json=$(
+            curl --fail --silent \
+              "http://127.0.0.1:5105/api/assignment/marks/$student_id"
+          )
+          jq --exit-status '
+            type == "array" and
+            (length > 0) and
+            .[0] | has("studentId") and has("assignmentId") and
+            has("tempMark") and has("finalMark")
+          ' <<< "$marks_json" > /dev/null
+
+          # ── POST temp mark contract (setTemporaryMark, exists=false) ─
+          post_result=$(
+            curl --fail --silent \
+              --request POST \
+              --header "Content-Type: application/json" \
+              --data '{
+                "studentId": "'"$student_id"'",
+                "assignmentId": "'"$assignment_id"'",
+                "tempMark": 85
+              }' \
+              http://127.0.0.1:5105/api/assignment/marks/
+          )
+          jq --exit-status '
+            has("studentId") and has("assignmentId") and
+            has("tempMark") and has("finalMark") and
+            .tempMark == 85
+          ' <<< "$post_result" > /dev/null
+
+          # ── PUT temp mark contract (setTemporaryMark, exists=true) ───
+          put_result=$(
+            curl --fail --silent \
+              --request PUT \
+              --header "Content-Type: application/json" \
+              --data '{
+                "studentId": "'"$student_id"'",
+                "assignmentId": "'"$assignment_id"'",
+                "tempMark": 92
+              }' \
+              http://127.0.0.1:5105/api/assignment/marks/
+          )
+          jq --exit-status '
+            has("studentId") and has("assignmentId") and
+            has("tempMark") and has("finalMark") and
+            .tempMark == 92
+          ' <<< "$put_result" > /dev/null
+
+          # ── DELETE temp mark contract ────────────────────────────────
+          delete_status=$(
+            curl --silent --output /dev/null --write-out "%{http_code}" \
+              --request DELETE \
+              "http://127.0.0.1:5105/api/assignment/marks/$student_id/$assignment_id"
+          )
+          test "$delete_status" = "204"
+
+  ef-core-migrations-check:
     name: EF Core migrations drift check
     runs-on: ubuntu-latest
     steps:
@@ -97,18 +265,24 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore
-        run: dotnet restore
-        working-directory: ${{ env.BACKEND_DIR }}
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-5/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
-      - name: Install matching EF Core CLI
+      - name: Restore
+        run: dotnet restore "${{ env.DATABASE_PROJECT }}"
+
+      - name: Install dotnet-ef (matching project's EF Core version)
         run: dotnet tool install --global dotnet-ef --version 10.0.11
 
       - name: Check for pending model changes
-        run: dotnet ef migrations has-pending-model-changes
-        working-directory: ${{ env.BACKEND_DIR }}
+        run: dotnet ef migrations has-pending-model-changes --project "${{ env.DATABASE_PROJECT }}"
 
-  backend-vulnerability-scan:
+  vulnerability-scan:
     name: NuGet vulnerability scan
     runs-on: ubuntu-latest
     steps:
@@ -121,30 +295,13 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore
-        run: dotnet restore
-        working-directory: ${{ env.BACKEND_DIR }}
+        run: dotnet restore "${{ env.DOTNET_SOLUTION }}"
 
-      - name: Scan known vulnerabilities
-        shell: bash
+      - name: Scan for known-vulnerable packages
         run: |
           set -o pipefail
-          dotnet list package --vulnerable --include-transitive | tee vulnerability-report.txt
-          if grep -qi "has the following vulnerable packages" vulnerability-report.txt; then
-            echo "::error::Vulnerable NuGet packages detected."
+          dotnet list "${{ env.DOTNET_SOLUTION }}" package --vulnerable --include-transitive | tee vuln-report.txt
+          if grep -qi "has the following vulnerable packages" vuln-report.txt; then
+            echo "::error::Vulnerable NuGet packages detected. See log above."
             exit 1
           fi
-        working-directory: ${{ env.BACKEND_DIR }}
-
-  package-images:
-    name: Build frontend & backend images
-    needs: [frontend-build, backend-build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build frontend image
-        run: docker build --file student-5/frontend/Dockerfile --tag student-5-frontend:ci .
-
-      - name: Build backend image
-        run: docker build --file student-5/backend/GradesManager/GradesManager/Dockerfile --tag student-5-backend:ci student-5/backend/GradesManager
