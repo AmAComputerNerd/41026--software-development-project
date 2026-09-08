@@ -23,16 +23,35 @@ services:
             retries: 5
             start_period: 15s
 
+    student-1-database:
+        build:
+            context: ./student-1/database
+            dockerfile: Dockerfile
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_DB: notifications_db
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+        volumes:
+            - student-1-postgres-data:/var/lib/postgresql/data
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "pg_isready", "-U", "postgres", "-d", "notifications_db"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
+
     student-1-backend:
         build:
             context: ./student-1/backend
             dockerfile: Api/Dockerfile
         ports:
             - "5101:8080"
-        volumes:
-            - student-1-db:/app/Data
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+            ConnectionStrings__DefaultConnection: Host=student-1-database;Port=5432;Database=notifications_db;Username=postgres;Password=postgres
             Cors__AllowedOrigins__0: http://localhost:3000
             Cors__AllowedOrigins__1: http://localhost:8080
             Cors__AllowedOrigins__2: http://localhost:5173
@@ -49,6 +68,8 @@ services:
             retries: 5
             start_period: 15s
         depends_on:
+            student-1-database:
+                condition: service_healthy
             shared-backend:
                 condition: service_healthy
             ai-mode:
@@ -176,7 +197,6 @@ services:
               required: false
         environment:
             ASPNETCORE_ENVIRONMENT: Development
-            OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -211,6 +231,7 @@ services:
 
 volumes:
     shared-db:
+    student-1-postgres-data:
     student-1-db:
     student-2-db:
     student-3-db:

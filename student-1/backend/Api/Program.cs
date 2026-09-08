@@ -14,7 +14,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options
-        .UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
+        .UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
         .UseSeeding((db, _) => DbSeeder.SeedData((AppDbContext)db))
         .UseAsyncSeeding((db, _, _) =>
         {
@@ -31,9 +31,14 @@ var aiGatewayBaseUrl = builder.Configuration["AiGateway:BaseUrl"] ?? "http://ai-
 builder.Services.AddHttpClient<IAiDigestService, OpenRouterDigestService>(client =>
 {
     client.BaseAddress = new Uri(aiGatewayBaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(30);
+    client.Timeout = TimeSpan.FromSeconds(90);
 })
-.AddStandardResilienceHandler();
+.AddStandardResilienceHandler(options =>
+{
+    options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(45);
+    options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(100);
+    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(90);
+});
 builder.Services.AddScoped<CanvasNotificationSyncService>();
 builder.Services.AddSingleton<INotificationStreamBroker, NotificationStreamBroker>();
 builder.Services.AddHostedService<CanvasSyncBackgroundService>();
