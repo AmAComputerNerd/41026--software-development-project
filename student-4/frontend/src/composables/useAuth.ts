@@ -88,6 +88,7 @@ export function useAuth() {
         lastName: userData.lastName ?? currentUser.value.lastName,
         gender: userData.gender ?? currentUser.value.gender,
         dateOfBirth: userData.dateOfBirth ?? currentUser.value.dateOfBirth,
+        userProfile: userData.userProfile ?? currentUser.value.userProfile,
       })
       currentUser.value = updated
       return updated

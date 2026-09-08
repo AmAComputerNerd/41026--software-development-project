@@ -45,12 +45,11 @@ public static class ProfileSummaryEndpoints
                 teacher,
                 cancellationToken);
 
-            var updated = await db.UpdateProfileSummaryAsync(
-                userId,
-                new ProfileSummaryCommand(summary),
-                cancellationToken);
-
-            return Results.Ok(new { summary = updated?.UserProfile ?? summary });
+            return Results.Ok(new
+            {
+                oldSummary = user.UserProfile,
+                newSummary = summary,
+            });
         }
         catch (DatabaseServiceException ex)
         {
