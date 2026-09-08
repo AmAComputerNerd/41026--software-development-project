@@ -132,9 +132,13 @@ export async function deleteAccount(
   })
 }
 
-// POST /api/users/{userId}/profile-summary — generates an AI profile
-// summary for the user and persists it. Returns { summary }.
-export async function generateProfileSummary(userId: string): Promise<{ summary: string }> {
+// POST /api/users/{userId}/profile-summary — generates candidates without persisting a summary.
+export interface ProfileSummaryResponse {
+  oldSummary: string | null
+  newSummary: string
+}
+
+export async function generateProfileSummary(userId: string): Promise<ProfileSummaryResponse> {
   return request(`/users/${userId}/profile-summary`, {
     method: 'POST',
   })

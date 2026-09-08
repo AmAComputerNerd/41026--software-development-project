@@ -49,6 +49,8 @@ const deleteAccountError = ref<string | null>(null)
 
 const generateSummaryLoading = ref(false)
 const generateSummaryError = ref<string | null>(null)
+const generatedOldSummary = ref<string | null>(null)
+const generatedNewSummary = ref<string | null>(null)
 
 onMounted(async () => {
   const userId = localStorage.getItem('userId')
@@ -105,8 +107,16 @@ function startEditing() {
 function cancelEditing() {
   isEditing.value = false
   populateForm()
+  generatedOldSummary.value = null
+  generatedNewSummary.value = null
   saveError.value = null
   saveSuccess.value = null
+}
+
+function chooseGeneratedSummary(summary: string) {
+  formData.value.userProfile = summary
+  isEditing.value = true
+  saveSuccess.value = 'Summary selected. Save your profile to apply it.'
 }
 
 async function handleSave() {
@@ -140,6 +150,8 @@ async function handleSave() {
 
     saveSuccess.value = 'Profile updated successfully!'
     isEditing.value = false
+    generatedOldSummary.value = null
+    generatedNewSummary.value = null
   } catch (err) {
     saveError.value = err instanceof Error ? err.message : 'Failed to update profile'
   } finally {
@@ -215,12 +227,10 @@ async function handleGenerateSummary() {
   generateSummaryLoading.value = true
   generateSummaryError.value = null
   try {
-    const { summary } = await generateProfileSummary(currentUser.value.id)
-    formData.value.userProfile = summary
-    if (currentUser.value) {
-      currentUser.value.userProfile = summary
-    }
-    saveSuccess.value = 'AI summary generated!'
+    const { oldSummary, newSummary } = await generateProfileSummary(currentUser.value.id)
+    generatedOldSummary.value = oldSummary
+    generatedNewSummary.value = newSummary
+    saveSuccess.value = 'Choose which summary to use, then save your profile.'
   } catch (err) {
     generateSummaryError.value = err instanceof Error ? err.message : 'Failed to generate summary'
   } finally {
@@ -321,7 +331,7 @@ function formatDate(dateStr: string) {
 
           <div class="nb-profile__field">
             <label class="nb-profile__field-label nb-mono">MIDDLE NAMES</label>
-            <div v-if="!isEditing" class="nb-profile__field-value">{{ currentUser.middleNames || 'â€”' }}</div>
+            <div v-if="!isEditing" class="nb-profile__field-value">{{ currentUser.middleNames || '-' }}</div>
             <input
               v-else
               type="text"
@@ -507,6 +517,32 @@ function formatDate(dateStr: string) {
           >
             DELETE ACCOUNT
           </button>
+        </div>
+        <div v-if="generatedNewSummary !== null" class="nb-panel nb-profile__summary-options">
+          <h3 class="nb-profile__field-label nb-mono">CHOOSE PROFILE SUMMARY</h3>
+          <div class="nb-profile__summary-option">
+            <strong class="nb-mono">OLD SUMMARY</strong>
+            <p>{{ generatedOldSummary || 'No existing summary.' }}</p>
+            <button
+              type="button"
+              class="nb-btn nb-btn--outline"
+              :disabled="generatedOldSummary === null"
+              @click="chooseGeneratedSummary(generatedOldSummary || '')"
+            >
+              USE OLD SUMMARY
+            </button>
+          </div>
+          <div class="nb-profile__summary-option">
+            <strong class="nb-mono">NEW SUMMARY</strong>
+            <p>{{ generatedNewSummary }}</p>
+            <button
+              type="button"
+              class="nb-btn nb-btn--accent"
+              @click="chooseGeneratedSummary(generatedNewSummary || '')"
+            >
+              USE NEW SUMMARY
+            </button>
+          </div>
         </div>
         <div v-if="generateSummaryError" class="nb-profile__message nb-panel nb-mono" style="border-color: var(--nb-color-accent-orange); color: var(--nb-color-accent-orange); margin-top: 12px;">
           {{ generateSummaryError }}
