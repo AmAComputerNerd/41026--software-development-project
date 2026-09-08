@@ -21,7 +21,7 @@ builder.Services
 builder.Services.AddHttpClient<IDatabaseClient, HttpDatabaseClient>((services, client) =>
 {
     var config = services.GetRequiredService<IConfiguration>();
-    var baseUrl = config["DatabaseService__BaseUrl"] ?? "http://student-5-database:8080";
+    var baseUrl = config["DatabaseService__BaseUrl"] ?? "http://localhost:5205";
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
 });
