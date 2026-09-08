@@ -1,0 +1,29 @@
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+Choose a target: 1
+Reviewing: student-1
+Choose a layer: 2
+
+[student-1/backend][START] Starting review flow
+[student-1/backend][OBSERVE] Collecting evidence
+[student-1/backend][OBSERVE] Complete
+[student-1/backend][PROMPTS] Loading prompt set
+[student-1/backend][PROMPTS] Loaded implementation prompt set (context from: prompts/owners/student-1/context_prompt.txt)
+[student-1/backend][LLM] Running implementation model
+[student-1/backend][LLM] Complete
+[student-1/backend][REVIEW-PROMPTS] Loading review prompt set
+[student-1/backend][REVIEW-LLM] Running review model
+[student-1/backend][REVIEW-LLM] Complete
+[student-1/backend][DONE] Review complete
+
+RUNNING: student-1/backend
+OBSERVE: Statically discovered routes: [('GET', '/notifications'), ('GET', '/notifications/{id:guid}'), ('POST', '/notifications'), ('POST', '/notifications/push'), ('PUT', '/notifications/{id:guid}/read'), ('PUT', '/notifications/read-all'), ('DELETE', '/notifications/{id:guid}'), ('GET', '/preferences'), ('PUT', '/preferences'), ('GET', '/preferences/types'), ('GET', '/preferences/channels'), ('GET', '/digest'), ('POST', '/digest/generate'), ('POST', '/digest/chat'), ('GET', '/canvas-sync/status'), ('POST', '/canvas-sync/poll')].
+Live endpoint evidence: GET /notifications returned 200 in 15ms; GET /notifications/11111111-1111-1111-1111-111111111111 returned 200 in 10ms; POST /notifications discovered, not probed (state-changing); POST /notifications/push discovered, not probed (state-changing); PUT /notifications/{id:guid}/read discovered, not probed (state-changing); PUT /notifications/read-all discovered, not probed (state-changing); DELETE /notifications/{id:guid} discovered, not probed (state-changing); GET /preferences returned 200 in 12ms; PUT /preferences discovered, not probed (state-changing); GET /preferences/types returned 200 in 7ms; GET /preferences/channels returned 200 in 7ms; GET /digest returned 200 in 20ms; POST /digest/generate discovered, not probed (state-changing); POST /digest/chat discovered, not probed (state-changing); GET /canvas-sync/status returned 200 in 9ms; POST /canvas-sync/poll discovered, not probed (state-changing).
+
+IMPLEMENTATION: Real-time Server-Sent Events (SSE) support added via `NotificationStreamBroker` for broadcasting live notification toasts across active clients. `POST /digest/chat` enables conversational Q&A over the student's notification context via the `ai-mode` gateway. Cross-service action payloads (`ActionPayload` JSON string) are propagated in push notifications from `student-3` (Deadlines) and `student-5` (Grades) to trigger interactive dialogs directly from notification cards.
+
+REVIEW: Confirmed compliance with microservices catalog and communication guidelines. The cross-service actions and SSE broadcast operate strictly over decoupled HTTP/SSE contracts without direct database dependencies.
+
+[student-1/backend][DONE] Review complete
+Loop closed.

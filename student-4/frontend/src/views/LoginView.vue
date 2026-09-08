@@ -1,6 +1,5 @@
 ﻿<script setup lang="ts">
 import { ref, computed } from 'vue'
-import { RouterLink } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { createUser, login, forgotPassword, type CreateUserRequest } from '@/api/users'
 import { ApiError } from '@/api/http'

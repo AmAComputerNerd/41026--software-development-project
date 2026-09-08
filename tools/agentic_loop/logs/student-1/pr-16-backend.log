@@ -1,0 +1,29 @@
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+Choose a target: 1
+Reviewing: student-1
+Choose a layer: 2
+
+[student-1/backend][START] Starting review flow
+[student-1/backend][OBSERVE] Collecting evidence
+[student-1/backend][OBSERVE] Complete
+[student-1/backend][PROMPTS] Loading prompt set
+[student-1/backend][PROMPTS] Loaded implementation prompt set (context from: prompts/owners/student-1/context_prompt.txt)
+[student-1/backend][LLM] Running implementation model
+[student-1/backend][LLM] Complete
+[student-1/backend][REVIEW-PROMPTS] Loading review prompt set
+[student-1/backend][REVIEW-LLM] Running review model
+[student-1/backend][REVIEW-LLM] Complete
+[student-1/backend][DONE] Review complete
+
+RUNNING: student-1/backend
+OBSERVE: Statically discovered routes: [('GET', '/notifications'), ('GET', '/notifications/{id:guid}'), ('POST', '/notifications'), ('POST', '/notifications/push'), ('PUT', '/notifications/{id:guid}/read'), ('PUT', '/notifications/read-all'), ('GET', '/preferences'), ('PUT', '/preferences'), ('GET', '/preferences/types'), ('GET', '/preferences/channels'), ('GET', '/digest'), ('POST', '/digest/generate'), ('GET', '/canvas-sync/status'), ('POST', '/canvas-sync/poll')].
+Live endpoint evidence: GET /notifications returned 200 in 21ms; GET /notifications/11111111-1111-1111-1111-111111111111 returned 200 in 15ms; POST /notifications discovered, not probed (state-changing); POST /notifications/push discovered, not probed (state-changing); PUT /notifications/{id:guid}/read discovered, not probed (state-changing); PUT /notifications/read-all discovered, not probed (state-changing); GET /preferences returned 200 in 17ms; PUT /preferences discovered, not probed (state-changing); GET /preferences/types returned 200 in 10ms; GET /preferences/channels returned 200 in 9ms; GET /digest returned 200 in 26ms; POST /digest/generate discovered, not probed (state-changing); GET /canvas-sync/status returned 200 in 14ms; POST /canvas-sync/poll discovered, not probed (state-changing).
+
+IMPLEMENTATION: Canvas background synchronization has been added via `CanvasSyncBackgroundService` and `CanvasNotificationSyncService`. The service retrieves active courses and assignments by querying the `shared-backend` gateway (`http://shared-backend:8080/api/canvas/*`) and does not hold Canvas API tokens directly, honoring Rule 2. The watermark tracking entity `CanvasAssignmentWatermarks` detects new or updated assignments and automatically dispatches new notifications for approaching deadlines. Recommendation: Ensure the background worker has a configurable sync interval (`CanvasSync__IntervalMinutes`) in `appsettings.json` so test environments can adjust polling frequency.
+
+REVIEW: Confirmed compliance with Rule 2 (Canvas Gateway Boundary). The implementation communicates exclusively with `shared-backend` and sanitizes assignment descriptions into concise notification messages. Watermark tracking prevents duplicate alerts.
+
+[student-1/backend][DONE] Review complete
+Loop closed.

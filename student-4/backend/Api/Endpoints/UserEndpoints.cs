@@ -44,7 +44,7 @@ public static class UserEndpoints
         try
         {
             var user = await db.GetUserAsync(userId, cancellationToken);
-            return user is null ? Results.NotFound() : Results.Ok(user.ToDto());
+            return user is null ? Results.NotFound("No user found") : Results.Ok(user.ToDto());
         }
         catch (DatabaseServiceException ex)
         {
@@ -109,7 +109,7 @@ public static class UserEndpoints
             );
 
             var user = await db.UpdateUserAsync(userId, command, cancellationToken);
-            return user is null ? Results.NotFound() : Results.Ok(user.ToDto());
+            return user is null ? Results.NotFound("No User Found") : Results.Ok(user.ToDto());
         }
         catch (DatabaseServiceException ex)
         {
@@ -125,7 +125,7 @@ public static class UserEndpoints
         try
         {
             var deleted = await db.DeleteUserAsync(userId, cancellationToken);
-            return deleted ? Results.NoContent() : Results.NotFound();
+            return deleted ? Results.NoContent() : Results.NotFound("No User Found");
         }
         catch (DatabaseServiceException ex)
         {
