@@ -1,0 +1,29 @@
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+Choose a target: 3
+Reviewing: student-3
+Choose a layer: 2
+
+[student-3/backend][START] Starting review flow
+[student-3/backend][OBSERVE] Collecting evidence
+[student-3/backend][OBSERVE] Complete
+[student-3/backend][PROMPTS] Loading prompt set
+[student-3/backend][PROMPTS] Loaded implementation prompt set (context from: README.md (fallback - no context_prompt.txt yet))
+[student-3/backend][LLM] Running implementation model
+[student-3/backend][LLM] Complete
+[student-3/backend][REVIEW-PROMPTS] Loading review prompt set
+[student-3/backend][REVIEW-LLM] Running review model
+[student-3/backend][REVIEW-LLM] Complete
+[student-3/backend][DONE] Review complete
+
+RUNNING: student-3/backend
+OBSERVE: Statically discovered routes: [('GET', '/api/courses'), ('GET', '/api/courses/{id:guid}'), ('GET', '/api/tasks'), ('GET', '/api/tasks/{id:guid}'), ('POST', '/api/tasks'), ('PUT', '/api/tasks/{id:guid}'), ('DELETE', '/api/tasks/{id:guid}')].
+Live endpoint evidence: GET /api/courses returned 200 in 33ms; GET /api/courses/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); GET /api/tasks returned 200 in 35ms; GET /api/tasks/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); POST /api/tasks discovered, not probed (state-changing); PUT /api/tasks/{id:guid} discovered, not probed (state-changing); DELETE /api/tasks/{id:guid} discovered, not probed (state-changing).
+
+IMPLEMENTATION: This PR only touches CI wiring (`.github/workflows/student-3-ci.yml`) plus minor extension/model tidy-ups; the discovered route set and live evidence are unchanged from the last run (same two list endpoints returning 200, same detail/mutation routes correctly left unprobed). No functional or architectural concerns raised by this evidence - the endpoint surface is stable and the new workflow doesn't affect route wiring. Recommend confirming the workflow actually runs `dotnet test`/`dotnet build` against `student-3/backend/DeadlineTaskTracker.sln` rather than just restoring, since that isn't observable from this collector's evidence.
+
+REVIEW: Agree - nothing in the live/static endpoint evidence indicates a regression, and the CI-only scope of this PR is consistent with that. The note about confirming the workflow actually builds/tests (rather than just restoring) is a fair caveat given the collector has no visibility into `.yml` step contents; not a blocker.
+
+[student-3/backend][DONE] Review complete
+Loop closed.

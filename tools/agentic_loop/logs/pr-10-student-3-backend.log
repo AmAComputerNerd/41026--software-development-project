@@ -1,0 +1,71 @@
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+# Run 1 - 2026-08-24 ~22:55 (working tree at "Canvas API resync for
+# Deadline and Task Tracker backend", before the DateTimeOffset fix)
+
+Choose a target: 3
+Reviewing: student-3
+Choose a layer: 2
+
+[student-3/backend][START] Starting review flow
+[student-3/backend][OBSERVE] Collecting evidence
+[student-3/backend][OBSERVE] Complete
+[student-3/backend][PROMPTS] Loading prompt set
+[student-3/backend][PROMPTS] Loaded implementation prompt set (context from: prompts/owners/student-3/context_prompt.txt)
+[student-3/backend][LLM] Running implementation model
+[student-3/backend][LLM] Complete
+[student-3/backend][REVIEW-PROMPTS] Loading review prompt set
+[student-3/backend][REVIEW-LLM] Running review model
+[student-3/backend][REVIEW-LLM] Complete
+[student-3/backend][DONE] Review complete
+
+RUNNING: student-3/backend
+OBSERVE: Statically discovered routes: [('POST', '/api/canvas-sync'), ('GET', '/api/courses'), ('GET', '/api/courses/{id:guid}'), ('GET', '/api/tasks'), ('GET', '/api/tasks/{id:guid}'), ('POST', '/api/tasks'), ('PUT', '/api/tasks/{id:guid}'), ('DELETE', '/api/tasks/{id:guid}')].
+Live endpoint evidence: POST /api/canvas-sync discovered, not probed (state-changing); GET /api/courses returned 200 in 51ms; GET /api/courses/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); GET /api/tasks returned 200 in 48ms; GET /api/tasks/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); POST /api/tasks discovered, not probed (state-changing); PUT /api/tasks/{id:guid} discovered, not probed (state-changing); DELETE /api/tasks/{id:guid} discovered, not probed (state-changing).
+
+IMPLEMENTATION: Canvas resync is landing correctly against `ISharedCanvasClient`, but flagging a data-type concern per the context file's "overdue" filter (DueDate in the past and Status != Completed): `TaskEntity.DueDate`, `Course`/`Task` Canvas timestamp fields, and the corresponding DTOs are typed `DateTimeOffset`, and SQLite (via the EF Core Sqlite provider) has no native `DateTimeOffset` column type - it's stored as TEXT and comparisons across values with different embedded offsets (e.g. a locally-created task vs. one upserted from a Canvas assignment payload) are not guaranteed to sort/compare the way `DateTimeOffset`'s built-in UTC-normalized comparison would in memory. Given "overdue" filtering does exactly this kind of comparison against `DateTimeOffset.UtcNow`, recommend standardizing on `DateTime` (stored as UTC) across `TaskEntity`, `Course`, and the Canvas DTOs before this ships, rather than mixing offsets through SQLite text comparisons.
+
+REVIEW: Agree this is a legitimate, evidence-backed risk rather than a style preference - it's a documented EF Core Sqlite provider limitation, and the context file's own "overdue" filter definition depends on correct DateTime comparison. Recommend treating as a should-fix before merge, not just a follow-up ticket.
+
+[student-3/backend][DONE] Review complete
+Loop closed.
+
+# Follow-up commit: ffce0cd "Use DateTime instead of DateTimeOffset"
+# (2026-08-24 22:56:44Z, ~1 minute after the run above) switched
+# `TaskEntity`, `Course`, the Canvas DTOs, and `DbSeeder` from
+# `DateTimeOffset` to `DateTime` across both `shared/backend` and
+# `student-3/backend` - directly addressing the concern flagged above.
+
+# Run 2 - 2026-08-24 ~23:05 (after the DateTime fix, this PR's final
+# merged state)
+
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+Choose a target: 3
+Reviewing: student-3
+Choose a layer: 2
+
+[student-3/backend][START] Starting review flow
+[student-3/backend][OBSERVE] Collecting evidence
+[student-3/backend][OBSERVE] Complete
+[student-3/backend][PROMPTS] Loading prompt set
+[student-3/backend][PROMPTS] Loaded implementation prompt set (context from: prompts/owners/student-3/context_prompt.txt)
+[student-3/backend][LLM] Running implementation model
+[student-3/backend][LLM] Complete
+[student-3/backend][REVIEW-PROMPTS] Loading review prompt set
+[student-3/backend][REVIEW-LLM] Running review model
+[student-3/backend][REVIEW-LLM] Complete
+[student-3/backend][DONE] Review complete
+
+RUNNING: student-3/backend
+OBSERVE: Statically discovered routes: [('POST', '/api/canvas-sync'), ('GET', '/api/courses'), ('GET', '/api/courses/{id:guid}'), ('GET', '/api/tasks'), ('GET', '/api/tasks/{id:guid}'), ('POST', '/api/tasks'), ('PUT', '/api/tasks/{id:guid}'), ('DELETE', '/api/tasks/{id:guid}')].
+Live endpoint evidence: POST /api/canvas-sync discovered, not probed (state-changing); GET /api/courses returned 200 in 46ms; GET /api/courses/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); GET /api/tasks returned 200 in 40ms; GET /api/tasks/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); POST /api/tasks discovered, not probed (state-changing); PUT /api/tasks/{id:guid} discovered, not probed (state-changing); DELETE /api/tasks/{id:guid} discovered, not probed (state-changing).
+
+IMPLEMENTATION: With the freshly-authored `prompts/owners/student-3/context_prompt.txt` now grounding this run, the feature intent is explicit: Canvas sync should upsert one primary Task per stable Canvas assignment ID via the shared backend, retaining (not deleting) missing records as inactive. `CanvasTaskSyncService` + `ISharedCanvasClient` correctly route through `shared-backend`'s `/api/canvas/*` surface rather than calling Canvas directly, respecting the Canvas Gateway boundary. The `AddCanvasSyncMetadata` and `UseUtcDateTimes` migrations line up with that description (tracking sync metadata, normalizing to UTC for a service that now ingests externally-sourced due dates). No violation of the "delete Course != delete Tasks" or "cascade delete for subtasks" data-integrity rules is visible from the route/evidence surface, though that behavior isn't independently exercised by this collector (it only probes GETs) - worth covering with an integration test if not already present.
+
+REVIEW: The recommendation is well-grounded in both the new context file and the discovered routes/migrations; confirming it holds. The caveat about data-integrity rules not being exercised by this collector (GET-only probing) is accurate and appropriately scoped as a suggestion, not a blocking finding. No changes requested.
+
+[student-3/backend][DONE] Review complete
+Loop closed.

@@ -1,0 +1,74 @@
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+# Run 1 - 2026-08-29 ~02:00 (working tree at "Add animations", before the
+# health-check/resilience fix)
+
+Choose a target: 3
+Reviewing: student-3
+Choose a layer: 2
+
+[student-3/backend][START] Starting review flow
+[student-3/backend][OBSERVE] Collecting evidence
+[student-3/backend][OBSERVE] Complete
+[student-3/backend][PROMPTS] Loading prompt set
+[student-3/backend][PROMPTS] Loaded implementation prompt set (context from: prompts/owners/student-3/context_prompt.txt)
+[student-3/backend][LLM] Running implementation model
+[student-3/backend][LLM] Complete
+[student-3/backend][REVIEW-PROMPTS] Loading review prompt set
+[student-3/backend][REVIEW-LLM] Running review model
+[student-3/backend][REVIEW-LLM] Complete
+[student-3/backend][DONE] Review complete
+
+RUNNING: student-3/backend
+OBSERVE: Statically discovered routes: [('POST', '/api/canvas-sync'), ('GET', '/api/courses'), ('GET', '/api/courses/{id:guid}'), ('GET', '/api/tasks'), ('GET', '/api/tasks/{id:guid}'), ('POST', '/api/tasks'), ('POST', '/api/tasks/ai-description'), ('POST', '/api/tasks/{id:guid}/ai-breakdown'), ('PUT', '/api/tasks/{id:guid}'), ('DELETE', '/api/tasks/{id:guid}')].
+Live endpoint evidence: POST /api/canvas-sync discovered, not probed (state-changing); GET /api/courses returned 200 in 43ms; GET /api/courses/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); GET /api/tasks returned 200 in 39ms; GET /api/tasks/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); POST /api/tasks discovered, not probed (state-changing); POST /api/tasks/ai-description discovered, not probed (state-changing); POST /api/tasks/{id:guid}/ai-breakdown discovered, not probed (state-changing); PUT /api/tasks/{id:guid} discovered, not probed (state-changing); DELETE /api/tasks/{id:guid} discovered, not probed (state-changing).
+
+IMPLEMENTATION: Route surface itself is fine, but flagging an operational gap: `student-3-backend` has two hard runtime dependencies over HTTP (`ISharedCanvasClient` -> `shared-backend`, `IAiTaskService` -> `ai-mode`), and neither `AddHttpClient<ISharedCanvasClient, SharedCanvasClient>()` nor `AddHttpClient<IAiTaskService, AiTaskService>()` in `Program.cs` is configured with a timeout or retry policy - a slow/unresponsive `shared-backend` or `ai-mode` could hang a request indefinitely. There is also no `/health/live` or `/health/ready` endpoint registered anywhere in `Program.cs`, so Docker Compose (or anything else) has no way to detect that this service is degraded because one of its two dependencies is down, versus genuinely healthy. Recommend adding a resilience handler (retry + timeout) on both `HttpClient` registrations and a couple of `IHealthCheck`s so orchestration can distinguish "backend is up" from "backend can actually serve requests".
+
+REVIEW: Agree - this is evidence-backed (confirmed absent from `Program.cs` and the discovered route set has no health endpoints at all) rather than a speculative best-practice nag, and it's a real availability risk given this service already depends on two other HTTP services per the architecture docs. Worth prioritizing given the PR is explicitly framed as "general fixups".
+
+[student-3/backend][DONE] Review complete
+Loop closed.
+
+# Follow-up commit: 0df1a6b "Add health checks to strengthen service
+# reliability" (2026-08-29 22:22:45Z) added `RemoteServiceHealthCheck`/
+# `SharedServiceHealthCheck`/`AiGatewayHealthCheck`, registered
+# `/health/live` and `/health/ready` via `AddHealthChecks()`/
+# `MapHealthChecks(...)`, and added `AddStandardResilienceHandler(...)`
+# (retry + timeout) to both the shared-service and AI-gateway `HttpClient`
+# registrations in `Program.cs` - directly addressing the gap flagged
+# above.
+
+# Run 2 - 2026-08-29 ~22:35 (after the health-check/resilience fix, this
+# PR's final merged state)
+
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+Choose a target: 3
+Reviewing: student-3
+Choose a layer: 2
+
+[student-3/backend][START] Starting review flow
+[student-3/backend][OBSERVE] Collecting evidence
+[student-3/backend][OBSERVE] Complete
+[student-3/backend][PROMPTS] Loading prompt set
+[student-3/backend][PROMPTS] Loaded implementation prompt set (context from: prompts/owners/student-3/context_prompt.txt)
+[student-3/backend][LLM] Running implementation model
+[student-3/backend][LLM] Complete
+[student-3/backend][REVIEW-PROMPTS] Loading review prompt set
+[student-3/backend][REVIEW-LLM] Running review model
+[student-3/backend][REVIEW-LLM] Complete
+[student-3/backend][DONE] Review complete
+
+RUNNING: student-3/backend
+OBSERVE: Statically discovered routes: [('POST', '/api/canvas-sync'), ('GET', '/api/courses'), ('GET', '/api/courses/{id:guid}'), ('GET', '/api/tasks'), ('GET', '/api/tasks/{id:guid}'), ('POST', '/api/tasks'), ('POST', '/api/tasks/ai-description'), ('POST', '/api/tasks/{id:guid}/ai-breakdown'), ('PUT', '/api/tasks/{id:guid}'), ('DELETE', '/api/tasks/{id:guid}')].
+Live endpoint evidence: POST /api/canvas-sync discovered, not probed (state-changing); GET /api/courses returned 200 in 40ms; GET /api/courses/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); GET /api/tasks returned 200 in 36ms; GET /api/tasks/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); POST /api/tasks discovered, not probed (state-changing); POST /api/tasks/ai-description discovered, not probed (state-changing); POST /api/tasks/{id:guid}/ai-breakdown discovered, not probed (state-changing); PUT /api/tasks/{id:guid} discovered, not probed (state-changing); DELETE /api/tasks/{id:guid} discovered, not probed (state-changing).
+
+IMPLEMENTATION: Route surface is unchanged from the last backend review - this PR's `SharedCanvasClient`/`RemoteServiceHealthChecks` additions are internal resilience/health-check plumbing (retry-on-failure toward `shared-backend` and `ai-mode`, plus `/health/live`/`/health/ready`) rather than new endpoints, and the two previously-passing list routes (`GET /api/courses`, `GET /api/tasks`) still return 200. Given the PR title ("General Fixups"), adding health checks and a resilience handler for the two remote dependencies (`shared-backend`, `ai-mode`) this service already calls over HTTP directly addresses the gap flagged in the previous run, and doesn't introduce any new direct external call that would violate the Canvas/AI gateway boundaries. No further issues found in the discovered evidence.
+
+REVIEW: Agree - nothing in the route/live evidence suggests a regression, and the resilience-focused scope described lines up with what "general fixups" implies for a service that depends on two other internal HTTP gateways. The previously-flagged gap is resolved. No changes requested.
+
+[student-3/backend][DONE] Review complete
+Loop closed.
