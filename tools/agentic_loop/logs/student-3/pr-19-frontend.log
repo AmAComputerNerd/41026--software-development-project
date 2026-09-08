@@ -1,0 +1,15 @@
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+Choose a target: 3
+Reviewing: student-3
+Choose a layer: 1
+
+[student-3/frontend][START] Starting review flow
+[student-3/frontend][OBSERVE] Collecting evidence
+[student-3/frontend][OBSERVE] Failed
+
+RUNNING: student-3/frontend
+OBSERVE FAILED: 'student-3/frontend' does not declare both 'vue' and 'vuetify' in package.json. Frontend review is only implemented for that stack today - add a collector for this stack if it differs.
+
+Loop closed.

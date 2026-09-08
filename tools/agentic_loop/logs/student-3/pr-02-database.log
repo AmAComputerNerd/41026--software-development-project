@@ -1,0 +1,29 @@
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+Choose a target: 3
+Reviewing: student-3
+Choose a layer: 3
+
+[student-3/database][START] Starting review flow
+[student-3/database][OBSERVE] Collecting evidence
+[student-3/database][OBSERVE] Complete
+[student-3/database][PROMPTS] Loading prompt set
+[student-3/database][PROMPTS] Loaded implementation prompt set (context from: README.md (fallback - no context_prompt.txt yet))
+[student-3/database][LLM] Running implementation model
+[student-3/database][LLM] Complete
+[student-3/database][REVIEW-PROMPTS] Loading review prompt set
+[student-3/database][REVIEW-LLM] Running review model
+[student-3/database][REVIEW-LLM] Complete
+[student-3/database][DONE] Review complete
+
+RUNNING: student-3/database
+OBSERVE: Table 'Courses' (0 row(s), primary key: yes): columns=[Id TEXT PK NOT NULL, Code TEXT NOT NULL, Name TEXT NOT NULL]; foreign keys=[none]
+Table 'TaskEntities' (0 row(s), primary key: yes): columns=[Id TEXT PK NOT NULL, Title TEXT NOT NULL, Description TEXT, DueDate TEXT, Priority INTEGER NOT NULL, Status INTEGER NOT NULL, CreatedAt TEXT NOT NULL, UpdatedAt TEXT NOT NULL, CourseId TEXT, ParentTaskId TEXT]; foreign keys=[CourseId -> Courses.Id, ParentTaskId -> TaskEntities.Id]
+
+IMPLEMENTATION: Schema for the initial `AppDbContext` (single `20260817112734_InitialCreate` migration) matches `Course`/`TaskEntity` and looks correct for a Sprint 1 deadline tracker: both tables have GUID primary keys, `TaskEntities.CourseId` is a nullable FK to `Courses` (fine, since not every task is course-linked yet) and `ParentTaskId` is a self-referencing FK supporting the subtask hierarchy already modelled on `TaskEntity.ChildrenTasks`. One thing to keep an eye on: no unique constraint on `Courses.Code`, so nothing stops a duplicate course code being seeded or created later - not a blocker at this stage since seeding is still hardcoded, but worth an index/unique constraint once real user input creates courses.
+
+REVIEW: Confirmed - the FK/PK layout is evidence-backed by the PRAGMA dump and correctly reflects the two-table Sprint 1 shape. The `Courses.Code` uniqueness gap is a legitimate, low-severity follow-up rather than a blocking issue; agree it shouldn't hold up this PR. No further changes recommended.
+
+[student-3/database][DONE] Review complete
+Loop closed.
