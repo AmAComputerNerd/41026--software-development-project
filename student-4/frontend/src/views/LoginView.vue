@@ -165,7 +165,7 @@ async function handleForgotPassword() {
 <template>
   <div class="nb-auth-page">
     <div class="nb-panel nb-auth__card">
-      <div class="nb-auth__header">
+      <div v-if="!showForgot" class="nb-auth__header">
         <h1 class="nb-auth__title nb-mono">{{ isLoginMode ? 'LOG IN' : 'CREATE ACCOUNT' }}</h1>
         <p class="nb-auth__subtitle">
           {{ isLoginMode ? 'Enter your credentials to access your account' : 'Fill in your details to create a new account' }}
