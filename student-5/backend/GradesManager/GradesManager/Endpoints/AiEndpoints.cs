@@ -22,11 +22,11 @@ namespace GradesManager.Endpoints
         {
             // Get assignments from database service
             var assignments = await databaseClient.GetAssignmentsAsync(cancellationToken);
-            
+
             var recommendation = await aiTaskService.GenerateRecommendationAsync(
                 new AiRecommendationContext((assignments ?? new List<AssignmentRecord>()).ToList()),
                 cancellationToken);
-            
+
             return Results.Ok(new GeneratedRecommendationDto(recommendation));
         }
     }
