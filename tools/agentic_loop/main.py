@@ -2,14 +2,17 @@ from __future__ import annotations
 
 from config.review_config import LAYERS, OWNERS, REPO_ROOT
 from core.ai_runner import AIRunner
+from core.log_writer import capture_run
 from core.orchestrator import run_target
 from core.reporter import print_layer_menu, print_owner_menu, print_result
 
 
 def _run_and_report(layer: str, owner: str | None, ai: AIRunner) -> None:
     label = f"{owner}/{layer}" if owner else layer
-    result = run_target(layer, owner, REPO_ROOT, ai)
-    print_result(label, result)
+    with capture_run(label) as log_path:
+        result = run_target(layer, owner, REPO_ROOT, ai)
+        print_result(label, result)
+    print(f"[{label}] Run transcript saved to {log_path.relative_to(REPO_ROOT)}")
 
 
 def _owner_submenu(owner: str, ai: AIRunner) -> None:
