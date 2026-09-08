@@ -1,0 +1,65 @@
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+# Run 1
+
+Choose a target: 3
+Reviewing: student-3
+Choose a layer: 2
+
+[student-3/backend][START] Starting review flow
+[student-3/backend][OBSERVE] Collecting evidence
+[student-3/backend][OBSERVE] Complete
+[student-3/backend][PROMPTS] Loading prompt set
+[student-3/backend][PROMPTS] Loaded implementation prompt set (context from: README.md (fallback - no context_prompt.txt yet))
+[student-3/backend][LLM] Running implementation model
+[student-3/backend][LLM] Complete
+[student-3/backend][REVIEW-PROMPTS] Loading review prompt set
+[student-3/backend][REVIEW-LLM] Running review model
+[student-3/backend][REVIEW-LLM] Complete
+[student-3/backend][DONE] Review complete
+
+RUNNING: student-3/backend
+OBSERVE: Statically discovered routes: [('GET', '/api/courses'), ('GET', '/api/courses/{id:guid}'), ('GET', '/api/tasks'), ('GET', '/api/tasks/{id:guid}'), ('POST', '/api/tasks'), ('PUT', '/api/tasks/{id:guid}'), ('DELETE', '/api/tasks/{id:guid}')].
+Live endpoint evidence: GET /api/courses returned 200 in 39ms; GET /api/courses/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); GET /api/tasks returned 200 in 34ms; GET /api/tasks/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); POST /api/tasks discovered, not probed (state-changing); PUT /api/tasks/{id:guid} discovered, not probed (state-changing); DELETE /api/tasks/{id:guid} discovered, not probed (state-changing).
+
+IMPLEMENTATION: Route/DTO shape looks fine for a Sprint 1 scaffold, but flagging a modelling gap against the root README's "Deadline and Task Tracker" blurb: the README describes tasks that can have subtasks/checklist items, yet `TaskEntity` has no self-referencing relationship (no `ParentTaskId`/`ParentTask`, no `ChildrenTasks` collection) and `TaskDto`/`CreateTaskRequestDto`/`ModifyTaskRequestDto` have no field to link a task to a parent. As it stands, this schema can only represent a flat list of tasks, not the hierarchy the feature description implies. Recommend adding a nullable self-referencing FK (`ParentTaskId` -> `TaskEntity.Id`) plus a matching EF Core migration before this is built on further, since retrofitting a self-reference after client code exists is more disruptive.
+
+REVIEW: Confirmed - this is a real, evidence-backed gap (grep of `Models/TaskEntity.cs` and the three Task DTOs shows no parent/child field anywhere), not a stylistic nit, and it directly contradicts the subtask/checklist behavior the feature is supposed to support. Recommend treating this as a blocking follow-up before the schema is considered final for Sprint 1.
+
+[student-3/backend][DONE] Review complete
+Loop closed.
+
+# Follow-up commit hash: b2bbe25
+
+# Run 2
+
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+Choose a target: 3
+Reviewing: student-3
+Choose a layer: 2
+
+[student-3/backend][START] Starting review flow
+[student-3/backend][OBSERVE] Collecting evidence
+[student-3/backend][OBSERVE] Complete
+[student-3/backend][PROMPTS] Loading prompt set
+[student-3/backend][PROMPTS] Loaded implementation prompt set (context from: README.md (fallback - no context_prompt.txt yet))
+[student-3/backend][LLM] Running implementation model
+[student-3/backend][LLM] Complete
+[student-3/backend][REVIEW-PROMPTS] Loading review prompt set
+[student-3/backend][REVIEW-LLM] Running review model
+[student-3/backend][REVIEW-LLM] Complete
+[student-3/backend][DONE] Review complete
+
+RUNNING: student-3/backend
+OBSERVE: Statically discovered routes: [('GET', '/api/courses'), ('GET', '/api/courses/{id:guid}'), ('GET', '/api/tasks'), ('GET', '/api/tasks/{id:guid}'), ('POST', '/api/tasks'), ('PUT', '/api/tasks/{id:guid}'), ('DELETE', '/api/tasks/{id:guid}')].
+Live endpoint evidence: GET /api/courses returned 200 in 41ms; GET /api/courses/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); GET /api/tasks returned 200 in 37ms; GET /api/tasks/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); POST /api/tasks discovered, not probed (state-changing); PUT /api/tasks/{id:guid} discovered, not probed (state-changing); DELETE /api/tasks/{id:guid} discovered, not probed (state-changing).
+
+IMPLEMENTATION: The initial minimal-API surface for Deadline & Task Tracker is a reasonable first cut: `TaskEndpoints` and `CourseEndpoints` follow the `MapGroup("/api/...")` + `MapGet/MapPost/MapPut/MapDelete` convention consistently, and the list endpoints (`GET /api/courses`, `GET /api/tasks`) both return 200 with EF Core-seeded data. The `{id:guid}` detail routes could not be exercised because the seeded lists returned during this run did not expose an `id` field the collector could reuse - worth double-checking `TaskDto`/`CourseDto` serialize `Id` (not just internal fields) so a client can round-trip a detail lookup. No AuthN/AuthZ is present yet on any route, which is acceptable for a Sprint 1 scaffold but should be tracked before this API is exposed outside the Docker network.
+
+REVIEW: Recommendation holds up against the evidence. Agree the discovered route set is complete and matches the `MapGroup`/`MapVerb` convention this tool depends on. The DTO/id-serialization concern is evidence-backed (the collector's own log shows it couldn't resurface an id from the list responses) rather than speculative, so it's a fair thing to flag even at this early stage. Confirming: no changes required to the review itself.
+
+[student-3/backend][DONE] Review complete
+Loop closed.

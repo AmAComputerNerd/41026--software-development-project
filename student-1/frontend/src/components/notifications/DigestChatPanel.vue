@@ -2,6 +2,7 @@
 import { nextTick, ref } from 'vue'
 import { CURRENT_STUDENT_ID } from '@/config'
 import { chatWithAssistant } from '@/api/digest'
+import MarkdownContent from './MarkdownContent.vue'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -99,7 +100,12 @@ async function sendPrompt(textToSend?: string) {
           <div class="nb-chat-msg__role nb-mono">
             {{ msg.role === 'user' ? 'YOU' : 'AI ASSISTANT' }}
           </div>
-          <p class="nb-chat-msg__text">{{ msg.content }}</p>
+          <MarkdownContent
+            v-if="msg.role === 'assistant'"
+            class="nb-chat-msg__markdown"
+            :source="msg.content"
+          />
+          <p v-else class="nb-chat-msg__text">{{ msg.content }}</p>
           <span class="nb-mono nb-chat-msg__time">{{ msg.time }}</span>
         </div>
       </div>
@@ -219,7 +225,6 @@ async function sendPrompt(textToSend?: string) {
   padding: var(--nb-space-3) var(--nb-space-4);
   font-size: 14px;
   line-height: 1.5;
-  white-space: pre-wrap;
   border-radius: 0;
 }
 
@@ -228,6 +233,7 @@ async function sendPrompt(textToSend?: string) {
   color: var(--nb-color-bg);
   border: var(--nb-border-width-sm) solid var(--nb-color-ink);
   box-shadow: 3px 3px 0 var(--nb-color-shadow);
+  white-space: pre-wrap;
 }
 
 .nb-chat-msg--assistant .nb-chat-msg__bubble {
@@ -235,6 +241,51 @@ async function sendPrompt(textToSend?: string) {
   color: var(--nb-color-ink);
   border: var(--nb-border-width-sm) solid var(--nb-color-ink);
   box-shadow: 3px 3px 0 var(--nb-color-shadow);
+}
+
+.nb-chat-msg__markdown :deep(p) {
+  margin: 0 0 8px;
+}
+
+.nb-chat-msg__markdown :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.nb-chat-msg__markdown :deep(ul),
+.nb-chat-msg__markdown :deep(ol) {
+  margin: 4px 0 8px;
+  padding-left: 18px;
+}
+
+.nb-chat-msg__markdown :deep(li) {
+  margin-bottom: 4px;
+}
+
+.nb-chat-msg__markdown :deep(h1),
+.nb-chat-msg__markdown :deep(h2),
+.nb-chat-msg__markdown :deep(h3),
+.nb-chat-msg__markdown :deep(h4) {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 10px 0 4px;
+}
+
+.nb-chat-msg__markdown :deep(h1:first-child),
+.nb-chat-msg__markdown :deep(h2:first-child),
+.nb-chat-msg__markdown :deep(h3:first-child),
+.nb-chat-msg__markdown :deep(h4:first-child) {
+  margin-top: 0;
+}
+
+.nb-chat-msg__markdown :deep(strong) {
+  font-weight: 700;
+}
+
+.nb-chat-msg__markdown :deep(code) {
+  font-family: var(--nb-font-mono, monospace);
+  background: rgba(0, 0, 0, 0.08);
+  padding: 1px 4px;
+  font-size: 12px;
 }
 
 .nb-chat-msg__role {
