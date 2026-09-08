@@ -443,3 +443,9 @@ FodyWeavers.xsd
 
 # graphify generated artifacts
 graphify-out/
+
+# Agentic loop run transcripts are intentionally tracked as review evidence,
+# despite the generic *.log / logs/ ignore rules above.
+!tools/agentic_loop/logs/
+!tools/agentic_loop/logs/**
+!tools/agentic_loop/logs/**/*.log

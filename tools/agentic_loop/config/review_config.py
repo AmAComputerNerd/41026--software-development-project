@@ -13,6 +13,7 @@ REPO_ROOT = TOOLS_ROOT.parent.parent
 PROMPT_ROOT = TOOLS_ROOT / "prompts" / "service"
 OWNER_PROMPT_ROOT = TOOLS_ROOT / "prompts" / "owners"
 README_PATH = REPO_ROOT / "README.md"
+LOGS_ROOT = TOOLS_ROOT / "logs"
 
 # Each individual student's working directory, plus the cross-cutting
 # "shared" microservice all students contribute to.

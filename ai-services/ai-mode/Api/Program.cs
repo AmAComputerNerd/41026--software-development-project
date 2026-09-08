@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration["OpenRouter:ApiKey"] =
     Environment.GetEnvironmentVariable("OPENROUTER_API_KEY") ?? builder.Configuration["OpenRouter:ApiKey"];
+builder.Configuration["OpenRouter:Model"] =
+    Environment.GetEnvironmentVariable("OPENROUTER_MODEL") ?? builder.Configuration["OpenRouter:Model"];
 
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();

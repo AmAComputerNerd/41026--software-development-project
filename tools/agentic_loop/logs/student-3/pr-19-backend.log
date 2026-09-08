@@ -1,0 +1,29 @@
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+Choose a target: 3
+Reviewing: student-3
+Choose a layer: 2
+
+[student-3/backend][START] Starting review flow
+[student-3/backend][OBSERVE] Collecting evidence
+[student-3/backend][OBSERVE] Complete
+[student-3/backend][PROMPTS] Loading prompt set
+[student-3/backend][PROMPTS] Loaded implementation prompt set (context from: prompts/owners/student-3/context_prompt.txt)
+[student-3/backend][LLM] Running implementation model
+[student-3/backend][LLM] Complete
+[student-3/backend][REVIEW-PROMPTS] Loading review prompt set
+[student-3/backend][REVIEW-LLM] Running review model
+[student-3/backend][REVIEW-LLM] Complete
+[student-3/backend][DONE] Review complete
+
+RUNNING: student-3/backend
+OBSERVE: Statically discovered routes: [('POST', '/api/canvas-sync'), ('GET', '/api/courses'), ('GET', '/api/courses/{id:guid}'), ('GET', '/api/tasks'), ('GET', '/api/tasks/{id:guid}'), ('POST', '/api/tasks'), ('POST', '/api/tasks/ai-description'), ('POST', '/api/tasks/{id:guid}/ai-breakdown'), ('PUT', '/api/tasks/{id:guid}'), ('DELETE', '/api/tasks/{id:guid}')].
+Live endpoint evidence: POST /api/canvas-sync discovered, not probed (state-changing); GET /api/courses returned 200 in 42ms; GET /api/courses/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); GET /api/tasks returned 200 in 38ms; GET /api/tasks/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); POST /api/tasks discovered, not probed (state-changing); POST /api/tasks/ai-description discovered, not probed (state-changing); POST /api/tasks/{id:guid}/ai-breakdown discovered, not probed (state-changing); PUT /api/tasks/{id:guid} discovered, not probed (state-changing); DELETE /api/tasks/{id:guid} discovered, not probed (state-changing).
+
+IMPLEMENTATION: Two new AI-backed routes (`POST /api/tasks/ai-description`, `POST /api/tasks/{id}/ai-breakdown`) are added via `AiTaskService`/`IAiTaskService`, configured through `AiGatewayOptions`. Existing list routes (`GET /api/courses`, `GET /api/tasks`) are unaffected and still return 200, so no regression from the earlier Canvas-sync surface. Per the new `AiGatewayOptions`, calls are made to the internal `ai-mode` gateway rather than OpenRouter directly, which is the correct boundary (only `ai-mode` should hold `OPENROUTER_API_KEY`). Both new routes are correctly state-changing (POST) and therefore not live-probed by this collector; recommend a manual smoke test of `ai-breakdown` against a seeded task, since a malformed AI gateway response could otherwise go unnoticed until a real user hits it.
+
+REVIEW: Confirmed - the AI Gateway boundary is respected based on the discovered configuration surface, and the route additions don't disturb previously-passing evidence. The suggestion for a manual smoke test on `ai-breakdown` is reasonable given it's a new state-changing route this collector can't probe; not a blocker.
+
+[student-3/backend][DONE] Review complete
+Loop closed.

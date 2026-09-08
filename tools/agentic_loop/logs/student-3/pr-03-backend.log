@@ -1,0 +1,29 @@
+$ python tools/agentic_loop.py
+AGENTIC LOOP (MODULAR) - per-owner frontend/backend/database + compose review
+
+Choose a target: 3
+Reviewing: student-3
+Choose a layer: 2
+
+[student-3/backend][START] Starting review flow
+[student-3/backend][OBSERVE] Collecting evidence
+[student-3/backend][OBSERVE] Complete
+[student-3/backend][PROMPTS] Loading prompt set
+[student-3/backend][PROMPTS] Loaded implementation prompt set (context from: README.md (fallback - no context_prompt.txt yet))
+[student-3/backend][LLM] Running implementation model
+[student-3/backend][LLM] Complete
+[student-3/backend][REVIEW-PROMPTS] Loading review prompt set
+[student-3/backend][REVIEW-LLM] Running review model
+[student-3/backend][REVIEW-LLM] Complete
+[student-3/backend][DONE] Review complete
+
+RUNNING: student-3/backend
+OBSERVE: Statically discovered routes: [('POST', '/api/canvas-sync'), ('GET', '/api/courses'), ('GET', '/api/courses/{id:guid}'), ('GET', '/api/tasks'), ('GET', '/api/tasks/{id:guid}'), ('POST', '/api/tasks'), ('PUT', '/api/tasks/{id:guid}'), ('DELETE', '/api/tasks/{id:guid}')].
+Live endpoint evidence: POST /api/canvas-sync discovered, not probed (state-changing); GET /api/courses returned 200 in 44ms; GET /api/courses/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); GET /api/tasks returned 200 in 39ms; GET /api/tasks/{id:guid} discovered, not probed (needs a real id and none was available from a sibling list endpoint); POST /api/tasks discovered, not probed (state-changing); PUT /api/tasks/{id:guid} discovered, not probed (state-changing); DELETE /api/tasks/{id:guid} discovered, not probed (state-changing).
+
+IMPLEMENTATION: The new `CanvasSyncEndpoints` group is wired correctly (`POST /api/canvas-sync` under the same `MapGroup` convention as the existing task/course groups) and doesn't disturb the previously-working `GET /api/courses` / `GET /api/tasks` list routes, both of which still return 200. Since `canvas-sync` is state-changing it isn't live-probed here, which is expected. Given this PR pulls Canvas assignments through `ISharedCanvasClient` rather than calling Canvas directly, it correctly respects the Canvas Gateway boundary (all Canvas traffic is proxied via `shared-backend`, not called from `student-3` directly) - no violation found in the discovered routes or service wiring.
+
+REVIEW: Confirmed - route discovery evidence supports the "no regression, gateway boundary respected" conclusion, and there is nothing in the evidence suggesting a direct Canvas API call from this service. No changes requested.
+
+[student-3/backend][DONE] Review complete
+Loop closed.
