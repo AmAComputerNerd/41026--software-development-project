@@ -11,7 +11,7 @@ public sealed partial class OpenRouterDigestService(
     HttpClient httpClient,
     ILogger<OpenRouterDigestService> logger) : IAiDigestService
 {
-    private const string Model = "minimax/minimax-m3:free";
+    private const string Model = "nvidia/nemotron-3.5-lightning:free";
     private const int MaxAttempts = 3;
     private const int MaxDigestCharacters = 4000;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -31,7 +31,7 @@ public sealed partial class OpenRouterDigestService(
             ],
             MaxTokens = 800,
             Temperature = 0.2,
-            Reasoning = new ReasoningOptions("low")
+            Reasoning = new ReasoningOptions("none")
         };
 
         for (var attempt = 1; attempt <= MaxAttempts; attempt++)
@@ -63,6 +63,11 @@ public sealed partial class OpenRouterDigestService(
 
             var choice = completion?.Choices?.FirstOrDefault();
             var content = choice?.Message?.Content;
+            if (string.IsNullOrWhiteSpace(content) && !string.IsNullOrWhiteSpace(choice?.Message?.Reasoning))
+            {
+                content = choice.Message.Reasoning;
+            }
+
             if (string.IsNullOrWhiteSpace(content))
             {
                 LogEmptyDigestContent(
@@ -115,7 +120,7 @@ public sealed partial class OpenRouterDigestService(
             Messages = messages,
             MaxTokens = 800,
             Temperature = 0.4,
-            Reasoning = new ReasoningOptions("low")
+            Reasoning = new ReasoningOptions("none")
         };
 
         for (var attempt = 1; attempt <= MaxAttempts; attempt++)
@@ -147,6 +152,11 @@ public sealed partial class OpenRouterDigestService(
 
             var choice = completion?.Choices?.FirstOrDefault();
             var content = choice?.Message?.Content;
+            if (string.IsNullOrWhiteSpace(content) && !string.IsNullOrWhiteSpace(choice?.Message?.Reasoning))
+            {
+                content = choice.Message.Reasoning;
+            }
+
             if (string.IsNullOrWhiteSpace(content))
             {
                 LogEmptyDigestContent(
@@ -175,7 +185,7 @@ public sealed partial class OpenRouterDigestService(
         sb.AppendLine(CultureInfo.InvariantCulture, $"Student ID: {studentId}");
         sb.AppendLine("You have access to the student's active notifications and deadlines:");
 
-        foreach (var notification in unreadNotifications)
+        foreach (var notification in unreadNotifications.TakeLast(15))
         {
             sb.AppendLine(CultureInfo.InvariantCulture, $"- [{notification.Type}] {notification.Message} (from {notification.SourceMicroservice} at {notification.CreatedAtUtc:O})");
         }
@@ -227,7 +237,7 @@ public sealed partial class OpenRouterDigestService(
         sb.AppendLine(CultureInfo.InvariantCulture, $"Student ID: {studentId}");
         sb.AppendLine("Here are the student's unread notifications:");
 
-        foreach (var notification in unreadNotifications)
+        foreach (var notification in unreadNotifications.TakeLast(15))
         {
             sb.AppendLine(CultureInfo.InvariantCulture, $"- [{notification.Type}] {notification.Message} (from {notification.SourceMicroservice} at {notification.CreatedAtUtc:O})");
         }
@@ -283,7 +293,8 @@ internal sealed class ChatCompletionRequest
     public required double Temperature { get; init; }
 
     [JsonPropertyName("reasoning")]
-    public required ReasoningOptions Reasoning { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ReasoningOptions? Reasoning { get; init; }
 }
 
 internal sealed class ChatMessage
