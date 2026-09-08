@@ -1,0 +1,42 @@
+using Database.Models;
+using Student4.Contracts;
+
+namespace Database.Extensions;
+
+public static class DtoExtensions
+{
+    public static UserRecord ToRecord(this User user)
+    {
+        return new UserRecord(
+            Id: user.Id,
+            Email: user.Email,
+            PasswordHash: user.PasswordHash,
+            FirstName: user.FirstName,
+            MiddleNames: user.MiddleNames,
+            LastName: user.LastName,
+            Gender: user.Gender.ToString(),
+            DateOfBirth: user.DateOfBirth,
+            UserType: user.UserType.ToString(),
+            UserProfile: user.UserProfile
+        );
+    }
+
+    public static StudentRecord ToRecord(this Student student)
+    {
+        return new StudentRecord(
+            UserId: student.UserId,
+            CourseStatus: student.CourseStatus.ToString(),
+            IsInternational: student.IsInternational,
+            CanvasApiKey: student.CanvasApiKey
+        );
+    }
+
+    public static TeacherRecord ToRecord(this Teacher teacher)
+    {
+        return new TeacherRecord(
+            UserId: teacher.UserId,
+            EmploymentStatus: teacher.EmploymentStatus.ToString(),
+            CanvasApiKey: teacher.CanvasApiKey
+        );
+    }
+}

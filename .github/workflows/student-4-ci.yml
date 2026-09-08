@@ -1,0 +1,146 @@
+name: Student 4 - CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "student-4/authentication/**"
+      - "student-4/backend/**"
+      - "student-4/contracts/**"
+      - "student-4/database/**"
+      - "student-4/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-4-ci.yml"
+  pull_request:
+    paths:
+      - "student-4/backend/**"
+      - "student-4/contracts/**"
+      - "student-4/database/**"
+      - "student-4/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-4-ci.yml"
+
+# Cancel superseded runs on the same branch/PR to save CI minutes.
+concurrency:
+  group: student-4-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  NODE_VERSION: "22"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SOLUTION: student-4/backend/AccountService.sln
+  API_PROJECT: student-4/backend/Api/Api.csproj
+  DATABASE_PROJECT: student-4/database/Database/Database.csproj
+
+jobs:
+  frontend-build:
+    name: Frontend type check & production build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Type check and build
+        run: npm run build --workspace=student-4-frontend
+
+  build-and-analyze:
+    name: Build, analyze & format check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-4/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore "${{ env.DOTNET_SOLUTION }}"
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-restore -warnaserror
+
+      - name: Verify code formatting
+        run: dotnet format "${{ env.DOTNET_SOLUTION }}" --verify-no-changes --severity warn
+
+  ef-core-migrations-check:
+    name: EF Core migrations drift check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-4/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore "${{ env.DATABASE_PROJECT }}"
+
+      - name: Install dotnet-ef (matching project's EF Core version)
+        run: dotnet tool install --global dotnet-ef --version 10.0.11
+
+      # Fails the build if the current model has diverged from the latest
+      # migration snapshot (e.g. an entity property changed without a
+      # corresponding `dotnet ef migrations add`).
+      - name: Check for pending model changes
+        run: dotnet ef migrations has-pending-model-changes --project "${{ env.DATABASE_PROJECT }}"
+
+  vulnerability-scan:
+    name: NuGet vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore "${{ env.DOTNET_SOLUTION }}"
+
+      # `dotnet list package --vulnerable` exits 0 even when vulnerabilities are
+      # found, so grep the output to fail the job when any are reported.
+      - name: Scan for known-vulnerable packages
+        run: |
+          set -o pipefail
+          dotnet list "${{ env.DOTNET_SOLUTION }}" package --vulnerable --include-transitive | tee vuln-report.txt
+          if grep -qi "has the following vulnerable packages" vuln-report.txt; then
+            echo "::error::Vulnerable NuGet packages detected. See log above."
+            exit 1
+          fi

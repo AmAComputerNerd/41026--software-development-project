@@ -39,9 +39,13 @@ Canvas assignment imports through the shared backend. Canvas sync keeps one
 primary task per assignment and updates it on later imports without storing a
 separate assessment table.
 
-**Student 4: Tristan Huang (STUDENT-NUM).**  
+**Student 4: Tristan Huang (25322025).**  
 Working directory: `student-4/`  
-TODO: Short summary of microservice, other info
+Account service: Account management and storage. Saves account details and 
+allows the creation and editing of account. Saves passwords securely with a hash,
+and can generate helpful AI Summaries for an account (to be expanded in future 
+releases). Additionally, a 'forgot password' prompt which allows users to receive 
+an email to change password.
 
 **Student 5: William Hannah (25494675).**  
 Working directory: `student-5/`  
@@ -93,6 +97,7 @@ port.
 | `5101`    | `student-1-backend`              | Notifications API. |
 | `5103`    | `student-3-backend`              | Deadlines & tasks API. |
 | `5203`    | `student-3-database` (standalone)| Internal Student 3 persistence API; not host-published by Docker Compose. |
+| `5104`    | `student-4-backend`              | Account API. |
 | `5105`    | `student-5-backend`              | Grades & progress API. |
 | `5110`    | `shared-backend`                 | Canvas gateway. CORS is locked down; only other backends call it. |
 
@@ -195,6 +200,7 @@ Feature set:
 - Assignment extension configuration, scheduled Canvas posts, AI quiz filling, and automation run history.
 - Deadline/task CRUD, course linkage, filtering, and Canvas synchronization.
 - Shared Canvas API gateway, audit database, Docker image, and CI workflow.
+- Account creation, management and AI summary of account
 - Grades & progress slice (student 5) — backend API and frontend
   shell, integrated into the shared dashboard.
 

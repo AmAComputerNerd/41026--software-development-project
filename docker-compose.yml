@@ -43,7 +43,7 @@ services:
             CanvasSync__IntervalMinutes: "2"
         restart: unless-stopped
         healthcheck:
-            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/live"]
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
             interval: 10s
             timeout: 3s
             retries: 5
@@ -132,6 +132,90 @@ services:
             ai-mode:
                 condition: service_healthy
 
+    student-4-database:
+        build:
+            context: ./student-4
+            dockerfile: database/Database/Dockerfile
+        volumes:
+            - student-4-db:/app/Data
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+        networks:
+            - student-4-data
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 15s
+
+    student-4-backend:
+        build:
+            context: ./student-4
+            dockerfile: backend/Api/Dockerfile
+        ports:
+            - "5104:8080"
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+            DatabaseService__BaseUrl: http://student-4-database:8080
+            AiGateway__BaseUrl: http://ai-mode:8080
+            NotificationService__BaseUrl: http://student-4-backend:8080
+            DueSoonReminder__IntervalMinutes: "15"
+            DueSoonReminder__HoursBeforeDue: "24"
+            DueSoonReminder__FinalHoursBeforeDue: "3"
+        networks:
+            - default
+            - student-4-data
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 15s
+        depends_on:
+            student-4-database:
+                condition: service_healthy
+            shared-backend:
+                condition: service_healthy
+            ai-mode:
+                condition: service_healthy
+            mailhog:
+                condition: service_started
+
+    student-4-authentication:
+        build:
+            context: ./student-4
+            dockerfile: authentication/Authentication/Dockerfile
+        ports:
+            - "5114:8080"
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+            DatabaseService__BaseUrl: http://student-4-database:8080
+            Email__Smtp__Host: mailhog
+            Email__Smtp__Port: "1025"
+            Email__Smtp__UseSsl: "false"
+            Email__FromAddress: no-reply@student4.local
+            Email__FromName: Student 4 Account Service
+            Email__PasswordReset__BaseUrl: http://localhost:8080/account/reset-password
+            Email__PasswordReset__TokenLifetimeMinutes: "60"
+        networks:
+            - default
+            - student-4-data
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 15s
+        depends_on:
+            student-4-database:
+                condition: service_healthy
+            mailhog:
+                condition: service_started
+
     student-5-backend:
         build:
             context: ./student-5/backend/GradesManager
@@ -151,7 +235,7 @@ services:
         build:
             context: .
             dockerfile: student-1/frontend/Dockerfile
-
+            
     student-2-frontend:
         build:
             context: .
@@ -161,6 +245,11 @@ services:
         build:
             context: .
             dockerfile: student-3/frontend/Dockerfile
+
+    student-4-frontend:
+        build:
+            context: .
+            dockerfile: student-4/frontend/Dockerfile
 
     student-5-frontend:
         build:
@@ -185,6 +274,13 @@ services:
             retries: 5
             start_period: 10s
 
+    mailhog:
+        image: mailhog/mailhog:latest
+        ports:
+            - "1025:1025"   # SMTP
+            - "8025:8025"   # Web UI
+        restart: unless-stopped
+
     shared-shell:
         build:
             context: .
@@ -204,6 +300,12 @@ services:
                 condition: service_started
             student-3-backend:
                 condition: service_healthy
+            student-4-frontend:
+                condition: service_started
+            student-4-backend:
+                condition: service_healthy
+            student-4-authentication:
+                condition: service_healthy
             student-5-frontend:
                 condition: service_started
             student-5-backend:
@@ -214,9 +316,12 @@ volumes:
     student-1-db:
     student-2-db:
     student-3-db:
+    student-4-db:
     student-5-db:
 
 networks:
     default:
     student-3-data:
+        internal: true
+    student-4-data:
         internal: true
