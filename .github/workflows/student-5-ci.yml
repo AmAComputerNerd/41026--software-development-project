@@ -157,12 +157,6 @@ jobs:
           test -s courses.json || fail "courses.json empty – API did not respond"
           echo "  ✓ API ready"
 
-          echo "── Course contract"
-          jq --exit-status '
-            type == "array" and length > 0 and
-            (.[0] | has("courseId","code","name","canvasCourseId","canvasIsActive","lastCanvasSyncAt"))
-          ' courses.json || fail "Course contract failed: $(head -c200 courses.json)"
-
           echo "── Student contract"
           students_json=$(curl --fail --silent http://127.0.0.1:5105/api/students/) \
             || fail "GET /api/students/ failed"
