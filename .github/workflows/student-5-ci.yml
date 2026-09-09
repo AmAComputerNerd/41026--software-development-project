@@ -159,8 +159,8 @@ jobs:
 
           echo "── Course contract"
           jq --exit-status '
-            type == "array" and (length > 0) and
-            .[0] | has("courseId","code","name","canvasCourseId","canvasIsActive","lastCanvasSyncAt")
+            type == "array" and length > 0 and
+            (.[0] | has("courseId","code","name","canvasCourseId","canvasIsActive","lastCanvasSyncAt"))
           ' courses.json || fail "Course contract failed: $(head -c200 courses.json)"
 
           echo "── Student contract"
