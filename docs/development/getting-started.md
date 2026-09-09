@@ -55,15 +55,18 @@ docker compose logs -f student-1-backend
 # Stop all services
 docker compose down
 
-# Stop and wipe SQLite database volumes (forces fresh seeding)
+# Stop and wipe database volumes (forces fresh seeding)
 docker compose down -v
 ```
 
 Once running, access the services:
 - **Shared Dashboard**: [http://localhost:8080](http://localhost:8080)
 - **Notifications**: [http://localhost:8080/notifications/](http://localhost:8080/notifications/)
+- **Automations**: [http://localhost:8080/automations/](http://localhost:8080/automations/)
 - **Deadlines & Tasks**: [http://localhost:8080/deadlines/](http://localhost:8080/deadlines/)
+- **Account & Auth**: [http://localhost:8080/account/](http://localhost:8080/account/)
 - **Grades & Progress**: [http://localhost:8080/grades/](http://localhost:8080/grades/)
+- **MailHog Web Mailbox**: [http://localhost:8025](http://localhost:8025)
 
 ---
 
@@ -85,31 +88,52 @@ npm run dev --workspace=shared-frontend
 
 # Run student frontends
 npm run dev --workspace=student-1-frontend
+npm run dev --workspace=student-2-frontend
 npm run dev --workspace=student-3-frontend
+npm run dev --workspace=student-4-frontend
 npm run dev --workspace=student-5-frontend
 ```
 
-### C. Running a Backend
-Navigate to the backend project and run:
+### C. Running a Backend & Database
+
+#### Student 1 (Notifications)
+Start PostgreSQL (via Docker or local PostgreSQL on port 5432), then run:
 ```bash
-# Example: Running student-1 notification backend
-cd student-1/backend/Api
-dotnet run
+dotnet run --project student-1/backend/Api/Api.csproj
 ```
 
-Student 3 requires its database service to start first:
+#### Student 2 (Automations)
+```bash
+dotnet run --project student-2/backend/Api/Api.csproj
+```
 
+#### Student 3 (Deadlines & Tasks)
+Start the internal database service first, then the backend:
 ```bash
 dotnet run --project student-3/database/Database/Database.csproj
 # In another terminal:
 dotnet run --project student-3/backend/Api/Api.csproj
 ```
 
-The standalone defaults are `http://localhost:5203` for
-`student-3-database` and `http://localhost:5103` for
-`student-3-backend`. Docker Compose keeps the database service internal.
+#### Student 4 (Account & Authentication)
+Start the database service, auth service, and backend:
+```bash
+dotnet run --project student-4/database/Database/Database.csproj
+# In additional terminals:
+dotnet run --project student-4/authentication/Authentication/Authentication.csproj
+dotnet run --project student-4/backend/Api/Api.csproj
+```
+
+#### Student 5 (Grades & Progress)
+Start the database service, then the backend:
+```bash
+dotnet run --project student-5/database/Database/Database.csproj
+# In another terminal:
+dotnet run --project student-5/backend/GradesManager/GradesManager/GradesManager.csproj
+```
 
 > [!IMPORTANT]
 > When running a backend outside Docker:
 > - Set environment variable `ASPNETCORE_ENVIRONMENT=Development`.
 > - If connecting to `shared-backend` or `ai-mode`, you must provide their URLs via `appsettings.Development.json` or environment variables (e.g. `AiGateway__BaseUrl=http://localhost:8080`).
+

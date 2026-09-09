@@ -65,3 +65,12 @@ When the loop runs, `core/doc_loader.py` automatically reads:
    ```bash
    python tools/agentic_loop.py
    ```
+
+---
+
+## 4. Automatic Logging & Audit Evidence
+
+The runner automatically records evaluation transcripts and structured evidence logs into timestamped folders (e.g. `graphify-out/YYYY-MM-DD/` and `tools/agentic_loop/logs/`):
+- Collector execution traces and observed HTTP responses.
+- LLM proposal and review deliberation outputs.
+- Verification status against the Five Golden Architectural Rules.

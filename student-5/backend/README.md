@@ -6,10 +6,14 @@ ASP.NET Core (.NET 10) Minimal API microservice for course grade calculation, ma
 
 ## 1. Setup & Run
 
+The backend delegates persistence over HTTP to the internal `student-5-database` service.
+
 ```bash
-cd GradesManager
-dotnet restore
-dotnet run
+# Terminal 1: Run Database Service
+dotnet run --project student-5/database/Database/Database.csproj
+
+# Terminal 2: Run Public Backend
+dotnet run --project student-5/backend/GradesManager/GradesManager/GradesManager.csproj
 ```
 
 Runs on host port `5105` (inside Docker: port `8080`).
@@ -25,8 +29,9 @@ Runs on host port `5105` (inside Docker: port `8080`).
 
 ## 3. Database & EF Core
 
-Uses Entity Framework Core with SQLite (`grades.db`). To add migrations:
+Persistence is owned by `student-5/database` using Entity Framework Core with SQLite (`grades.db`). To add migrations:
 
 ```bash
-dotnet ef migrations add <MigrationName> --project GradesManager.csproj
+dotnet ef migrations add <MigrationName> --project student-5/database/Database/Database.csproj
 ```
+

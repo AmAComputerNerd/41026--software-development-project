@@ -10,20 +10,26 @@ This guide documents the automated testing, code validation, and continuous inte
 Run these commands from the repository root or the service's `backend/` directory:
 
 ```bash
-# 1. Run all unit/integration tests for a solution
+# 1. Run all unit/integration tests for solutions
 dotnet test student-1/backend/NotificationService.sln
 dotnet test student-3/backend/DeadlineTaskTracker.sln
 dotnet test shared/backend/SharedBackend.sln
 
 # 2. Check for code formatting compliance
 dotnet format student-1/backend/NotificationService.sln --verify-no-changes
+dotnet format student-2/backend/Api/Api.csproj --verify-no-changes
 dotnet format student-3/backend/DeadlineTaskTracker.sln --verify-no-changes
+dotnet format student-4/backend/Api/Api.csproj --verify-no-changes
+dotnet format student-5/backend/Student5.sln --verify-no-changes
 dotnet format shared/backend/SharedBackend.sln --verify-no-changes
 
 # 3. Check for EF Core migration drift (ensure models match migrations)
-# Student 3 EF Core is owned by its database service
 dotnet ef migrations has-pending-model-changes \
   --project student-3/database/Database/Database.csproj
+dotnet ef migrations has-pending-model-changes \
+  --project student-4/database/Database/Database.csproj
+dotnet ef migrations has-pending-model-changes \
+  --project student-5/database/Database/Database.csproj
 ```
 
 ### Frontend Typechecking & Building
@@ -36,8 +42,18 @@ npm run build --workspaces
 # Or build individual workspaces
 npm run build --workspace=shared-frontend
 npm run build --workspace=student-1-frontend
+npm run build --workspace=student-2-frontend
 npm run build --workspace=student-3-frontend
+npm run build --workspace=student-4-frontend
 npm run build --workspace=student-5-frontend
+```
+
+### End-to-End (E2E) Testing
+Student 1 maintains Playwright end-to-end browser test suites:
+
+```bash
+cd student-1/frontend
+npx playwright test
 ```
 
 ---
@@ -50,9 +66,11 @@ The repository enforces CI checks on all Pull Requests targeting `main` and push
 |---|---|---|
 | **`docker-ci.yml`** | `ai-services/**`, `shared/**`, `student-*/**`, `docker-compose.yml`, `package.json` | Compose contract validation, dynamically discovered parallel image builds, and focused integration smoke tests |
 | **`shared-ci.yml`** | `shared/**` | Frontend build, .NET build/test, `dotnet format` check, EF migrations check, NuGet vulnerability audit |
-| **`student-1-ci.yml`** | `student-1/**` | Notifications frontend typecheck/build, .NET build/test, format check, EF migration check |
+| **`student-1-ci.yml`** | `student-1/**` | Notifications frontend typecheck/build, .NET build/test, Playwright e2e test, format check, EF migration check |
+| **`student-2-ci.yml`** | `student-2/**` | Automations frontend typecheck/build, .NET build, format check, EF migration check |
 | **`student-3-ci.yml`** | `student-3/**` | Deadlines frontend typecheck/build, .NET build/test, format check, EF migration check |
-| **`student-5-ci.yml`** | `student-5/**` | Grades frontend typecheck/build, .NET build/test, format check |
+| **`student-4-ci.yml`** | `student-4/**` | Account & Auth frontend typecheck/build, .NET build, format check, EF migration check |
+| **`student-5-ci.yml`** | `student-5/**` | Grades frontend typecheck/build, .NET build/test, format check, EF migration check |
 
 Docker image targets are discovered from the rendered Compose configuration
 rather than maintained as a second service list. Each image builds in a
@@ -71,3 +89,4 @@ Before opening a PR, ensure:
 3. `npm run build --workspaces` succeeds without TypeScript or Vite errors.
 4. If database models were modified, an EF Core migration was generated and committed.
 5. All commits follow Conventional Commits format (`feat:`, `fix:`, `docs:`, `test:`, `chore:`).
+

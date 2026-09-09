@@ -10,14 +10,16 @@ For the complete extraction process, see
 ## 1. Database Architecture & Boundaries
 
 ### Strict Isolation Rule
-Each persistence-owning service maintains an **independent SQLite database**:
-- `student-1/backend/Api`: `notifications.db` (or configured database name)
-- `student-3/database/Database`: `app.db` in Docker Compose
-- `student-5/backend/Api`: `grades.db`
-- `shared/backend/Api`: `canvas_audit.db`
+Each persistence-owning service maintains an **independent, isolated database**:
+- `student-1`: **PostgreSQL 16** container (`student-1-database`, database: `notifications_db`). Initialized via `student-1/database/init.sql` and EF Core PostgreSQL provider (`Npgsql.EntityFrameworkCore.PostgreSQL`).
+- `student-2`: **SQLite** database (`student-2-db`) managed directly by `student-2/backend/Api`.
+- `student-3`: **SQLite** database (`student-3-db`) owned exclusively by the dedicated `student-3/database/Database` service on private network `student-3-data`.
+- `student-4`: **SQLite** database (`student-4-db`) owned exclusively by the dedicated `student-4/database/Database` service on private network `student-4-data`.
+- `student-5`: **SQLite** database (`student-5-db`) owned exclusively by the dedicated `student-5/database/Database` service on private network `student-5-data`.
+- `shared-backend`: **SQLite** audit database (`shared-db`) managed by `shared/backend/Api`.
 
 > [!CAUTION]
-> **Zero Cross-Database Access**: Microservices must never open another service's SQLite file directly or attach to another database context. Cross-service data requests must always proceed via HTTP API endpoints.
+> **Zero Cross-Database Access**: Microservices must never open another service's database file/connection directly or attach to another database context. Cross-service data requests must always proceed via HTTP API endpoints.
 
 ---
 
@@ -26,24 +28,32 @@ Each persistence-owning service maintains an **independent SQLite database**:
 Whenever you modify an entity class or `DbContext` model configuration:
 
 ### Step 1: Create a Migration
-New slices place migrations in their dedicated database service:
+Run migrations against the dedicated persistence-owning project:
 
 ```bash
+# Student 3
 dotnet ef migrations add <DescriptiveMigrationName> \
-  --project student-N/database/Database/Database.csproj
-```
+  --project student-3/database/Database/Database.csproj
 
-Existing legacy services continue using their current persistence-owning
-project until migrated. For example:
-
-```bash
+# Student 4
 dotnet ef migrations add <DescriptiveMigrationName> \
-  --project student-1/backend/Api/Api.csproj
+  --project student-4/database/Database/Database.csproj
+
+# Student 5
+dotnet ef migrations add <DescriptiveMigrationName> \
+  --project student-5/database/Database/Database.csproj
+
+# Student 2
+dotnet ef migrations add <DescriptiveMigrationName> \
+  --project student-2/backend/Api/Api.csproj
+
+# Shared Backend
+dotnet ef migrations add <DescriptiveMigrationName> \
+  --project shared/backend/Api/Api.csproj
 ```
 
 ### Step 2: Review Generated Migration
-Check the newly generated migration file in the owning project's
-`Migrations/` directory. Verify:
+Check the newly generated migration file in the owning project's `Migrations/` directory. Verify:
 - Up and Down methods are symmetric and reversible.
 - Column types, foreign keys, and indexes match the intended design.
 - No unintended drops or schema truncations occurred.
@@ -54,17 +64,15 @@ dotnet ef database update \
   --project student-N/database/Database/Database.csproj
 ```
 
-In Docker Compose mode, migrations are typically applied automatically during application startup via `context.Database.Migrate()` or `DatabaseMigrator`.
+In Docker Compose mode, migrations are applied automatically during application startup via `context.Database.Migrate()` or `DatabaseMigrator`.
 
-For Student 3, only `student-3-database` may mount `student-3-db` or
-apply migrations. `student-3-backend` accesses persistence exclusively
-through the internal HTTP API.
+Only the owning database service may mount its database volume or apply migrations. The public backend accesses persistence exclusively through its internal HTTP client.
 
 ---
 
 ## 3. Database Seeding Conventions
 
-- Seeding logic resides in dedicated seeder classes (e.g. `DbInitializer.cs` or `DatabaseSeeder.cs`).
+- Seeding logic resides in dedicated seeder classes (e.g. `DbInitializer.cs` or `DatabaseSeeder.cs`, or `init.sql` for PostgreSQL).
 - Seeding should be idempotent (e.g. check `!context.Notifications.Any()` before adding seed data).
 - Timestamps must always be stored in **UTC** (`DateTime.UtcNow`).
 
@@ -74,10 +82,11 @@ through the internal HTTP API.
 
 - **Pending Model Changes Error (`InvalidOperationException`)**:
   - Cause: A model was modified without generating a matching migration.
-  - Fix: Run `dotnet ef migrations add <Name> --project student-N/database/Database/Database.csproj`.
+  - Fix: Run `dotnet ef migrations add <Name> --project <OwningProject>.csproj`.
 - **Database Lock / Busy Errors (`SQLite Error 5: 'database is locked'`)**:
   - Cause: Multiple processes accessing the SQLite file simultaneously without write-ahead logging (WAL).
   - Fix: Enable WAL mode in DbContext setup (`PRAGMA journal_mode=WAL;`).
 - **Resetting Database to Fresh State**:
   - In Docker: `docker compose down -v && docker compose up --build`
-  - Outside Docker: Delete the local `.db` file and run `dotnet ef database update`.
+  - Outside Docker: Delete the local `.db` file or recreate PostgreSQL container, then run `dotnet ef database update`.
+

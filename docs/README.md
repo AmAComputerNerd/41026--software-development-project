@@ -23,7 +23,7 @@ Welcome to the documentation suite for the **41026 Advanced Software Development
 ### 3. Development Runbooks
 - [**Getting Started & Local Setup**](development/getting-started.md) — Step-by-step setup for Docker Compose, standalone .NET backends, standalone Vue frontends, and environment variables.
 - [**Testing & CI Guide**](development/testing-and-ci.md) — How to run unit tests, type-checks, linters, format verification, and understand GitHub Actions CI workflows.
-- [**Database & Migrations Guide**](development/database-and-migrations.md) — Entity Framework Core SQLite database isolation, migrations lifecycle, schema seeding, and queries.
+- [**Database & Migrations Guide**](development/database-and-migrations.md) — Multi-database architecture (PostgreSQL and dedicated internal SQLite database services), migrations lifecycle, and seeding.
 
 ---
 
@@ -39,8 +39,9 @@ Welcome to the documentation suite for the **41026 Advanced Software Development
 - [**`shared/ui-kit/README.md`**](../shared/ui-kit/README.md) — `@better-canvas/ui-kit` design tokens, Neobrutalism CSS primitives, and components.
 - [**`shared/README.md`**](../shared/README.md) — Shared backend Canvas gateway and dashboard shell.
 - [**`ai-services/ai-mode/README.md`**](../ai-services/ai-mode/README.md) — Shared OpenRouter AI gateway.
-- [**`student-1/backend/README.md`**](../student-1/backend/README.md) & [**`student-1/frontend/README.md`**](../student-1/frontend/README.md) — Notifications microservice.
-- [**`student-2/README.md`**](../student-2/README.md) — Automations microservice blueprint.
+- [**`student-1/backend/README.md`**](../student-1/backend/README.md), [**`student-1/database/README.md`**](../student-1/database/README.md) & [**`student-1/frontend/README.md`**](../student-1/frontend/README.md) — Notifications microservice.
+- [**`student-2/README.md`**](../student-2/README.md) — Automations microservice.
 - [**`student-3/README.md`**](../student-3/README.md) — Deadlines & Task Tracker microservice.
-- [**`student-4/README.md`**](../student-4/README.md) — Account microservice blueprint.
+- [**`student-4/README.md`**](../student-4/README.md) — Account & Authentication microservice.
 - [**`student-5/backend/README.md`**](../student-5/backend/README.md) & [**`student-5/frontend/README.md`**](../student-5/frontend/README.md) — Grades & Progress microservice.
+

@@ -46,8 +46,7 @@ This document traces the primary end-to-end data flows and lifecycle sequences a
 3. `shared-backend` forwards request with `CANVAS_API_TOKEN` to Canvas.
 4. Canvas returns course and assignment entities containing HTML descriptions.
 5. `shared-backend` cleans untrusted markup, producing clean plain text.
-6. `student-3-backend` validates and submits one complete snapshot to
-   `student-3-database`.
+6. `student-3-backend` validates and submits one complete snapshot to `student-3-database`.
 7. `student-3-database` performs atomic database upserts:
    - New assignments become active tasks.
    - Deleted assignments in Canvas receive `CanvasIsActive = false` (never hard-deleted).
@@ -55,48 +54,35 @@ This document traces the primary end-to-end data flows and lifecycle sequences a
 
 ---
 
-## 2. Proactive Deadline Reminder & Inline Completion
+## 2. Proactive Deadline Reminders & Task Push Notifications
 
 ```
-[ student-3-backend Background Service ]
+[ student-3-backend (Task Creation / Worker) ]
         │
-        │ 1. GET /internal/reminders/due
-        ▼
-[ student-3-database ]
-        │
-        │ 2. Read /app/Data/app.db
-        ▼
-[ student-3-backend ]
-        │
-        │ 3. POST /notifications/push
-        │    Payload: { Title, DueDate, RelatedEntityType: "Task", RelatedEntityId: 42 }
+        │ 1. Task created or due reminder detected
+        │ 2. POST /notifications/push
+        │    Payload: { Title, Type: "Deadline", Source: "deadlines", RelatedEntityId: task.Id }
         ▼
 [ student-1-backend ]
         │
-        │ 4. Persist Notification (Type: Deadline)
-        │ 5. Publish Event to Stream Broker
+        │ 3. Insert notification into PostgreSQL (notifications_db)
+        │ 4. Publish Event to NotificationStreamBroker
         ▼
 [ NotificationStreamBroker ] ───(SSE Event: "notification")───► [ student-1-frontend ]
                                                                       │
-                                                                      │ 6. Render Action Buttons
+                                                                      │ 5. Render Action Buttons
                                                                       │    [MARK COMPLETE] [AI BREAK DOWN]
                                                                       ▼
                                                               [ User clicks MARK COMPLETE ]
                                                                       │
-                                                                      │ 7. PUT /api/deadlines/tasks/42
+                                                                      │ 6. PUT /api/deadlines/tasks/{id}
                                                                       ▼
                                                               [ student-3-backend ]
+                                                                      │
+                                                                      │ 7. PUT /internal/tasks/{id}
+                                                                      ▼
+                                                              [ student-3-database ]
 ```
-
-### Steps:
-1. `DueSoonReminderBackgroundService` asks `student-3-database` for eligible tasks.
-2. The backend sends an HTTP push request to `student-1-backend` with the task identity.
-3. After successful delivery, the backend records `DueSoonReminderSentAtUtc`
-   through `student-3-database`.
-4. `student-1-backend` persists the notification and emits a real-time event.
-5. The user sees a toast alert and interactive action buttons.
-6. Clicking `MARK COMPLETE` calls `student-3-backend`, which sends one
-   transactional update command to `student-3-database`.
 
 ---
 
@@ -137,7 +123,7 @@ This document traces the primary end-to-end data flows and lifecycle sequences a
         ▼
 [ student-1-backend ]
         │
-        │ 3. Query active notifications & user preferences from SQLite
+        │ 3. Query active notifications & user preferences from PostgreSQL
         │ 4. Format prompt with dynamic notification grounding context
         │ 5. POST /v1/chat/completions
         ▼
@@ -154,18 +140,74 @@ This document traces the primary end-to-end data flows and lifecycle sequences a
 
 ---
 
-## 5. Cross-Service Action Triggers (`AI BREAK DOWN` & `GRADE IMPACT`)
+## 5. Automated Execution Flow (Scheduled Canvas Posts & AI Quiz Filling)
+
+```
+[ student-2-backend Periodic Worker (every 30s) ]
+        │
+        │ 1. Check enabled automations from SQLite
+        │ 2. Generate immutable candidate execution key
+        │ 3. Atomically record run state as RUN
+        ▼
+┌───────────────────────────────────────┴───────────────────────────────────────┐
+│ Scheduled Post Flow                           Quiz Filler Flow                │
+│                                                                               │
+│ 4a. POST /api/canvas/conversations            4b. POST /api/canvas/.../quiz   │
+│     (via shared-backend)                          submission start            │
+│ 5a. Canvas Conversation Created               5b. GET quiz questions          │
+│                                               6b. Call ai-mode for answers    │
+│                                               7b. POST draft answers to quiz  │
+│                                                   (submission left in draft)  │
+└───────────────────────────────────────┬───────────────────────────────────────┘
+                                        │
+                                        │ 8. Mark run state SUC / FAI in SQLite
+                                        ▼
+                               [ student-2-frontend ]
+                               (Displays updated run history)
+```
+
+---
+
+## 6. Account Password Reset Flow (MailHog SMTP)
+
+```
+[ User on /account/forgot-password ]
+        │
+        │ 1. POST /api/auth/forgot-password { email: "student@example.edu" }
+        ▼
+[ student-4-authentication ]
+        │
+        │ 2. Generate cryptographic reset token
+        │ 3. Dispatch SMTP message to mailhog:1025
+        ▼
+[ MailHog (SMTP Server) ] ──► Email available at http://localhost:8025
+        │
+        │ 4. User copies reset token or clicks email link
+        ▼
+[ User on /account/reset-password ]
+        │
+        │ 5. POST /api/auth/reset-password { token: "...", newPassword: "..." }
+        ▼
+[ student-4-authentication ]
+        │
+        │ 6. Verify token & update password hash in student-4-database
+        ▼
+[ student-4-database (EF Core SQLite) ]
+```
+
+---
+
+## 7. Cross-Service Action Triggers (`AI BREAK DOWN` & `GRADE IMPACT`)
 
 ### AI Subtask Breakdown Flow
 1. User clicks `AI BREAK DOWN` on a Deadline notification.
 2. `student-1-frontend` opens `BreakdownDialog.vue`.
 3. Modal calls `POST /api/deadlines/tasks/{id}/ai-breakdown` on `student-3-backend`.
-4. `student-3-backend` loads assignment context through `student-3-database`,
-   calls `ai-mode`, validates generated subtasks, and sends one bulk command
-   back to the database service for atomic persistence.
+4. `student-3-backend` loads assignment context through `student-3-database`, calls `ai-mode`, validates generated subtasks, and sends one bulk command back to the database service for atomic persistence.
 
 ### Grade Impact Simulation Flow
 1. User clicks `GRADE IMPACT` on a Grade notification.
 2. `student-1-frontend` opens `GradeImpactDialog.vue`.
-3. Modal retrieves assignment mark weightings and submits simulated scores to `PUT /api/grades/api/assignment/marks/` on `student-5-backend`.
+3. Modal retrieves assignment mark weightings and submits simulated scores to `PUT /api/grades/api/assignment/marks/` on `student-5-backend` (which persists via `student-5-database`).
 4. Student visualizes live GPA / course percentage impact.
+
