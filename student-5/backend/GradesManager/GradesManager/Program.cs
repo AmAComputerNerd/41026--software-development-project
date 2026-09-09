@@ -1,9 +1,6 @@
 using GradesManager.Configuration;
-using GradesManager.Data;
 using GradesManager.Endpoints;
-using GradesManager.Extensions;
 using GradesManager.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 
@@ -19,17 +16,28 @@ builder.Services
         options => IsAbsoluteHttpUrl(options.BaseUrl),
         "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL.")
     .ValidateOnStart();
-builder.Services.AddDbContext<AppDbContext>(options =>
-{
-    options
-        .UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
-        .UseSeeding((db, _) => DbSeeder.SeedData((AppDbContext)db))
-        .UseAsyncSeeding((db, _, _) =>
-        {
-            DbSeeder.SeedData((AppDbContext)db);
-            return Task.CompletedTask;
-        });
-});
+builder.Services
+    .AddOptions<DatabaseServiceOptions>()
+    .Bind(builder.Configuration.GetSection(DatabaseServiceOptions.SectionName))
+    .Validate(
+        options => IsAbsoluteHttpUrl(options.BaseUrl),
+        "DatabaseService:BaseUrl must be an absolute HTTP or HTTPS URL.")
+    .ValidateOnStart();
+
+// Database client
+builder.Services
+    .AddHttpClient<IDatabaseClient, HttpDatabaseClient>((services, client) =>
+        ConfigureClient(
+            client,
+            services.GetRequiredService<IOptions<DatabaseServiceOptions>>().Value.BaseUrl))
+    .AddStandardResilienceHandler(options =>
+    {
+        options.Retry.MaxRetryAttempts = 2;
+        options.Retry.Delay = TimeSpan.FromMilliseconds(250);
+        options.Retry.DisableForUnsafeHttpMethods();
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(35);
+    });
 builder.Services
     .AddHttpClient<IAiTaskService, AiTaskService>((services, client) =>
         ConfigureClient(
@@ -44,6 +52,7 @@ builder.Services
         options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(120);
         options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(190);
     });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -54,14 +63,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//map endpoints
+// Map endpoints
 app.MapCourseEndpoints();
 app.MapStudentEndpoints();
 app.MapAssignmentEndpoints();
 app.MapAiEndpoints();
 
 app.UseHttpsRedirection();
-await app.InitialiseDatabaseAsync();
 
 app.Run();
 

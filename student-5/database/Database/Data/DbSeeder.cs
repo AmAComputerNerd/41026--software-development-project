@@ -1,4 +1,4 @@
-﻿using GradesManager.Models;
+using GradesManager.Models;
 
 namespace GradesManager.Data
 {

@@ -1,7 +1,6 @@
-﻿using GradesManager.Data;
-using GradesManager.Extensions;
+﻿using GradesManager.DTOs;
+using GradesManager.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace GradesManager.Endpoints
 {
@@ -16,30 +15,36 @@ namespace GradesManager.Endpoints
 
             return endpoints;
         }
+
         private static async Task<IResult> GetCourses(
-        AppDbContext db,
-        bool includeInactiveCanvas = false)
+            IDatabaseClient databaseClient,
+            bool includeInactiveCanvas = false,
+            CancellationToken cancellationToken = default)
         {
-            var query = db.Courses.AsNoTracking();
-            if (!includeInactiveCanvas)
+            var courses = await databaseClient.GetCoursesAsync(includeInactiveCanvas, cancellationToken);
+
+            if (courses == null)
             {
-                query = query.Where(course => course.CanvasIsActive != false);
+                return Results.NotFound();
             }
 
-            var courses = await query.ToListAsync();
-
-            var courseDtos = courses.Select(c => c.ToDto());
+            var courseDtos = courses.Select(c => new CourseDto(
+                c.CourseId, c.Code, c.Name, c.CanvasCourseId, c.CanvasIsActive, c.LastCanvasSyncAt));
 
             return Results.Ok(courseDtos);
         }
 
-        private static async Task<IResult> GetCourse([FromRoute] Guid id, AppDbContext db)
+        private static async Task<IResult> GetCourse(
+            [FromRoute] Guid id,
+            IDatabaseClient databaseClient,
+            CancellationToken cancellationToken = default)
         {
-            var course = await db.Courses
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.CourseId == id);
+            var course = await databaseClient.GetCourseAsync(id, cancellationToken);
 
-            return course == null ? Results.NotFound() : Results.Ok(course.ToDto());
+            return course == null
+                ? Results.NotFound()
+                : Results.Ok(new CourseDto(
+                    course.CourseId, course.Code, course.Name, course.CanvasCourseId, course.CanvasIsActive, course.LastCanvasSyncAt));
         }
     }
 }

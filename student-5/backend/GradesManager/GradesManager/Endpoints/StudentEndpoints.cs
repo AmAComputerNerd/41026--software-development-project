@@ -1,8 +1,7 @@
-﻿using GradesManager.Data;
+﻿using GradesManager.Contracts;
 using GradesManager.DTOs;
-using GradesManager.Extensions;
+using GradesManager.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace GradesManager.Endpoints
 {
@@ -21,16 +20,37 @@ namespace GradesManager.Endpoints
             return endpoints;
         }
 
-        private static async Task<IResult> GetStudent([FromRoute] Guid id, AppDbContext db)
+        private static async Task<IResult> GetStudents(
+            IDatabaseClient databaseClient,
+            CancellationToken cancellationToken = default)
         {
-            var student = await db.Students
-                .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.StudentId == id);
+            var students = await databaseClient.GetStudentsAsync(cancellationToken);
 
-            return student == null ? Results.NotFound() : Results.Ok(student.ToDto());
+            if (students == null)
+            {
+                return Results.NotFound();
+            }
+
+            var studentsDtos = students.Select(s => new StudentDto(s.StudentId, s.Name, s.IdealMark));
+            return Results.Ok(studentsDtos);
         }
 
-        private static async Task<IResult> AddIdealMark(ModifyIdealMarkDto requestDto, AppDbContext db)
+        private static async Task<IResult> GetStudent(
+            [FromRoute] Guid id,
+            IDatabaseClient databaseClient,
+            CancellationToken cancellationToken = default)
+        {
+            var student = await databaseClient.GetStudentAsync(id, cancellationToken);
+
+            return student == null
+                ? Results.NotFound()
+                : Results.Ok(new StudentDto(student.StudentId, student.Name, student.IdealMark));
+        }
+
+        private static async Task<IResult> AddIdealMark(
+            ModifyIdealMarkDto requestDto,
+            IDatabaseClient databaseClient,
+            CancellationToken cancellationToken = default)
         {
             if (requestDto.idealMark is null)
             {
@@ -47,8 +67,7 @@ namespace GradesManager.Endpoints
                 return Results.BadRequest("Student ID cannot be empty.");
             }
 
-            var student = await db.Students
-            .FindAsync(requestDto.StudentId);
+            var student = await databaseClient.GetStudentAsync(requestDto.StudentId, cancellationToken);
 
             if (student is null)
             {
@@ -60,12 +79,18 @@ namespace GradesManager.Endpoints
                 return Results.BadRequest("Ideal mark has already been set for this student.");
             }
 
-            student.IdealMark = requestDto.idealMark.Value;
-            await db.SaveChangesAsync();
-            return Results.Ok(student.ToDto());
+            var updatedStudent = await databaseClient.UpdateStudentAsync(requestDto.StudentId, new UpdateStudentCommand(
+                requestDto.StudentId, student.Name, requestDto.idealMark.Value), cancellationToken);
+
+            return updatedStudent == null
+                ? Results.NotFound()
+                : Results.Ok(new StudentDto(updatedStudent.StudentId, updatedStudent.Name, updatedStudent.IdealMark));
         }
 
-        private static async Task<IResult> UpdateIdealMark(ModifyIdealMarkDto requestDto, AppDbContext db)
+        private static async Task<IResult> UpdateIdealMark(
+            ModifyIdealMarkDto requestDto,
+            IDatabaseClient databaseClient,
+            CancellationToken cancellationToken = default)
         {
             if (requestDto.idealMark is null)
             {
@@ -82,8 +107,7 @@ namespace GradesManager.Endpoints
                 return Results.BadRequest("Student ID cannot be empty.");
             }
 
-            var student = await db.Students
-            .FindAsync(requestDto.StudentId);
+            var student = await databaseClient.GetStudentAsync(requestDto.StudentId, cancellationToken);
 
             if (student is null)
             {
@@ -95,15 +119,20 @@ namespace GradesManager.Endpoints
                 return Results.BadRequest("Ideal mark has not been set for this student.");
             }
 
-            student.IdealMark = requestDto.idealMark.Value;
-            await db.SaveChangesAsync();
-            return Results.Ok(student.ToDto());
+            var updatedStudent = await databaseClient.UpdateStudentAsync(requestDto.StudentId, new UpdateStudentCommand(
+                requestDto.StudentId, student.Name, requestDto.idealMark.Value), cancellationToken);
+
+            return updatedStudent == null
+                ? Results.NotFound()
+                : Results.Ok(new StudentDto(updatedStudent.StudentId, updatedStudent.Name, updatedStudent.IdealMark));
         }
 
-        private static async Task<IResult> DeleteIdealMark([FromRoute] Guid studentId, AppDbContext db)
+        private static async Task<IResult> DeleteIdealMark(
+            [FromRoute] Guid studentId,
+            IDatabaseClient databaseClient,
+            CancellationToken cancellationToken = default)
         {
-            var student = await db.Students
-                .FindAsync(studentId);
+            var student = await databaseClient.GetStudentAsync(studentId, cancellationToken);
 
             if (student is null)
             {
@@ -114,22 +143,13 @@ namespace GradesManager.Endpoints
             {
                 return Results.BadRequest("No ideal mark found for this student.");
             }
-            student.IdealMark = null;
-            await db.SaveChangesAsync();
 
-            return Results.Ok();
-        }
+            var updatedStudent = await databaseClient.UpdateStudentAsync(studentId, new UpdateStudentCommand(
+                studentId, student.Name, null), cancellationToken);
 
-        private static async Task<IResult> GetStudents(
-        AppDbContext db)
-        {
-            var query = db.Students.AsNoTracking();
-
-            var students = await query.ToListAsync();
-
-            var studentsDtos = students.Select(c => c.ToDto());
-
-            return Results.Ok(studentsDtos);
+            return updatedStudent == null
+                ? Results.NotFound()
+                : Results.Ok();
         }
     }
 }

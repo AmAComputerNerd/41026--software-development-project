@@ -1,4 +1,4 @@
-﻿using GradesManager.Models;
+﻿using GradesManager.Contracts;
 
 namespace GradesManager.Services
 {
@@ -10,5 +10,5 @@ namespace GradesManager.Services
     }
 
     public sealed record AiRecommendationContext(
-        List<Assignment> Assignments);
+        List<AssignmentRecord> Assignments);
 }

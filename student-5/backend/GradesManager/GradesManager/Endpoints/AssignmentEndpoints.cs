@@ -1,8 +1,7 @@
-﻿using GradesManager.Data;
+﻿using GradesManager.Contracts;
 using GradesManager.DTOs;
-using GradesManager.Extensions;
+using GradesManager.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace GradesManager.Endpoints
 {
@@ -23,152 +22,176 @@ namespace GradesManager.Endpoints
             return endpoints;
         }
 
-        private static async Task<IResult> GetAssignment([FromRoute] Guid id, AppDbContext db)
+        private static async Task<IResult> GetAssignment(
+            [FromRoute] Guid id,
+            IDatabaseClient databaseClient,
+            CancellationToken cancellationToken = default)
         {
-            var assignment = await db.Assignments
-                .AsNoTracking()
-                .FirstOrDefaultAsync(a => a.AssignmentId == id);
-            return assignment == null ? Results.NotFound() : Results.Ok(assignment.ToDto());
+            var assignment = await databaseClient.GetAssignmentAsync(id, cancellationToken);
+
+            return assignment == null
+                ? Results.NotFound()
+                : Results.Ok(new AssignmentDto(
+                    assignment.AssignmentId, assignment.CourseId, assignment.Name, assignment.Weight, assignment.MaxMark, assignment.Completed));
         }
 
-        private static async Task<IResult> GetAssignmentsByStudent([FromRoute] Guid studentId, AppDbContext db)
+        private static async Task<IResult> GetAssignmentsByStudent(
+            [FromRoute] Guid studentId,
+            IDatabaseClient databaseClient,
+            CancellationToken cancellationToken = default)
         {
             if (studentId == Guid.Empty)
             {
                 return Results.BadRequest("Student ID cannot be empty.");
             }
 
-            var student = await db.Students
-            .FindAsync(studentId);
+            var assignments = await databaseClient.GetAssignmentsByStudentAsync(studentId, cancellationToken);
 
-            if (student is null)
+            if (assignments == null)
             {
                 return Results.NotFound();
             }
 
-            var assignments = await db.StudentAssignments
-                .Where(sa => sa.StudentId == studentId)
-                .Select(sa => sa.Assignment)
-                .ToListAsync();
-
-            return Results.Ok(assignments.Select(a => a.ToDto()));
-
+            return Results.Ok(assignments.Select(a => new AssignmentDto(
+                a.AssignmentId, a.CourseId, a.Name, a.Weight, a.MaxMark, a.Completed)));
         }
 
-        private static async Task<IResult> GetAssignmentsByCourse([FromRoute] Guid courseId, AppDbContext db)
+        private static async Task<IResult> GetAssignmentsByCourse(
+            [FromRoute] Guid courseId,
+            IDatabaseClient databaseClient,
+            CancellationToken cancellationToken = default)
         {
             if (courseId == Guid.Empty)
             {
                 return Results.BadRequest("Course ID cannot be empty.");
             }
 
-            var course = await db.Courses
-            .FindAsync(courseId);
+            var assignments = await databaseClient.GetAssignmentsByCourseAsync(courseId, cancellationToken);
 
-            if (course is null)
+            if (assignments == null)
             {
                 return Results.NotFound();
             }
 
-            var assignments = await db.Assignments
-                .Where(a => a.CourseId == courseId)
-                .ToListAsync();
-
-            return Results.Ok(assignments.Select(a => a.ToDto()));
-
+            return Results.Ok(assignments.Select(a => new AssignmentDto(
+                a.AssignmentId, a.CourseId, a.Name, a.Weight, a.MaxMark, a.Completed)));
         }
 
-        private static async Task<IResult> GetStudentMarks([FromRoute] Guid studentId, AppDbContext db)
+        private static async Task<IResult> GetStudentMarks(
+            [FromRoute] Guid studentId,
+            IDatabaseClient databaseClient,
+            CancellationToken cancellationToken = default)
         {
             if (studentId == Guid.Empty)
             {
                 return Results.BadRequest("Student ID cannot be empty.");
             }
-            var student = await db.Students
-            .FindAsync(studentId);
-            if (student is null)
+
+            var studentAssignments = await databaseClient.GetStudentMarksAsync(studentId, cancellationToken);
+
+            if (studentAssignments == null)
             {
                 return Results.NotFound();
             }
-            var studentAssignments = await db.StudentAssignments
-                .Where(sa => sa.StudentId == studentId)
-                .ToListAsync();
-            return Results.Ok(studentAssignments.Select(sa => sa.ToDto()));
+
+            return Results.Ok(studentAssignments.Select(sa => new StudentAssignmentDto(
+                sa.StudentId, sa.AssignmentId, sa.TempMark, sa.FinalMark)));
         }
 
-        private static async Task<IResult> AddTempMark(ModifyTempMarkDto modifyTempMarkDto, AppDbContext db)
+        private static async Task<IResult> AddTempMark(
+            ModifyTempMarkDto modifyTempMarkDto,
+            IDatabaseClient databaseClient,
+            CancellationToken cancellationToken = default)
         {
             if (modifyTempMarkDto.StudentId == Guid.Empty || modifyTempMarkDto.AssignmentId == Guid.Empty)
             {
                 return Results.BadRequest("Student ID and Assignment ID cannot be empty.");
             }
-            var studentAssignment = await db.StudentAssignments
-                .FirstOrDefaultAsync(sa => sa.StudentId == modifyTempMarkDto.StudentId && sa.AssignmentId == modifyTempMarkDto.AssignmentId);
-            if (studentAssignment is null)
+
+            var studentAssignments = await databaseClient.GetStudentMarksAsync(modifyTempMarkDto.StudentId, cancellationToken);
+            var existing = studentAssignments?.FirstOrDefault(sa => sa.AssignmentId == modifyTempMarkDto.AssignmentId);
+
+            if (existing != null)
             {
-                return Results.NotFound();
+                if (existing.TempMark.HasValue)
+                {
+                    return Results.BadRequest("Temporary mark already exists. Use the update endpoint to modify it.");
+                }
+
+                var updated = await databaseClient.UpdateStudentAssignmentAsync(new UpdateStudentAssignmentCommand(
+                    modifyTempMarkDto.StudentId, modifyTempMarkDto.AssignmentId, modifyTempMarkDto.TempMark, null), cancellationToken);
+
+                return updated == null
+                    ? Results.NotFound()
+                    : Results.Ok(new StudentAssignmentDto(updated.StudentId, updated.AssignmentId, updated.TempMark, updated.FinalMark));
             }
 
-            if (studentAssignment.TempMark.HasValue)
-            {
-                return Results.BadRequest("Temporary mark already exists. Use the update endpoint to modify it.");
-            }
+            var created = await databaseClient.CreateStudentAssignmentAsync(new CreateStudentAssignmentCommand(
+                modifyTempMarkDto.StudentId, modifyTempMarkDto.AssignmentId, modifyTempMarkDto.TempMark, null), cancellationToken);
 
-            studentAssignment.TempMark = modifyTempMarkDto.TempMark;
-            await db.SaveChangesAsync();
-            return Results.Ok(studentAssignment.ToDto());
+            return created == null
+                ? Results.BadRequest("Could not create student assignment.")
+                : Results.Ok(new StudentAssignmentDto(created.StudentId, created.AssignmentId, created.TempMark, created.FinalMark));
         }
 
-        private static async Task<IResult> UpdateTempMark(ModifyTempMarkDto modifyTempMarkDto, AppDbContext db)
+        private static async Task<IResult> UpdateTempMark(
+            ModifyTempMarkDto modifyTempMarkDto,
+            IDatabaseClient databaseClient,
+            CancellationToken cancellationToken = default)
         {
             if (modifyTempMarkDto.StudentId == Guid.Empty || modifyTempMarkDto.AssignmentId == Guid.Empty)
             {
                 return Results.BadRequest("Student ID and Assignment ID cannot be empty.");
             }
-            var studentAssignment = await db.StudentAssignments
-                .FirstOrDefaultAsync(sa => sa.StudentId == modifyTempMarkDto.StudentId && sa.AssignmentId == modifyTempMarkDto.AssignmentId);
-            if (studentAssignment is null)
+
+            var studentAssignments = await databaseClient.GetStudentMarksAsync(modifyTempMarkDto.StudentId, cancellationToken);
+            var existing = studentAssignments?.FirstOrDefault(sa => sa.AssignmentId == modifyTempMarkDto.AssignmentId);
+
+            if (existing == null)
             {
                 return Results.NotFound();
             }
 
-            if (!studentAssignment.TempMark.HasValue)
+            if (!existing.TempMark.HasValue)
             {
                 return Results.BadRequest("No temporary mark exists to update.");
             }
 
-            studentAssignment.TempMark = modifyTempMarkDto.TempMark;
-            await db.SaveChangesAsync();
-            return Results.Ok(studentAssignment.ToDto());
+            var updated = await databaseClient.UpdateStudentAssignmentAsync(new UpdateStudentAssignmentCommand(
+                modifyTempMarkDto.StudentId, modifyTempMarkDto.AssignmentId, modifyTempMarkDto.TempMark, existing.FinalMark), cancellationToken);
+
+            return updated == null
+                ? Results.NotFound()
+                : Results.Ok(new StudentAssignmentDto(updated.StudentId, updated.AssignmentId, updated.TempMark, updated.FinalMark));
         }
 
         private static async Task<IResult> DeleteTempMark(
             [FromRoute] Guid studentId,
             [FromRoute] Guid assignmentId,
-            AppDbContext db)
+            IDatabaseClient databaseClient,
+            CancellationToken cancellationToken = default)
         {
             if (studentId == Guid.Empty || assignmentId == Guid.Empty)
             {
                 return Results.BadRequest("Student ID and Assignment ID cannot be empty.");
             }
 
-            var studentAssignment = await db.StudentAssignments
-                .FirstOrDefaultAsync(sa => sa.StudentId == studentId && sa.AssignmentId == assignmentId);
+            var studentAssignments = await databaseClient.GetStudentMarksAsync(studentId, cancellationToken);
+            var existing = studentAssignments?.FirstOrDefault(sa => sa.AssignmentId == assignmentId);
 
-            if (studentAssignment is null)
+            if (existing == null)
             {
                 return Results.NotFound();
             }
 
-            if (!studentAssignment.TempMark.HasValue)
+            if (!existing.TempMark.HasValue)
             {
                 return Results.BadRequest("No temporary mark exists to delete.");
             }
 
-            studentAssignment.TempMark = null;
-            await db.SaveChangesAsync();
-            return Results.NoContent();
-        }
+            var deleted = await databaseClient.DeleteStudentAssignmentAsync(studentId, assignmentId, cancellationToken);
 
+            return deleted ? Results.NoContent() : Results.NotFound();
+        }
     }
 }

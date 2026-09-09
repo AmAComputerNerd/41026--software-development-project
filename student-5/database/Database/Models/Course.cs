@@ -1,4 +1,4 @@
-﻿namespace GradesManager.Models
+namespace GradesManager.Models
 {
     public class Course
     {

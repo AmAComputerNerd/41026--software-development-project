@@ -1,3 +1,5 @@
 <Solution>
   <Project Path="GradesManager/GradesManager.csproj" />
+  <Project Path="../../contracts/Contracts/Contracts.csproj" />
+  <Project Path="../../database/Database/Database.csproj" />
 </Solution>

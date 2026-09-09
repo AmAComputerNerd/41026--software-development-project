@@ -1,4 +1,4 @@
-﻿using GradesManager.Data;
+using GradesManager.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace GradesManager.Extensions
