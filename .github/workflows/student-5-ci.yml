@@ -157,12 +157,23 @@ jobs:
           test -s courses.json || fail "courses.json empty – API did not respond"
           echo "  ✓ API ready"
 
+          echo "── Course contract"
+          jq --exit-status '
+            type == "array" and length > 0
+          ' courses.json || fail "Course contract failed: $(head -c200 courses.json)"
+          jq --exit-status '
+            .[0] | has("courseId") and has("code") and has("name")
+              and has("canvasCourseId") and has("canvasIsActive") and has("lastCanvasSyncAt")
+          ' courses.json || fail "Course contract failed: $(head -c200 courses.json)"
+
           echo "── Student contract"
           students_json=$(curl --fail --silent http://127.0.0.1:5105/api/students/) \
             || fail "GET /api/students/ failed"
           jq --exit-status '
-            type == "array" and (length > 0) and
-            .[0] | has("studentId","name","idealMark")
+            type == "array" and length > 0
+          ' <<< "$students_json" || fail "Student contract failed: $students_json"
+          jq --exit-status '
+            .[0] | has("studentId") and has("name") and has("idealMark")
           ' <<< "$students_json" || fail "Student contract failed: $students_json"
           student_id=$(jq --exit-status --raw-output '.[0].studentId' <<< "$students_json")
           echo "  student_id=$student_id"
@@ -171,8 +182,11 @@ jobs:
           assignments_json=$(curl --fail --silent "http://127.0.0.1:5105/api/assignment/student/$student_id") \
             || fail "GET /api/assignment/student/$student_id failed"
           jq --exit-status '
-            type == "array" and (length > 0) and
-            .[0] | has("assignmentId","courseId","name","weight","maxMark","completed")
+            type == "array" and length > 0
+          ' <<< "$assignments_json" || fail "Assignment contract failed: $assignments_json"
+          jq --exit-status '
+            .[0] | has("assignmentId") and has("courseId") and has("name")
+              and has("weight") and has("maxMark") and has("completed")
           ' <<< "$assignments_json" || fail "Assignment contract failed: $assignments_json"
           assignment_id=$(jq --exit-status --raw-output '.[0].assignmentId' <<< "$assignments_json")
           echo "  assignment_id=$assignment_id"
@@ -181,8 +195,11 @@ jobs:
           marks_json=$(curl --fail --silent "http://127.0.0.1:5105/api/assignment/marks/$student_id") \
             || fail "GET /api/assignment/marks/$student_id failed"
           jq --exit-status '
-            type == "array" and (length > 0) and
-            .[0] | has("studentId","assignmentId","tempMark","finalMark")
+            type == "array" and length > 0
+          ' <<< "$marks_json" || fail "Marks contract failed: $marks_json"
+          jq --exit-status '
+            .[0] | has("studentId") and has("assignmentId")
+              and has("tempMark") and has("finalMark")
           ' <<< "$marks_json" || fail "Marks contract failed: $marks_json"
 
           echo "── POST temp mark"
@@ -192,7 +209,8 @@ jobs:
               http://127.0.0.1:5105/api/assignment/marks/) \
             || fail "POST /api/assignment/marks/ failed"
           jq --exit-status '
-            has("studentId","assignmentId","tempMark","finalMark") and .tempMark == 85
+            has("studentId") and has("assignmentId")
+              and has("tempMark") and has("finalMark") and .tempMark == 85
           ' <<< "$post_result" || fail "POST contract failed: $post_result"
 
           echo "── PUT temp mark"
@@ -202,7 +220,8 @@ jobs:
               http://127.0.0.1:5105/api/assignment/marks/) \
             || fail "PUT /api/assignment/marks/ failed"
           jq --exit-status '
-            has("studentId","assignmentId","tempMark","finalMark") and .tempMark == 92
+            has("studentId") and has("assignmentId")
+              and has("tempMark") and has("finalMark") and .tempMark == 92
           ' <<< "$put_result" || fail "PUT contract failed: $put_result"
 
           echo "── DELETE temp mark"
