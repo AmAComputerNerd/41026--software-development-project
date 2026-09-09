@@ -2,7 +2,7 @@ namespace Api.Models;
 
 public class NotificationPreference
 {
-    public Guid Id { get; }
+    public Guid Id { get; set; }
     public Guid StudentId { get; set; }
     public NotificationType Type { get; set; }
     public NotificationChannel Channel { get; set; }
