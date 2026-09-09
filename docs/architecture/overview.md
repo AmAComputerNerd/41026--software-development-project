@@ -9,52 +9,42 @@ Current architectural state of the **41026 Advanced Software Development Project
 The application is structured as a decentralized microservices architecture composed of independent vertical slices running inside a Docker network behind an Nginx reverse proxy shell (`shared-shell`).
 
 ```
-                                      [ Client Browser ]
-                                               │
-                                      (HTTP: Port 8080)
-                                               ▼
-                         ┌───────────────────────────────────────────┐
-                         │           shared-shell (Nginx)            │
-                         │   • /              -> Dashboard (Vue 3)   │
-                         │   • /notifications -> student-1-frontend  │
-                         │   • /automations   -> student-2-frontend  │
-                         │   • /deadlines     -> student-3-frontend  │
-                         │   • /account       -> student-4-frontend  │
-                         │   • /grades        -> student-5-frontend  │
-                         │   • /api/*         -> Proxied to backends │
-                         └─────────────────┬───┬───┬─────────────────┘
-                                           │   │   │
-                  ┌────────────────────────┘   │   └────────────────────────┐
-                  ▼                            ▼                            ▼
-      ┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐
-      │  student-1-frontend   │   │  student-3-frontend   │   │  student-5-frontend   │
-      │  (Notifications UI)   │   │  (Deadlines & Tasks)  │   │  (Grades & Progress)  │
-      └───────────┬───────────┘   └───────────┬───────────┘   └───────────┬───────────┘
-                  │ /api/notifications/*      │ /api/deadlines/*          │ /api/grades/*
-                  ▼                           ▼                           ▼
-      ┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐
-      │   student-1-backend   │   │   student-3-backend   │   │   student-5-backend   │
-      │      (Port 5101)      │   │      (Port 5103)      │   │      (Port 5105)      │
-      │     [Public API]      │   │     [Public API]      │   │     [Public API]      │
-      └───────────┬───────────┘   └───────────┬───────────┘   └───────────┬───────────┘
-                  │ HTTP                      │ HTTP                      │ HTTP
-                  ▼                           ▼                           ▼
-      ┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐
-      │  student-1-database   │   │  student-3-database   │   │  student-5-database   │
-      │    [PostgreSQL 16]    │   │   [EF Core: app.db]   │   │   [EF Core: app.db]   │
-      └───────────────────────┘   └───────────────────────┘   └───────────────────────┘
+[ Client Browser ] ──HTTP :8080──→ shared-shell (Nginx)
+                                       │
+                                       ├── /notifications
+                                       │     → student-1-frontend
+                                       │     → student-1-backend (:5101)
+                                       │       → student-1-database (PostgreSQL)
+                                       │       → shared-backend and ai-mode
+                                       │
+                                       ├── /automations
+                                       │     → student-2-frontend
+                                       │     → student-2-backend (:5102)
+                                       │       → owned SQLite database
+                                       │       → shared-backend and ai-mode
+                                       │
+                                       ├── /deadlines
+                                       │     → student-3-frontend
+                                       │     → student-3-backend (:5103)
+                                       │       → student-3-database
+                                       │       → shared-backend and ai-mode
+                                       │       → student-1-backend (notification push)
+                                       │
+                                       ├── /account
+                                       │     → student-4-frontend
+                                       │     → student-4-backend (:5104)
+                                       │       / authentication (:5114)
+                                       │       → student-4-database
+                                       │       → ai-mode (profile summaries)
+                                       │       → MailHog (password-reset email)
+                                       │
+                                       └── /grades
+                                             → student-5-frontend
+                                             → student-5-backend (:5105)
+                                               → student-5-database and ai-mode
 
-  student-3-backend also pushes due-soon reminders to student-1-backend
-  (POST /notifications/push). Every AI-enabled backend calls ai-mode, and
-  every Canvas-consuming backend calls shared-backend:
-
-      ┌───────────────────────┐             ┌───────────────────────┐
-      │     ai-mode (8080)    │             │  shared-backend(5110) │
-      │  (OpenRouter Gateway) │             │  (Canvas LMS Gateway) │
-      │  [Holds API Key]      │             │  [SQLite: shared.db]  │
-      └───────────┬───────────┘             └───────────┬───────────┘
-                  ▼                                     ▼
-          [ OpenRouter API ]                    [ Canvas LMS API ]
+shared-backend (:5110) ──HTTPS──→ [ Canvas LMS API ]
+ai-mode (internal :8080) ─HTTPS─→ [ OpenRouter API ]
 ```
 
 ---
@@ -168,6 +158,16 @@ Notifications carry structured action metadata enabling cross-service operations
 ### C. Conversational AI Digest Assistant
 - `student-1-backend` provides `POST /digest/chat` backed by `OpenRouterDigestService`.
 - The assistant is dynamically grounded with the student's unread notifications and course context, allowing interactive multi-turn questions ("What deadlines do I have this week?", "Explain the feedback on Assignment 1").
+
+### D. Scheduled Canvas Automations
+- `student-2-backend` stores assignment-extension, scheduled-post, and quiz-filler automations in its owned SQLite database.
+- A periodic execution worker durably claims due work, accesses Canvas only through `shared-backend`, and records execution history.
+- Quiz-filler automations send eligible Canvas quiz questions to `ai-mode`, validate the structured answers, and submit them through the Canvas gateway.
+
+### E. Account, Authentication, and AI Profiles
+- `student-4-authentication` provides login, password change, account deletion, and email password-reset workflows; both authentication and profile APIs access `student-4-database` exclusively over HTTP.
+- Development password-reset messages are delivered to MailHog, whose web inbox is exposed on port `8025`.
+- `student-4-backend` can generate a replacement profile summary through `ai-mode` using the stored user and student/teacher profile context.
 
 ---
 

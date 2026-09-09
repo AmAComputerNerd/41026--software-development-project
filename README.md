@@ -22,9 +22,7 @@ and AI-generated digests summarising a student's recent notification
 activity.
 
 **Student 2: Isaac Thomas (25341708).**
-
 Working directory: `student-2/`
-
 Automations service: configures assignment extension, scheduled post, and quiz
 filler automations, stores each type in its own Entity Framework table, and
 provides read-only records of previous runs. A periodic worker executes due
@@ -59,6 +57,9 @@ frontend is proxied through the shared shell at `/grades/`.
 You need: Docker Desktop (or compatible), Node 22 (only if you intend to
 run a frontend or the ui-kit standalone outside Docker), and the .NET
 10 SDK (only if you intend to run a backend standalone outside Docker).
+
+You will also need a Canvas API key and an OpenRouter API key to use
+Canvas Sync functionality and AI mode functionality, respectively.
 
 1. Copy the env template and fill in the values you need:
 
@@ -99,7 +100,6 @@ port.
 | `5432`    | `student-1-database`             | PostgreSQL 16 container owning `notifications_db`. |
 | `5102`    | `student-2-backend`              | Automations API. |
 | `5103`    | `student-3-backend`              | Deadlines & tasks API. |
-| `5203`    | `student-3-database` (standalone)| Internal Student 3 persistence API; not host-published by Docker Compose. |
 | `5104`    | `student-4-backend`              | Account/profile API. |
 | `5114`    | `student-4-authentication`       | Login, password management, and password reset API. |
 | `5105`    | `student-5-backend`              | Grades & progress API. |
@@ -107,9 +107,9 @@ port.
 | `1025` / `8025` | `mailhog`                  | Development SMTP sink and web inbox for Student 4 password-reset emails. |
 
 `ai-mode` is internal-only (no host port). It fronts OpenRouter and is
-the only service that needs the OpenRouter key. The Student 4 and
-Student 5 persistence services are internal-only too. See
-`docs/architecture/overview.md` for the full service table.
+the only service that needs the OpenRouter key. All database services
+are also internal-only by design. See `docs/architecture/overview.md`
+for the full service table.
 
 ## Project layout
 
@@ -130,44 +130,15 @@ Student 5 persistence services are internal-only too. See
 │   ├── contracts/       # internal HTTP contracts (students 3, 4, 5)
 │   └── frontend/        # Vue 3 + plain SCSS
 ├── docs/
-│   ├── architecture/overview.md
-│   └── playbooks/new-frontend-microservice.md
+│   ├── architecture
+│   └── playbooks
+├── tools/
+│   ├── agentic_loop     # agentic loop files and logs
+│   └── agentic_loop.py  # agentic loop runner
 ├── .github/workflows/   # one CI workflow per service group
 ├── docker-compose.yml
 └── .env.example
 ```
-
-## Service communication
-
-Microservices communicate over HTTP and own separate databases. They
-must not query another service's Entity Framework database. The
-shared backend owns Canvas authentication and API pagination. The
-deadline and task-tracker backend receives `SharedService:BaseUrl`
-and `DatabaseService:BaseUrl` through standard ASP.NET configuration.
-Its EF Core context and SQLite volume are exclusively owned by the
-internal `student-3-database` service; students 4 and 5 follow the same
-split. Docker Compose supplies `http://shared-backend:8080` and
-`http://student-3-database:8080`, resolved through Compose's internal
-DNS. Each database service is isolated on a private network shared only
-with the public services of its own slice; notification service
-availability does not block the Student 3 API from starting.
-
-To import Canvas data, start the services and call:
-
-```http
-POST http://localhost:5103/api/canvas-sync
-```
-
-The sync fetches active courses and their assignments, then
-transactionally upserts one task per stable Canvas assignment ID.
-Removed assignments are marked inactive rather than deleted. Canvas
-data remains live in the shared service; only the source IDs and
-fields needed by courses/tasks are persisted by the task tracker. A
-submitted or graded assignment marks its task as completed; other
-Canvas submission states do not overwrite the task's local status.
-
-The shared Canvas and task-tracker databases persist timestamps as
-`DateTime` normalized to UTC.
 
 ## Running a single service outside Docker
 
@@ -207,7 +178,7 @@ changes don't trigger unrelated builds.
 
 ## Release 0: Summary
 
-Working branch: `main`  
+Working branch: `release-0`
 Feature set:
 - Shared dashboard shell and UI kit.
 - Notification preferences, notification management, AI digests, and a
@@ -221,4 +192,4 @@ Feature set:
   service, and frontend, integrated into the shared dashboard.
 
 All five slices are wired into the shared shell. Release 1 work builds on
-this baseline.
+this baseline and adds RAG and MCP support for ai-mode.
