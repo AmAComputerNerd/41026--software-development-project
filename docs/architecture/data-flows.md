@@ -54,34 +54,38 @@ This document traces the primary end-to-end data flows and lifecycle sequences a
 
 ---
 
-## 2. Proactive Deadline Reminders & Task Push Notifications
+## 2. Cross-Microservice Push Notifications & Action Triggers
+
+All vertical slice microservices link to `student-1-backend` (`NotificationService`) via resilient HTTP clients pushing event notifications to `POST /notifications/push`:
 
 ```
-[ student-3-backend (Task Creation / Worker) ]
+[ Microservice Backends ]
+  ├── student-2-backend (Automations executed / created / updated)
+  ├── student-3-backend (Deadlines due soon / AI subtasks generated)
+  ├── student-4-backend & auth (Password reset / profile updated / AI summary)
+  └── student-5-backend (Grades recorded / AI recommendations)
         │
-        │ 1. Task created or due reminder detected
-        │ 2. POST /notifications/push
-        │    Payload: { Title, Type: "Deadline", Source: "deadlines", RelatedEntityId: task.Id }
+        │ 1. POST /notifications/push
+        │    Payload: { StudentId, Type, SourceMicroservice, Message, RelatedEntityType, RelatedEntityId }
         ▼
 [ student-1-backend ]
         │
-        │ 3. Insert notification into PostgreSQL (notifications_db)
-        │ 4. Publish Event to NotificationStreamBroker
+        │ 2. Insert notification into PostgreSQL (notifications_db)
+        │ 3. Publish Event to NotificationStreamBroker
         ▼
-[ NotificationStreamBroker ] ───(SSE Event: "notification")───► [ student-1-frontend ]
+[ NotificationStreamBroker ] ───(SSE Event: "notification")───► [ Frontends / Navigation Bell ]
                                                                       │
-                                                                      │ 5. Render Action Buttons
-                                                                      │    [MARK COMPLETE] [AI BREAK DOWN]
+                                                                      │ 4. Render Action Buttons
+                                                                      │    [VIEW TASK / MARK COMPLETE / AI BREAK DOWN]
+                                                                      │    [VIEW GRADES / GRADE IMPACT]
+                                                                      │    [VIEW AUTOMATION]
+                                                                      │    [VIEW ACCOUNT]
                                                                       ▼
-                                                              [ User clicks MARK COMPLETE ]
+                                                              [ User clicks Interactive Action ]
                                                                       │
-                                                                      │ 6. PUT /api/deadlines/tasks/{id}
+                                                                      │ 5. Deep-links or triggers target microservice API
                                                                       ▼
-                                                              [ student-3-backend ]
-                                                                      │
-                                                                      │ 7. PUT /internal/tasks/{id}
-                                                                      ▼
-                                                              [ student-3-database ]
+                                                              [ Target Microservice Backend ]
 ```
 
 ---

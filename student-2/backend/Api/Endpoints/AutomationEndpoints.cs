@@ -2,6 +2,7 @@ using Api.Data;
 using Api.DTOs;
 using Api.Extensions;
 using Api.Models;
+using Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -54,7 +55,11 @@ public static class AutomationEndpoints
         return automation is null ? Results.NotFound() : Results.Ok(automation.ToDto());
     }
 
-    private static async Task<IResult> AddAutomation(SaveAutomationRequestDto request, AppDbContext db)
+    private static async Task<IResult> AddAutomation(
+        SaveAutomationRequestDto request,
+        AppDbContext db,
+        INotificationClient notificationClient,
+        ILoggerFactory loggerFactory)
     {
         var validationError = request.Validate();
         if (validationError is not null)
@@ -66,13 +71,32 @@ public static class AutomationEndpoints
         db.Automations.Add(automation);
         await db.SaveChangesAsync();
 
+        try
+        {
+            var title = GetAutomationTitle(automation);
+            await notificationClient.PushAsync(new PushNotificationDto(
+                StudentId: automation.StudentId,
+                Type: "Automation",
+                SourceMicroservice: "automations",
+                Message: $"{title} was created.",
+                RelatedEntityType: "Automation",
+                RelatedEntityId: automation.Id));
+        }
+        catch (Exception ex)
+        {
+            var logger = loggerFactory.CreateLogger("Api.Endpoints.AutomationEndpoints");
+            AutomationEndpointsLog.PushNotificationFailed(logger, automation.Id, ex);
+        }
+
         return Results.Created($"/api/automations/{automation.Id}", automation.ToDto());
     }
 
     private static async Task<IResult> UpdateAutomation(
         [FromRoute] Guid id,
         SaveAutomationRequestDto request,
-        AppDbContext db)
+        AppDbContext db,
+        INotificationClient notificationClient,
+        ILoggerFactory loggerFactory)
     {
         var validationError = request.Validate();
         if (validationError is not null)
@@ -94,8 +118,35 @@ public static class AutomationEndpoints
         request.ApplyTo(automation);
 
         await db.SaveChangesAsync();
+
+        try
+        {
+            var title = GetAutomationTitle(automation);
+            await notificationClient.PushAsync(new PushNotificationDto(
+                StudentId: automation.StudentId,
+                Type: "Automation",
+                SourceMicroservice: "automations",
+                Message: $"{title} was updated.",
+                RelatedEntityType: "Automation",
+                RelatedEntityId: automation.Id));
+        }
+        catch (Exception ex)
+        {
+            var logger = loggerFactory.CreateLogger("Api.Endpoints.AutomationEndpoints");
+            AutomationEndpointsLog.PushNotificationFailed(logger, automation.Id, ex);
+        }
+
         return Results.Ok(automation.ToDto());
     }
+
+    private static string GetAutomationTitle(Automation automation) => automation switch
+    {
+        AssignmentExtensionAutomation => "Assignment Extension",
+        ScheduledPostAutomation post when !string.IsNullOrWhiteSpace(post.Subject) => $"Scheduled Post \"{post.Subject}\"",
+        ScheduledPostAutomation => "Scheduled Post",
+        QuizFillerAutomation => "Quiz Filler",
+        _ => "Automation"
+    };
 
     private static async Task<IResult> DeleteAutomation([FromRoute] Guid id, AppDbContext db)
     {
@@ -110,5 +161,10 @@ public static class AutomationEndpoints
         await db.SaveChangesAsync();
         return Results.NoContent();
     }
+}
 
+internal static partial class AutomationEndpointsLog
+{
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to push notification for automation {AutomationId}.")]
+    public static partial void PushNotificationFailed(ILogger logger, Guid automationId, Exception ex);
 }

@@ -54,6 +54,8 @@ public static class UserEndpoints
 
     private static async Task<IResult> CreateUser(
         IAccountDatabaseClient db,
+        INotificationClient notificationClient,
+        ILoggerFactory loggerFactory,
         [FromBody] CreateUserRequestDto request,
         CancellationToken cancellationToken)
     {
@@ -82,6 +84,22 @@ public static class UserEndpoints
             );
 
             var user = await db.CreateUserAsync(command, cancellationToken);
+            try
+            {
+                await notificationClient.PushAsync(new PushNotificationDto(
+                    StudentId: user.Id,
+                    Type: "Account",
+                    SourceMicroservice: "account",
+                    Message: "Account created successfully.",
+                    RelatedEntityType: "User",
+                    RelatedEntityId: user.Id), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                var logger = loggerFactory.CreateLogger("Api.Endpoints.UserEndpoints");
+                UserEndpointsLog.PushNotificationFailed(logger, user.Id, ex);
+            }
+
             return Results.Created($"/api/users/{user.Id}", user.ToDto());
         }
         catch (DatabaseServiceException ex)
@@ -93,6 +111,8 @@ public static class UserEndpoints
     private static async Task<IResult> UpdateUser(
         Guid userId,
         IAccountDatabaseClient db,
+        INotificationClient notificationClient,
+        ILoggerFactory loggerFactory,
         [FromBody] UpdateUserRequestDto request,
         CancellationToken cancellationToken)
     {
@@ -109,7 +129,28 @@ public static class UserEndpoints
             );
 
             var user = await db.UpdateUserAsync(userId, command, cancellationToken);
-            return user is null ? Results.NotFound("No User Found") : Results.Ok(user.ToDto());
+            if (user is null)
+            {
+                return Results.NotFound("No User Found");
+            }
+
+            try
+            {
+                await notificationClient.PushAsync(new PushNotificationDto(
+                    StudentId: user.Id,
+                    Type: "Account",
+                    SourceMicroservice: "account",
+                    Message: "Profile updated successfully.",
+                    RelatedEntityType: "User",
+                    RelatedEntityId: user.Id), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                var logger = loggerFactory.CreateLogger("Api.Endpoints.UserEndpoints");
+                UserEndpointsLog.PushNotificationFailed(logger, user.Id, ex);
+            }
+
+            return Results.Ok(user.ToDto());
         }
         catch (DatabaseServiceException ex)
         {
@@ -132,4 +173,10 @@ public static class UserEndpoints
             return Results.Problem(detail: ex.Message, statusCode: 503);
         }
     }
+}
+
+internal static partial class UserEndpointsLog
+{
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to push notification for user {UserId}.")]
+    public static partial void PushNotificationFailed(ILogger logger, Guid userId, Exception ex);
 }

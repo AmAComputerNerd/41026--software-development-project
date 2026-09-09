@@ -163,7 +163,7 @@ The root `.env` (copied from `.env.example`) and Docker Compose environment entr
 | `SharedService__BaseUrl` | `student-1`, `student-2`, `student-3` | Internal URL for Canvas gateway (`http://shared-backend:8080`) |
 | `AiGateway__BaseUrl` | `student-1` through `student-5` where AI is enabled | Internal URL for AI gateway (`http://ai-mode:8080`) |
 | `DatabaseService__BaseUrl` | `student-3`, `student-4` (API and authentication), `student-5` | Internal URL for private persistence API |
-| `NotificationService__BaseUrl` | `student-3` | Internal URL for notifications (`http://student-1-backend:8080`) |
+| `NotificationService__BaseUrl` | `student-2`, `student-3`, `student-4` (API and authentication), `student-5` | Internal URL for notifications (`http://student-1-backend:8080`) |
 | `Email__Smtp__Host` | `student-4-authentication` | SMTP server host (`mailhog`) |
 | `Email__Smtp__Port` | `student-4-authentication` | SMTP server port (`1025`) |
 | `Email__*` | `student-4-authentication` | SMTP sender and password-reset URL configuration (MailHog in development) |

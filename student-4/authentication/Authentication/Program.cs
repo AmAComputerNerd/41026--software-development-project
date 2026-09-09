@@ -29,6 +29,26 @@ builder.Services
 builder.Services
     .AddOptions<EmailOptions>()
     .Bind(builder.Configuration.GetSection(EmailOptions.SectionName));
+builder.Services
+    .AddOptions<NotificationServiceOptions>()
+    .Bind(builder.Configuration.GetSection(NotificationServiceOptions.SectionName))
+    .Validate(
+        options => IsAbsoluteHttpUrl(options.BaseUrl),
+        "NotificationService:BaseUrl must be an absolute HTTP or HTTPS URL.")
+    .ValidateOnStart();
+
+builder.Services
+    .AddHttpClient<INotificationClient, NotificationClient>((services, client) =>
+        ConfigureClient(
+            client,
+            services.GetRequiredService<IOptions<NotificationServiceOptions>>().Value.BaseUrl))
+    .AddStandardResilienceHandler(options =>
+    {
+        options.Retry.MaxRetryAttempts = 2;
+        options.Retry.Delay = TimeSpan.FromMilliseconds(500);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(35);
+    });
 
 builder.Services
     .AddHttpClient<IAccountDatabaseClient, AccountDatabaseClient>((services, client) =>

@@ -1,5 +1,6 @@
 using Api.Configuration;
 using Api.Data;
+using Api.DTOs;
 using Api.Models;
 using Api.Services.Executors;
 using Microsoft.Data.Sqlite;
@@ -28,6 +29,11 @@ public sealed class AutomationExecutionBackgroundService(
             LogLevel.Error,
             new EventId(3, nameof(LogExecutionFailure)),
             "Automation {AutomationId} execution failed.");
+    private static readonly Action<ILogger, Guid, Exception?> LogNotificationFailure =
+        LoggerMessage.Define<Guid>(
+            LogLevel.Warning,
+            new EventId(4, nameof(LogNotificationFailure)),
+            "Failed to push notification for automation {AutomationId}.");
     private readonly TimeSpan _interval = TimeSpan.FromSeconds(options.Value.IntervalSeconds);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -144,6 +150,25 @@ public sealed class AutomationExecutionBackgroundService(
                 await candidate.ExecuteAsync(cancellationToken);
                 run.Result = AutomationRunResult.Success;
                 await db.SaveChangesAsync(CancellationToken.None);
+
+                try
+                {
+                    var notificationClient = scope.ServiceProvider.GetRequiredService<INotificationClient>();
+                    var title = GetAutomationTitle(automation);
+                    await notificationClient.PushAsync(
+                        new PushNotificationDto(
+                            StudentId: automation.StudentId,
+                            Type: "Automation",
+                            SourceMicroservice: "automations",
+                            Message: $"{title} executed successfully.",
+                            RelatedEntityType: "Automation",
+                            RelatedEntityId: automation.Id),
+                        CancellationToken.None);
+                }
+                catch (Exception notifEx)
+                {
+                    LogNotificationFailure(logger, automation.Id, notifEx);
+                }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -154,7 +179,35 @@ public sealed class AutomationExecutionBackgroundService(
                 run.Result = AutomationRunResult.Failed;
                 await db.SaveChangesAsync(CancellationToken.None);
                 LogExecutionFailure(logger, automation.Id, exception);
+
+                try
+                {
+                    var notificationClient = scope.ServiceProvider.GetRequiredService<INotificationClient>();
+                    var title = GetAutomationTitle(automation);
+                    await notificationClient.PushAsync(
+                        new PushNotificationDto(
+                            StudentId: automation.StudentId,
+                            Type: "Automation",
+                            SourceMicroservice: "automations",
+                            Message: $"{title} execution failed.",
+                            RelatedEntityType: "Automation",
+                            RelatedEntityId: automation.Id),
+                        CancellationToken.None);
+                }
+                catch (Exception notifEx)
+                {
+                    LogNotificationFailure(logger, automation.Id, notifEx);
+                }
             }
         }
     }
+
+    private static string GetAutomationTitle(Automation automation) => automation switch
+    {
+        AssignmentExtensionAutomation => "Assignment Extension",
+        ScheduledPostAutomation post when !string.IsNullOrWhiteSpace(post.Subject) => $"Scheduled Post \"{post.Subject}\"",
+        ScheduledPostAutomation => "Scheduled Post",
+        QuizFillerAutomation => "Quiz Filler",
+        _ => "Automation"
+    };
 }

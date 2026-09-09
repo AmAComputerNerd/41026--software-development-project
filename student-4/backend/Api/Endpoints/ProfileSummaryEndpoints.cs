@@ -18,6 +18,8 @@ public static class ProfileSummaryEndpoints
         Guid userId,
         IAccountDatabaseClient db,
         IAiProfileSummaryService aiService,
+        INotificationClient notificationClient,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         try
@@ -45,6 +47,22 @@ public static class ProfileSummaryEndpoints
                 teacher,
                 cancellationToken);
 
+            try
+            {
+                await notificationClient.PushAsync(new PushNotificationDto(
+                    StudentId: userId,
+                    Type: "AI",
+                    SourceMicroservice: "account",
+                    Message: "New AI profile summary generated.",
+                    RelatedEntityType: "User",
+                    RelatedEntityId: userId), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                var logger = loggerFactory.CreateLogger("Api.Endpoints.ProfileSummaryEndpoints");
+                ProfileSummaryEndpointsLog.PushNotificationFailed(logger, userId, ex);
+            }
+
             return Results.Ok(new
             {
                 oldSummary = user.UserProfile,
@@ -67,4 +85,10 @@ public static class ProfileSummaryEndpoints
                 statusCode: StatusCodes.Status502BadGateway);
         }
     }
+}
+
+internal static partial class ProfileSummaryEndpointsLog
+{
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to push notification for profile summary of user {UserId}.")]
+    public static partial void PushNotificationFailed(ILogger logger, Guid userId, Exception ex);
 }

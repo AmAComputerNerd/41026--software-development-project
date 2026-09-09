@@ -24,6 +24,8 @@ const isActionableDeadline = computed(
   () => props.notification.type === 'Deadline' && !!props.notification.relatedEntityId,
 )
 const isGradeNotification = computed(() => props.notification.type === 'Grade')
+const isAutomationNotification = computed(() => props.notification.type === 'Automation')
+const isAccountNotification = computed(() => props.notification.type === 'Account')
 const taskUrl = computed(() => `/deadlines/?taskId=${props.notification.relatedEntityId}`)
 </script>
 
@@ -86,6 +88,12 @@ const taskUrl = computed(() => `/deadlines/?taskId=${props.notification.relatedE
         >
           GRADE IMPACT
         </button>
+      </template>
+      <template v-else-if="isAutomationNotification">
+        <a class="nb-btn nb-btn--outline" href="/automations/">VIEW AUTOMATION</a>
+      </template>
+      <template v-else-if="isAccountNotification">
+        <a class="nb-btn nb-btn--outline" href="/account/">VIEW ACCOUNT</a>
       </template>
       <button
         type="button"

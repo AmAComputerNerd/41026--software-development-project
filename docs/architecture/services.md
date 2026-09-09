@@ -98,6 +98,7 @@
 - Stores assignment-extension, scheduled-post, and quiz-filler automation configurations in polymorphic EF Core tables.
 - Runs a background worker (default every 30 seconds) that claims due execution candidates with durable execution keys before contacting Canvas.
 - Executes scheduled Canvas conversations and AI-assisted Classic Quiz filling through `shared-backend` and `ai-mode`; it never turns a quiz in automatically.
+- Dispatches real-time push notifications to `student-1-backend` upon automation execution (success/failure) and configuration updates.
 - Exposes read-only run history.
 
 ### Key Endpoints
@@ -150,6 +151,7 @@ See [`student-2/README.md`](../../student-2/README.md) for the full contract.
 - Stores user, student, and teacher profile records with hashed passwords.
 - Issues password-reset emails through SMTP; development uses the `mailhog` container (SMTP `1025`, web UI `http://localhost:8025`).
 - Generates AI profile summaries through the `ai-mode` gateway.
+- Dispatches real-time push notifications to `student-1-backend` upon password changes, password resets, profile updates, and AI profile summary generation.
 - Delegates all persistence over HTTP to `student-4-database`, which exclusively owns the `student-4-db` volume on the private `student-4-data` Docker network.
 
 ### Key Endpoints
@@ -170,12 +172,14 @@ See [`student-2/README.md`](../../student-2/README.md) for the full contract.
   - Frontend: Vue 3 + TypeScript + Vite + `@better-canvas/ui-kit`
 - **Port (Host)**: `5105` (Backend), `5205` (database when standalone), Proxied at `/grades/` (Frontend)
 - **Owner**: Student 5 (William Hannah)
+- Dispatches real-time push notifications to `student-1-backend` upon temporary mark updates and AI study recommendation generation.
 
 ### Responsibilities
 - Calculates grade progress, course weights, and cumulative marks.
 - Provides "What-If" grade simulation allowing students to forecast target GPAs or marks.
 - Exposes mark update endpoints used by cross-service interactive notifications.
 - Generates AI study recommendations through the `ai-mode` gateway.
+- Dispatches real-time push notifications to `student-1-backend` upon temporary mark updates and AI study recommendation generation.
 - Delegates all persistence over HTTP to `student-5-database`, which exclusively owns the `student-5-db` volume and its EF Core migrations, on the private `student-5-data` Docker network.
 
 ### Key Endpoints
