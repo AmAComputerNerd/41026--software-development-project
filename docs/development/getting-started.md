@@ -55,15 +55,18 @@ docker compose logs -f student-1-backend
 # Stop all services
 docker compose down
 
-# Stop and wipe SQLite database volumes (forces fresh seeding)
+# Stop and wipe database volumes (forces fresh seeding)
 docker compose down -v
 ```
 
 Once running, access the services:
 - **Shared Dashboard**: [http://localhost:8080](http://localhost:8080)
 - **Notifications**: [http://localhost:8080/notifications/](http://localhost:8080/notifications/)
+- **Automations**: [http://localhost:8080/automations/](http://localhost:8080/automations/)
 - **Deadlines & Tasks**: [http://localhost:8080/deadlines/](http://localhost:8080/deadlines/)
+- **Account & Settings**: [http://localhost:8080/account/](http://localhost:8080/account/)
 - **Grades & Progress**: [http://localhost:8080/grades/](http://localhost:8080/grades/)
+- **MailHog inbox** (Student 4 password-reset emails): [http://localhost:8025](http://localhost:8025)
 
 ---
 
@@ -85,7 +88,9 @@ npm run dev --workspace=shared-frontend
 
 # Run student frontends
 npm run dev --workspace=student-1-frontend
+npm run dev --workspace=student-2-frontend
 npm run dev --workspace=student-3-frontend
+npm run dev --workspace=student-4-frontend
 npm run dev --workspace=student-5-frontend
 ```
 
@@ -97,7 +102,14 @@ cd student-1/backend/Api
 dotnet run
 ```
 
-Student 3 requires its database service to start first:
+Student 1 needs its PostgreSQL container before the backend will start. The
+quickest way is to start just that service:
+
+```bash
+docker compose up -d student-1-database
+```
+
+Students 3, 4, and 5 require their database service to start first:
 
 ```bash
 dotnet run --project student-3/database/Database/Database.csproj
@@ -105,9 +117,11 @@ dotnet run --project student-3/database/Database/Database.csproj
 dotnet run --project student-3/backend/Api/Api.csproj
 ```
 
-The standalone defaults are `http://localhost:5203` for
-`student-3-database` and `http://localhost:5103` for
-`student-3-backend`. Docker Compose keeps the database service internal.
+The standalone default for `student-3-database` is `http://localhost:5203`
+(matching `DatabaseService:BaseUrl` in `student-3/backend/Api/appsettings.json`).
+Docker Compose keeps every database service internal. Each backend's own
+standalone URL comes from its `Properties/launchSettings.json`, which is not
+always the same as the host port Docker Compose publishes.
 
 > [!IMPORTANT]
 > When running a backend outside Docker:

@@ -137,7 +137,7 @@ This document traces the primary end-to-end data flows and lifecycle sequences a
         ▼
 [ student-1-backend ]
         │
-        │ 3. Query active notifications & user preferences from SQLite
+        │ 3. Query active notifications & user preferences from PostgreSQL
         │ 4. Format prompt with dynamic notification grounding context
         │ 5. POST /v1/chat/completions
         ▼
@@ -145,7 +145,7 @@ This document traces the primary end-to-end data flows and lifecycle sequences a
         │
         │ 6. Inject OpenRouter API Key & Call LLM
         ▼
-[ OpenRouter (MiniMax-M3) ]
+[ OpenRouter (default: nvidia/nemotron-3.5-lightning:free) ]
         │
         │ 7. Return AI Completion
         ▼

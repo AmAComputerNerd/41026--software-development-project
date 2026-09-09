@@ -29,8 +29,10 @@ correctly.
 
 ## Model
 
-Defaults to MiniMax-M3 (`minimax/minimax-m3:free`) if
-you omit `model`. Override by setting `model` in request body.
+Defaults to Nemotron 3.5 Lightning (`nvidia/nemotron-3.5-lightning:free`)
+if you omit `model`. Override per request by setting `model` in the request
+body, or change the gateway-wide default with the `OPENROUTER_MODEL`
+environment variable (or the `OpenRouter:Model` configuration key).
 
 ## docker-compose
 

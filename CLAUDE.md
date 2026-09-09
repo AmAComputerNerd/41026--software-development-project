@@ -10,8 +10,8 @@ Keep `docs/architecture/overview.md` up to date with what's actually built.
 
 ## 1. Golden Architectural Rules
 
-1. **Database Boundaries**: Each student slice owns an isolated SQLite database. Student 3 delegates persistence to its internal `student-3-database` service. **Zero cross-database queries**; all communication is via HTTP APIs.
-2. **Canvas Gateway**: `shared/backend` exclusively owns Canvas API communication (`courses`, `assignments`, `users`). Assignments' untrusted HTML is sanitized into plain text at the gateway.
+1. **Database Boundaries**: Each student slice owns an isolated database. Students 3, 4, and 5 delegate persistence to private internal database services; student 1 owns a dedicated PostgreSQL container. **Zero cross-database queries**; all communication is via HTTP APIs.
+2. **Canvas Gateway**: `shared/backend` exclusively owns Canvas API communication (`courses`, `assignments`, `users`, `recipients`, `conversations`, Classic Quizzes). Assignments' untrusted HTML is sanitized into plain text at the gateway.
 3. **AI Gateway (`ai-mode`)**: Only `ai-mode` holds `OPENROUTER_API_KEY`. All microservices call `http://ai-mode:8080/v1/chat/completions`.
 4. **Design System**: Use `@better-canvas/ui-kit` (workspace package) with Vue 3 `<script setup>` and plain SCSS. Follow Neobrutalism tokens (`0px` radius, thick borders, raw drop shadows). No Vuetify in new slices.
 5. **Git Workflow**: Branch off `main` per feature (`feat/`, `fix/`, `docs/`), use Conventional Commits, and open PRs into `main`.
@@ -21,10 +21,13 @@ Keep `docs/architecture/overview.md` up to date with what's actually built.
 ## 2. Ports & Routing Cheatsheet
 
 - `http://localhost:8080` — Shared Shell (Nginx Dashboard + Reverse Proxy)
-- `http://localhost:8080/notifications/` / API: `5101` (`/api/notifications/`) — Student 1 (Notifications)
+- `http://localhost:8080/notifications/` / API: `5101` (`/api/notifications/`) — Student 1 (Notifications); PostgreSQL on `5432`
+- `http://localhost:8080/automations/` / API: `5102` (`/api/automations/`) — Student 2 (Automations)
 - `http://localhost:8080/deadlines/` / API: `5103` (`/api/deadlines/`) — Student 3 (Deadlines & Tasks)
+- `http://localhost:8080/account/` / APIs: `5104` (profiles), `5114` (authentication) — Student 4 (Account)
 - `http://localhost:8080/grades/` / API: `5105` (`/api/grades/`) — Student 5 (Grades & Progress)
 - API: `5110` (`/api/canvas/*`) — Shared Backend (Canvas Gateway)
+- `http://localhost:8025` (`1025` SMTP) — MailHog development inbox
 - Internal `8080` (`/v1/chat/completions`) — AI Mode (OpenRouter Gateway)
 
 ---
@@ -41,12 +44,13 @@ dotnet build
 dotnet test
 dotnet format --verify-no-changes
 dotnet ef migrations add <Name> \
-  --project student-N/database/Database/Database.csproj
+  --project <persistence-owning-project.csproj>
 
 # Frontend (npm workspaces)
 npm run dev --workspace=shared-frontend
 npm run dev --workspace=student-1-frontend
-npm run build --workspaces
+npm run build --workspaces --if-present
+npm run test:e2e --workspace=student-1-frontend
 ```
 
 ## 4. Frontend Conventions
