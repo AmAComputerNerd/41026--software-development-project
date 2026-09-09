@@ -6,11 +6,19 @@ on:
     paths:
       - "student-1/backend/**"
       - "student-1/database/**"
+      - "student-1/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/student-1-ci.yml"
   pull_request:
     paths:
       - "student-1/backend/**"
       - "student-1/database/**"
+      - "student-1/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/student-1-ci.yml"
 
 # Cancel superseded runs on the same branch/PR to save CI minutes.
@@ -20,13 +28,40 @@ concurrency:
 
 env:
   DOTNET_VERSION: "10.0.x"
+  NODE_VERSION: "22"
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SOLUTION: student-1/backend/NotificationService.sln
   WORKING_DIR: student-1/backend/Api
 
 jobs:
-  build-and-analyze:
-    name: Build, analyze & format check
+  frontend-tests:
+    name: Frontend build & Playwright E2E tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Type check and build
+        run: npm run build --workspace=student-1-frontend
+
+      - name: Run Playwright E2E tests
+        run: npm run test:e2e --workspace=student-1-frontend
+
+  build-and-test:
+    name: Backend build, test & format check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -46,16 +81,16 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore
-        run: dotnet restore
-        working-directory: ${{ env.WORKING_DIR }}
+        run: dotnet restore "${{ env.DOTNET_SOLUTION }}"
 
       - name: Build (Release, warnings as errors)
-        run: dotnet build --configuration Release --no-restore -warnaserror
-        working-directory: ${{ env.WORKING_DIR }}
+        run: dotnet build "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-restore -warnaserror
+
+      - name: Run Unit & Integration Tests
+        run: dotnet test "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-build
 
       - name: Verify code formatting
-        run: dotnet format --verify-no-changes --severity warn
-        working-directory: ${{ env.WORKING_DIR }}
+        run: dotnet format "${{ env.DOTNET_SOLUTION }}" --verify-no-changes --severity warn
 
   ef-core-migrations-check:
     name: EF Core migrations drift check
@@ -102,6 +137,14 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-1/backend/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
       - name: Restore
         run: dotnet restore

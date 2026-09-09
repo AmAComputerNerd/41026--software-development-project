@@ -23,9 +23,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         });
 });
 builder.Services.AddHttpClient();
+var sharedServiceBaseUrl = builder.Configuration["SharedService:BaseUrl"] ?? "http://shared-backend:8080";
 builder.Services.AddHttpClient<ISharedCanvasClient, SharedCanvasClient>(client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["SharedService:BaseUrl"]!);
+    client.BaseAddress = new Uri(sharedServiceBaseUrl);
 });
 var aiGatewayBaseUrl = builder.Configuration["AiGateway:BaseUrl"] ?? "http://ai-mode:8080";
 builder.Services.AddHttpClient<IAiDigestService, OpenRouterDigestService>(client =>
@@ -113,3 +114,6 @@ internal static partial class Log
         "(see student-1/backend/README.md).")]
     public static partial void AiGatewayBaseUrlNotSet(ILogger logger);
 }
+
+public partial class Program { }
+

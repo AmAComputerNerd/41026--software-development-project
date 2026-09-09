@@ -12,7 +12,14 @@ public static class DatabaseExtensions
         var db = scope.ServiceProvider
             .GetRequiredService<AppDbContext>();
 
-        await db.Database.MigrateAsync();
+        if (db.Database.IsNpgsql())
+        {
+            await db.Database.MigrateAsync();
+        }
+        else
+        {
+            await db.Database.EnsureCreatedAsync();
+        }
         DbSeeder.SeedData(db);
     }
 }
