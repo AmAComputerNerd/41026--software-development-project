@@ -9,6 +9,8 @@ holds no EF Core context, connection string, or database volume.
 
 ## 1. Setup & Run
 
+The backend delegates persistence over HTTP to the internal `student-5-database` service.
+
 From the repository root:
 
 ```bash
@@ -52,6 +54,5 @@ Entity Framework Core, SQLite, and all migrations live in
 `student-5/database/Database`. To add a migration:
 
 ```bash
-dotnet ef migrations add <MigrationName> \
-  --project student-5/database/Database/Database.csproj
+dotnet ef migrations add <MigrationName>   --project student-5/database/Database/Database.csproj
 ```

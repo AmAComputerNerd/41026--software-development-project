@@ -39,9 +39,18 @@ public static class TaskEndpoints
         return task is null ? Results.NotFound() : Results.Ok(task.ToDto());
     }
 
+    private static readonly Guid DemoStudentId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+    private static string FormatDate(DateTime value)
+    {
+        return value.ToString("MMM d, yyyy 'at' h:mm tt 'UTC'", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     private static async Task<IResult> AddTask(
         CreateTaskRequestDto request,
         IStudent3DatabaseClient database,
+        INotificationClient notificationClient,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Title))
@@ -77,6 +86,28 @@ public static class TaskEndpoints
                 request.ParentTaskId),
             cancellationToken);
 
+        try
+        {
+            var message = task.DueDate.HasValue
+                ? $"New task \"{task.Title}\" is due {FormatDate(task.DueDate.Value)}."
+                : $"New task \"{task.Title}\" created.";
+
+            await notificationClient.PushAsync(
+                new PushNotificationDto(
+                    StudentId: DemoStudentId,
+                    Type: "Deadline",
+                    SourceMicroservice: "deadlines",
+                    Message: message,
+                    RelatedEntityType: "Task",
+                    RelatedEntityId: task.Id),
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            var logger = loggerFactory.CreateLogger("Api.Endpoints.TaskEndpoints");
+            TaskEndpointsLog.PushNotificationFailed(logger, task.Id, ex);
+        }
+
         return Results.Created($"/api/tasks/{task.Id}", task.ToDto());
     }
 
@@ -85,6 +116,8 @@ public static class TaskEndpoints
         GenerateTaskBreakdownRequestDto request,
         IStudent3DatabaseClient database,
         IAiTaskService aiTaskService,
+        INotificationClient notificationClient,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         var prompt = request.Prompt?.Trim();
@@ -122,6 +155,27 @@ public static class TaskEndpoints
                     .Select(task => new GeneratedSubtaskRecord(task.Title, task.Description))
                     .ToList()),
             cancellationToken);
+
+        if (tasks is not null && tasks.Count > 0)
+        {
+            try
+            {
+                await notificationClient.PushAsync(
+                    new PushNotificationDto(
+                        StudentId: DemoStudentId,
+                        Type: "Deadline",
+                        SourceMicroservice: "deadlines",
+                        Message: $"{tasks.Count} subtask(s) generated for \"{assignment.Title}\".",
+                        RelatedEntityType: "Task",
+                        RelatedEntityId: assignment.Id),
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                var logger = loggerFactory.CreateLogger("Api.Endpoints.TaskEndpoints");
+                TaskEndpointsLog.PushNotificationFailed(logger, assignment.Id, ex);
+            }
+        }
 
         return tasks is null
             ? Results.NotFound()
@@ -239,4 +293,10 @@ public static class TaskEndpoints
     {
         return value is "Low" or "Medium" or "High";
     }
+}
+
+internal static partial class TaskEndpointsLog
+{
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to push notification for task {TaskId}.")]
+    public static partial void PushNotificationFailed(ILogger logger, Guid taskId, Exception ex);
 }

@@ -18,14 +18,12 @@ saving.
 
 The task and course APIs need their private database service running first:
 
-```powershell
-dotnet run --project student-3\database\Database
-```
+```bash
+# Terminal 1: Run Database Service (default port 5203)
+dotnet run --project student-3/database/Database/Database.csproj
 
-In a second terminal, start the public API:
-
-```powershell
-dotnet run --project student-3\backend\Api
+# Terminal 2: Run Public Backend (default port 5103)
+dotnet run --project student-3/backend/Api/Api.csproj
 ```
 
 The API reads `DatabaseService:BaseUrl`, which defaults to
@@ -34,7 +32,7 @@ The API reads `DatabaseService:BaseUrl`, which defaults to
 In a third terminal, run the frontend at
 `http://localhost:3003/deadlines/`:
 
-```powershell
+```bash
 npm run dev --workspace=student-3-frontend
 ```
 

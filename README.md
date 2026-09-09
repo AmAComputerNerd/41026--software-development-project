@@ -1,144 +1,152 @@
-# 41026 — Advanced Software Development; Project
+# 41026 Software Development Project (Better Canvas)
 
-An LLM-enhanced web application built on top of the Canvas Infrastructure
-API. The system is a 5-student microservices project (ASD unit): each
-student owns a vertical slice, services talk to each other over HTTP,
-and one shared Canvas gateway is the only thing that talks to Canvas
-directly. A shared dashboard shell routes users to each microservice.
+A microservices web platform built on top of the Canvas Infrastructure LMS API,
+providing vertical slices for notifications, automations, deadlines, account
+management, and grades/progress tracking.
 
-For AI agent guidance, see [`AGENTS.md`](AGENTS.md). For the complete
-documentation hub, see [`docs/README.md`](docs/README.md) and
-[`docs/architecture/overview.md`](docs/architecture/overview.md). For how to
-contribute, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+---
 
-## Team
+## Architectural overview
 
-**Student 1: Bryan Lee (25495108).**  
-Working directory: `student-1/`  
-Notifications service: manages student notifications (deadlines, grades,
-automation, account, and AI-sourced) with read/unread state, per-student
-delivery preferences by notification type and channel (in-app or email),
-and AI-generated digests summarising a student's recent notification
-activity.
+```
+[ Browser / Client ] ──HTTP :8080──→ shared-shell (Nginx)
+                                      │
+                                      ├── /notifications, /api/notifications
+                                      │     → student-1-backend
+                                      │       → student-1-database (PostgreSQL)
+                                      │       → shared-backend and ai-mode
+                                      │
+                                      ├── /automations, /api/automations
+                                      │     → student-2-backend
+                                      │       → owned SQLite database
+                                      │       → shared-backend and ai-mode
+                                      │
+                                      ├── /deadlines, /api/deadlines
+                                      │     → student-3-backend
+                                      │       → student-3-database
+                                      │       → shared-backend and ai-mode
+                                      │       → student-1-backend (notification push)
+                                      │
+                                      ├── /account, /api/auth|users|students|teachers
+                                      │     → student-4-backend / authentication
+                                      │       → student-4-database
+                                      │       → ai-mode (profile summaries)
+                                      │       → MailHog (password-reset email)
+                                      │
+                                      └── /grades, /api/grades
+                                            → student-5-backend
+                                              → student-5-database and ai-mode
 
-**Student 2: Isaac Thomas (25341708).**
-Working directory: `student-2/`
-Automations service: configures assignment extension, scheduled post, and quiz
-filler automations, stores each type in its own Entity Framework table, and
-provides read-only records of previous runs. A periodic worker executes due
-scheduled posts and fills eligible Canvas quizzes through the shared backend's
-Canvas gateway, and uses durable execution keys to prevent duplicate runs.
+shared-backend ──HTTPS──→ [ Canvas LMS API ]
+ai-mode ────────HTTPS──→ [ OpenRouter API ]
+```
 
-**Student 3: Jonathon Thomson (25488154).**  
-Working directory: `student-3/`  
-Deadline and task-tracker service: manages courses and coursework tasks,
-including priorities, completion states, due dates, subtasks, filtering, and
-Canvas assignment imports through the shared backend. Canvas sync keeps one
-primary task per assignment and updates it on later imports without storing a
-separate assessment table.
+---
 
-**Student 4: Tristan Huang (25322025).**  
-Working directory: `student-4/`  
-Account service: Account management and storage. Saves account details and 
-allows the creation and editing of account. Saves passwords securely with a hash,
-and can generate helpful AI Summaries for an account (to be expanded in future 
-releases). Additionally, a 'forgot password' prompt which allows users to receive 
-an email to change password.
+## Services & Team Allocation
 
-**Student 5: William Hannah (25494675).**  
-Working directory: `student-5/`  
-Grades and progress service: aggregates course, assignment, and mark
-data through its own private database service, renders progress views,
-and simulates what-if marks. Backend listens on host port `5105`;
-frontend is proxied through the shared shell at `/grades/`.
+| Microservice | Member | Stack | Key Features |
+|---|---|---|---|
+| **`shared/backend`** | Shared | ASP.NET Core (.NET 10) + SQLite | Canvas LMS API gateway, in-memory caching (3-min TTL), HTML sanitization, audit log |
+| **`shared/frontend`** | Shared | Vue 3 + TypeScript + Nginx | Shared dashboard shell, Nginx reverse proxy at `http://localhost:8080` |
+| **`shared/ui-kit`** | Shared | SCSS + Vue 3 components | `@better-canvas/ui-kit` design system library |
+| **`ai-services/ai-mode`** | Shared | ASP.NET Core (.NET 10) | OpenRouter LLM gateway (`/v1/chat/completions`) |
+| **`student-1`** | Bryan Lee | ASP.NET Core + PostgreSQL 16 + Vue 3 | Notifications, delivery preferences, SSE stream, AI digests & chat assistant |
+| **`student-2`** | Isaac Thomas | ASP.NET Core + SQLite + Vue 3 | Automations, scheduled Canvas posts, AI quiz filling, execution runner |
+| **`student-3`** | Jonathon Thomson | ASP.NET Core + SQLite + Vue 3 | Deadlines & task tracking, Canvas sync, AI subtasks, push notifications |
+| **`student-4`** | Tristan Huang | ASP.NET Core + SQLite + Vue 3 | User/role profiles, auth/login, MailHog password reset, AI profile summary |
+| **`student-5`** | William Hannah | ASP.NET Core + SQLite + Vue 3 | Grades calculation, What-If simulator, marks update endpoints |
+| **`mailhog`** | Infrastructure | Go SMTP test container | Local SMTP mock (`1025`) & web mailbox UI (`8025`) for email verification |
 
-## Quickstart
+---
 
-You need: Docker Desktop (or compatible), Node 22 (only if you intend to
-run a frontend or the ui-kit standalone outside Docker), and the .NET
-10 SDK (only if you intend to run a backend standalone outside Docker).
+## Quick start (Docker Compose)
 
-You will also need a Canvas API key and an OpenRouter API key to use
-Canvas Sync functionality and AI mode functionality, respectively.
+The easiest way to run the entire system is via Docker Compose:
 
-1. Copy the env template and fill in the values you need:
+```bash
+# 1. Clone repository and copy environment file
+cp .env.example .env
 
-   ```bash
-   cp .env.example .env
-   # edit .env and paste your OpenRouter and Canvas credentials
-   ```
+# 2. Edit .env with your OpenRouter API key and Canvas credentials
+# (OPENROUTER_API_KEY, CANVAS_BASE_URL, CANVAS_API_TOKEN)
 
-   The only required keys are `OPENROUTER_API_KEY` (for AI features),
-   `CANVAS_BASE_URL` (the root URL of your Canvas instance), and
-   `CANVAS_API_TOKEN` (a personal Canvas access token). `docker-compose.yml`
-   injects these into the services that own each integration. Without an
-   OpenRouter key, AI features will return 500s; without Canvas
-   credentials, the sync endpoints will fail.
+# 3. Build and launch all microservices
+docker compose up --build
+```
 
-2. Bring the whole stack up:
+Access services via the shared shell at [http://localhost:8080](http://localhost:8080).
 
-   ```bash
-   docker compose up
-   ```
+---
 
-3. Open the dashboard at <http://localhost:8080>.
-
-To stop: `docker compose down`. To wipe the database volumes (forces a
-clean re-seed on next start): `docker compose down -v`.
-
-## What runs where
-
-Host ports are set in `docker-compose.yml`. Backends are exposed
-directly so you can hit them with `curl` or a REST client; frontends
-sit behind the shared shell and aren't reachable on their own host
-port.
-
-| Host port | Service                          | Notes |
-|----------:|----------------------------------|-------|
-| `8080`    | `shared-shell` (nginx)           | Dashboard entry point. Proxies `/notifications`, `/automations`, `/deadlines`, `/account`, `/grades`, and `/api/*` to the right microservice. |
-| `5101`    | `student-1-backend`              | Notifications API. |
-| `5432`    | `student-1-database`             | PostgreSQL 16 container owning `notifications_db`. |
-| `5102`    | `student-2-backend`              | Automations API. |
-| `5103`    | `student-3-backend`              | Deadlines & tasks API. |
-| `5104`    | `student-4-backend`              | Account/profile API. |
-| `5114`    | `student-4-authentication`       | Login, password management, and password reset API. |
-| `5105`    | `student-5-backend`              | Grades & progress API. |
-| `5110`    | `shared-backend`                 | Canvas gateway. CORS is locked down; only other backends call it. |
-| `1025` / `8025` | `mailhog`                  | Development SMTP sink and web inbox for Student 4 password-reset emails. |
-
-`ai-mode` is internal-only (no host port). It fronts OpenRouter and is
-the only service that needs the OpenRouter key. All database services
-are also internal-only by design. See `docs/architecture/overview.md`
-for the full service table.
-
-## Project layout
+## Repository layout
 
 ```
 .
-├── ai-services/         # ai-mode gateway (OpenRouter proxy)
+├── ai-services/
+│   └── ai-mode/         # OpenRouter LLM proxy gateway
 ├── shared/
-│   ├── backend/         # Canvas API integration
-│   ├── frontend/        # dashboard shell + nginx reverse proxy
-│   └── ui-kit/          # @better-canvas/ui-kit workspace package
-│                        #   (tokens, fonts, shared Vue components)
-├── student-N/           # one slice per student
+│   ├── backend/         # Canvas LMS gateway + audit database
+│   ├── frontend/        # Vue 3 dashboard shell + Nginx proxy
+│   └── ui-kit/          # @better-canvas/ui-kit design system
+├── student-1/           # Notifications vertical slice (Bryan Lee)
+│   ├── backend/         # ASP.NET Core + EF Core PostgreSQL
+│   ├── database/        # Dedicated PostgreSQL 16 container
+│   └── frontend/        # Vue 3 + TypeScript + Playwright e2e
+├── student-2/           # Automations vertical slice (Isaac Thomas)
+│   ├── backend/         # ASP.NET Core + SQLite + runner
+│   └── frontend/        # Vue 3 + TypeScript
+├── student-3/           # Deadlines vertical slice (Jonathon Thomson)
 │   ├── backend/         # ASP.NET Core public API
-│   ├── authentication/  # Student 4 login / password-reset API
-│   ├── database/        # private persistence service
-│   │                    #   (PostgreSQL for student 1; internal
-│   │                    #    EF Core/SQLite services for 3, 4, 5)
-│   ├── contracts/       # internal HTTP contracts (students 3, 4, 5)
-│   └── frontend/        # Vue 3 + plain SCSS
-├── docs/
-│   ├── architecture
-│   └── playbooks
-├── tools/
-│   ├── agentic_loop     # agentic loop files and logs
-│   └── agentic_loop.py  # agentic loop runner
-├── .github/workflows/   # one CI workflow per service group
+│   ├── database/        # Internal EF Core/SQLite persistence service
+│   ├── contracts/       # Internal HTTP persistence contracts
+│   └── frontend/        # Vue 3 + TypeScript
+├── student-4/           # Account & Auth vertical slice (Tristan Huang)
+│   ├── backend/         # ASP.NET Core Account API
+│   ├── authentication/  # ASP.NET Core Auth & Password Reset API
+│   ├── database/        # Internal EF Core/SQLite persistence service
+│   ├── contracts/       # Internal HTTP persistence contracts
+│   └── frontend/        # Vue 3 + TypeScript
+├── student-5/           # Grades & Progress vertical slice (William Hannah)
+│   ├── backend/         # ASP.NET Core GradesManager API
+│   ├── database/        # Internal EF Core/SQLite persistence service
+│   ├── contracts/       # Internal HTTP persistence contracts
+│   └── frontend/        # Vue 3 + TypeScript
+├── docs/                # Full architecture, runbooks, and playbooks
+├── tools/               # Multi-agent architecture and code evaluation runner
+├── .github/workflows/   # CI workflows per service group
 ├── docker-compose.yml
 └── .env.example
 ```
+
+## Service communication
+
+Microservices communicate over HTTP and own strictly isolated databases.
+They must not query another service's database directly. The shared backend
+owns Canvas authentication and API pagination.
+
+- **Student 1**: NotificationService connects directly to its dedicated PostgreSQL container `student-1-database`.
+- **Student 2**: Automations backend stores data in its dedicated SQLite database `student-2-db`.
+- **Student 3**: Deadlines backend delegates all persistence to `student-3-database` over an internal private network (`student-3-data`).
+- **Student 4**: Account and Authentication backends delegate persistence to `student-4-database` over an internal private network (`student-4-data`), and auth sends emails via MailHog.
+- **Student 5**: Grades backend delegates persistence to `student-5-database` over an internal private network (`student-5-data`).
+
+To import Canvas data, start the services and call:
+
+```http
+POST http://localhost:5103/api/canvas-sync
+```
+
+The sync fetches active courses and their assignments, then
+transactionally upserts one task per stable Canvas assignment ID.
+Removed assignments are marked inactive rather than deleted. Canvas
+data remains live in the shared service; only the source IDs and
+fields needed by courses/tasks are persisted by the task tracker. A
+submitted or graded assignment marks its task as completed; other
+Canvas submission states do not overwrite the task's local status.
+
+The shared Canvas and task-tracker databases persist timestamps as
+`DateTime` normalized to UTC.
 
 ## Running a single service outside Docker
 
@@ -151,45 +159,32 @@ vars it needs (notably `OPENROUTER_API_KEY` for AI features,
 gateway, and `DatabaseService__BaseUrl` for students 3, 4, and 5). See
 `docs/architecture/overview.md` for the per-service env-var reference.
 
-Each frontend is a Vite + Vue 3 project. Run it with `npm run dev`
-from the frontend's directory; it expects a backend reachable on the
-URL baked in at build time (set via `VITE_*_API_BASE_URL` in the
-frontend's Dockerfile). In Docker the gateway is `nginx`, outside
-Docker you'll be hitting `localhost:<backend-port>` directly.
+Each frontend is a Vite + Vue 3 project. Run it with `npm run dev --workspace=<workspace-name>`
+from the repository root.
 
 ## Continuous integration
 
-One workflow per service group under `.github/workflows/`:
+Workflows under `.github/workflows/`:
 
-- `docker-ci.yml` — Docker image build for the full stack (fires on
-  any change under `ai-services/`, `shared/`, `student-*/`,
-  `docker-compose.yml`, the root `package.json`/`package-lock.json`, or
-  `.env.example`).
-- `shared-ci.yml` — frontend type-check + build, .NET build + format
-  check, EF migrations drift check, NuGet vulnerability scan.
-- `student-1-ci.yml` through `student-5-ci.yml` — same shape as
-  `shared-ci.yml`, scoped to that student's slice. `student-1-ci.yml`
-  additionally runs the .NET test suite and the Playwright E2E tests;
-  `student-3-ci.yml` and `student-5-ci.yml` add API contract smoke tests.
+- `docker-ci.yml` — Docker image build and Compose contract validation for the full stack (fires on any change under `ai-services/`, `shared/`, `student-*/`, `docker-compose.yml`, `package.json`, `package-lock.json`, or `.env.example`).
+- `shared-ci.yml` — Shared shell and backend build, format check, EF migrations drift check, and NuGet vulnerability scan.
+- `student-1-ci.yml` — Notifications frontend build + Playwright E2E, .NET build/test/format check, EF migration drift check, and NuGet audit.
+- `student-2-ci.yml` — Automations frontend build, .NET build/format check, EF migration drift check, and NuGet audit.
+- `student-3-ci.yml` — Deadlines frontend build, .NET build/format check, API contract smoke test, EF migration drift check, and NuGet audit.
+- `student-4-ci.yml` — Account & Auth frontend build, .NET build/format check, EF migration drift check, and NuGet audit.
+- `student-5-ci.yml` — Grades frontend build, .NET build/format check, API contract smoke test, EF migration drift check, and NuGet audit.
 
-Workflows run on PRs into `main` and on pushes to `main`. Path filters
-keep each workflow scoped to the directories it owns, so unrelated
-changes don't trigger unrelated builds.
+Workflows run on PRs targeting `main` and pushes to `main`.
 
 ## Release 0: Summary
 
 Working branch: `release-0`
 Feature set:
-- Shared dashboard shell and UI kit.
-- Notification preferences, notification management, AI digests, and a
-  dedicated PostgreSQL database microservice.
-- Assignment extension configuration, scheduled Canvas posts, AI quiz filling, and automation run history.
-- Deadline/task CRUD, course linkage, filtering, and Canvas synchronization.
-- Shared Canvas API gateway, audit database, Docker image, and CI workflow.
-- Account creation, management, authentication, password reset, and AI
-  summary of account.
-- Grades & progress slice (student 5) — backend API, private database
-  service, and frontend, integrated into the shared dashboard.
+- **Shared infrastructure**: Dashboard shell, `@better-canvas/ui-kit` Neobrutalism design system, Canvas LMS API gateway with caching/sanitization, OpenRouter AI mode gateway, and MailHog mock SMTP.
+- **Student 1 (Notifications)**: Delivery preferences, notification management, real-time SSE streaming broker, and AI digests and chat assistant backed by PostgreSQL.
+- **Student 2 (Automations)**: Assignment extension requests, scheduled Canvas posts via Canvas Conversations, AI quiz filling via `ai-mode`, and execution run history.
+- **Student 3 (Deadlines & Tasks)**: Deadline/task CRUD, course linkage, filtering, Canvas synchronization, AI subtask breakdown, internal database microservice, and real-time push notification integration.
+- **Student 4 (Account & Authentication)**: Account management, secure password hashing, AI profile summaries, authentication API, password reset workflow via MailHog, and internal database microservice.
+- **Student 5 (Grades & Progress)**: Grades aggregation, what-if marks simulator, marks update endpoints, and internal database microservice.
 
-All five slices are wired into the shared shell. Release 1 work builds on
-this baseline and adds RAG and MCP support for ai-mode.
+All five slices are wired into the shared shell. Release 1 work builds on this baseline and adds RAG and MCP support for ai-mode.

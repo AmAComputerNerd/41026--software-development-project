@@ -1,90 +1,106 @@
-# Architecture Overview
+# System Architecture Overview
 
-Current architectural state of the **41026 Advanced Software Development Project**. This document serves as the authoritative source material for technical reports, architecture diagrams, and onboarding for developers and AI agents.
-
----
-
-## 1. System Topology & Microservices
-
-The application is structured as a decentralized microservices architecture composed of independent vertical slices running inside a Docker network behind an Nginx reverse proxy shell (`shared-shell`).
-
-```
-[ Client Browser ] ──HTTP :8080──→ shared-shell (Nginx)
-                                       │
-                                       ├── /notifications
-                                       │     → student-1-frontend
-                                       │     → student-1-backend (:5101)
-                                       │       → student-1-database (PostgreSQL)
-                                       │       → shared-backend and ai-mode
-                                       │
-                                       ├── /automations
-                                       │     → student-2-frontend
-                                       │     → student-2-backend (:5102)
-                                       │       → owned SQLite database
-                                       │       → shared-backend and ai-mode
-                                       │
-                                       ├── /deadlines
-                                       │     → student-3-frontend
-                                       │     → student-3-backend (:5103)
-                                       │       → student-3-database
-                                       │       → shared-backend and ai-mode
-                                       │       → student-1-backend (notification push)
-                                       │
-                                       ├── /account
-                                       │     → student-4-frontend
-                                       │     → student-4-backend (:5104)
-                                       │       / authentication (:5114)
-                                       │       → student-4-database
-                                       │       → ai-mode (profile summaries)
-                                       │       → MailHog (password-reset email)
-                                       │
-                                       └── /grades
-                                             → student-5-frontend
-                                             → student-5-backend (:5105)
-                                               → student-5-database and ai-mode
-
-shared-backend (:5110) ──HTTPS──→ [ Canvas LMS API ]
-ai-mode (internal :8080) ─HTTPS─→ [ OpenRouter API ]
-```
+> **Authoritative Architectural Specification for Better Canvas**  
+> Workspace: `41026--software-development-project`  
+> Topology: Microservices over Docker Compose, Nginx Reverse Proxy, ASP.NET Core & Vue 3
 
 ---
 
-## 2. Microservice Directory & Port Matrix
+## 1. High-Level System Architecture
 
-| Service | Directory | Stack | Host Port | Internal Docker URL | Core Responsibilities | Dependencies |
-|---|---|---|---|---|---|---|
-| **`shared-shell`** | `shared/frontend` | Vue 3 + Nginx | `8080` | `http://shared-shell:80` | Host entrypoint, dashboard UI, reverse proxy routing | All frontends & backends |
-| **`shared-backend`** | `shared/backend` | ASP.NET Core + SQLite | `5110` | `http://shared-backend:8080` | Canvas LMS API client, HTML sanitizer, 3-min in-memory cache, audit log | Canvas LMS |
-| **`ai-mode`** | `ai-services/ai-mode` | ASP.NET Core | *Internal only* | `http://ai-mode:8080` | Central OpenRouter LLM gateway, status error normalization, health checks | OpenRouter API |
-| **`student-1-backend`** | `student-1/backend` | ASP.NET Core + EF Core (Npgsql) | `5101` | `http://student-1-backend:8080` | Notification management, delivery preferences, AI digests & chat, SSE stream broker | `student-1-database`, `ai-mode`, `shared-backend` |
-| **`student-1-database`** | `student-1/database` | PostgreSQL 16 Alpine | `5432` | `student-1-database:5432` | Student 1 persistence (`notifications_db`), `init.sql` seeding | — |
-| **`student-1-frontend`** | `student-1/frontend` | Vue 3 + Vite | *Proxied* | `http://student-1-frontend:80` | Notifications page, real-time toast alerts, AI digest chat panel | `student-1-backend` |
-| **`student-2-backend`** | `student-2/backend` | ASP.NET Core + SQLite | `5102` | `http://student-2-backend:8080` | Assignment extensions, scheduled Canvas posts, AI quiz filling, periodic execution, run history | `shared-backend`, `ai-mode` |
-| **`student-2-frontend`** | `student-2/frontend` | Vue 3 + Vite | *Proxied* | `http://student-2-frontend:80` | Automation configuration and run-history UI | `student-2-backend` |
-| **`student-3-backend`** | `student-3/backend` | ASP.NET Core | `5103` | `http://student-3-backend:8080` | Public task API, Canvas/AI orchestration, due-soon reminder worker | `student-3-database`, `shared-backend`, `ai-mode`, `student-1-backend` |
-| **`student-3-database`** | `student-3/database` | ASP.NET Core + EF Core SQLite | *Internal only* (`5203` standalone) | `http://student-3-database:8080` | Student 3 persistence API, migrations, seeding, transactional task operations | — |
-| **`student-3-frontend`** | `student-3/frontend` | Vue 3 + Vite | *Proxied* | `http://student-3-frontend:80` | Task manager, calendar view, upcoming task view, AI breakdown modal | `student-3-backend` |
-| **`student-4-backend`** | `student-4/backend` | ASP.NET Core | `5104` | `http://student-4-backend:8080` | User/student/teacher profile API, AI profile summaries | `student-4-database`, `ai-mode` |
-| **`student-4-authentication`** | `student-4/authentication` | ASP.NET Core | `5114` | `http://student-4-authentication:8080` | Login, password/account management, SMTP password reset | `student-4-database`, `mailhog` |
-| **`student-4-database`** | `student-4/database` | ASP.NET Core + EF Core SQLite | *Internal only* | `http://student-4-database:8080` | Student 4 persistence API and migrations | — |
-| **`student-4-frontend`** | `student-4/frontend` | Vue 3 + Vite | *Proxied* | `http://student-4-frontend:80` | Login, profile, and password-reset UI | `student-4-backend`, `student-4-authentication` |
-| **`student-5-backend`** | `student-5/backend` | ASP.NET Core | `5105` | `http://student-5-backend:8080` | Grades & progress calculation, what-if marks endpoints, AI recommendations | `student-5-database`, `ai-mode` |
-| **`student-5-database`** | `student-5/database` | ASP.NET Core + EF Core SQLite | *Internal only* | `http://student-5-database:8080` | Student 5 persistence API and migrations | — |
-| **`student-5-frontend`** | `student-5/frontend` | Vue 3 + Vite | *Proxied* | `http://student-5-frontend:80` | Grades list, grade breakdown, what-if simulator | `student-5-backend` |
-| **`mailhog`** | *(image `mailhog/mailhog`)* | Go SMTP test server | `1025` (SMTP), `8025` (UI) | `mailhog:1025` | Development inbox for Student 4 password-reset emails | — |
+Better Canvas is an **LLM-enhanced microservices web platform** designed around autonomous vertical slices. Each student owns a bounded business context, backed by dedicated infrastructure services for Canvas LMS connectivity, OpenRouter AI completions, and unified dashboard proxying.
 
-Canvas assignment descriptions are treated as untrusted HTML. The shared
-backend parses them into compact plain text before returning its API DTOs, so
-downstream services neither render raw Canvas markup nor send it to AI models.
-The automations backend also obtains messageable Canvas recipient IDs and names
-through shared-backend; only shared-backend receives the Canvas API token.
-Its periodic executor asks each type-specific executor for zero or more due
-execution candidates and durably claims each candidate before external work.
-Candidate keys derive from their execution parameters; scheduled posts hash the
-scheduled time and complete Canvas message configuration, while quiz filling
-keys on the quiz ID so each quiz is attempted at most once. This prevents
-duplicate sends across timer overlap or replicas while allowing edited or
-multi-target automations to produce new logical executions.
+```
+                                  [ Browser / Client ]
+                                           │
+                                  (HTTP: Port 8080)
+                                           ▼
+                    ┌─────────────────────────────────────────────┐
+                    │          shared-shell (Nginx)               │
+                    │  - /             -> Dashboard (Vue 3)       │
+                    │  - /notifications-> student-1-frontend      │
+                    │  - /automations  -> student-2-frontend      │
+                    │  - /deadlines    -> student-3-frontend      │
+                    │  - /account      -> student-4-frontend      │
+                    │  - /grades       -> student-5-frontend      │
+                    │  - /api/*        -> Proxied to backends     │
+                    └───────┬───────────────────────────────┬─────┘
+                            │ (internal HTTP network)       │
+            ┌───────────────┴──────────────┬────────────────┴──────────────┐
+            ▼                              ▼                               ▼
+┌───────────────────────┐      ┌───────────────────────┐      ┌───────────────────────┐
+│   student-1-backend   │      │   student-3-backend   │      │   student-5-backend   │
+│  (Notifications +     │◄─────┤ (Deadlines, Tasks,    │      │  (Grades & Progress)  │
+│   SSE + AI Digest)    │ push │  Sync, AI Subtasks)   │      └───────────┬───────────┘
+└───────────┬───────────┘      └───────────┬───────────┘                  │
+            │                              │                              │
+            │ PostgreSQL                   │ HTTP (private net)           │ HTTP (private net)
+            ▼                              ▼                              ▼
+┌───────────────────────┐      ┌───────────────────────┐      ┌───────────────────────┐
+│   student-1-database  │      │   student-3-database  │      │   student-5-database  │
+│   (PostgreSQL 16)     │      │  [EF Core: app.db]    │      │  [EF Core: grades.db] │
+└───────────────────────┘      └───────────┬───────────┘      └───────────────────────┘
+                                           │
+                                           │ HTTP
+                                           ▼
+┌───────────────────────┐      ┌───────────────────────┐
+│     ai-mode (8080)    │      │  shared-backend(8080) │
+│  (OpenRouter Gateway) │      │  (Canvas LMS Gateway) │
+└───────────┬───────────┘      └───────────┬───────────┘
+            │ HTTPS                        │ HTTPS
+            ▼                              ▼
+     [ OpenRouter API ]             [ Canvas LMS API ]
+```
+
+---
+
+## 2. Core Service Topology
+
+```
+[ Browser / Client ] ──HTTP :8080──→ shared-shell (Nginx)
+                                      │
+                                      ├── /notifications, /api/notifications
+                                      │     → student-1-backend
+                                      │       → student-1-database (PostgreSQL)
+                                      │       → shared-backend and ai-mode
+                                      │
+                                      ├── /automations, /api/automations
+                                      │     → student-2-backend
+                                      │       → owned SQLite database
+                                      │       → shared-backend and ai-mode
+                                      │
+                                      ├── /deadlines, /api/deadlines
+                                      │     → student-3-backend
+                                      │       → student-3-database
+                                      │       → shared-backend and ai-mode
+                                      │       → student-1-backend (notification push)
+                                      │
+                                      ├── /account, /api/auth|users|students|teachers
+                                      │     → student-4-backend / authentication
+                                      │       → student-4-database
+                                      │       → ai-mode (profile summaries)
+                                      │       → MailHog (password-reset email)
+                                      │
+                                      └── /grades, /api/grades
+                                            → student-5-backend
+                                              → student-5-database and ai-mode
+
+shared-backend ──HTTPS──→ [ Canvas LMS API ]
+ai-mode ────────HTTPS──→ [ OpenRouter API ]
+```
+
+### Infrastructure & Shared Services
+- **`shared-shell`** (Port 8080): Vue 3 shell dashboard and Nginx reverse proxy routing web requests and API paths.
+- **`shared-backend`** (Port 5110): Exclusive Canvas LMS API client with 3-minute in-memory caching and HTML sanitization.
+- **`ai-mode`** (Internal 8080): Unified chat completions gateway proxying requests to OpenRouter LLMs.
+- **`mailhog`** (SMTP: 1025 / Web UI: 8025): Local SMTP mock service for developer email verification.
+
+### Vertical Microservice Slices
+- **`student-1` (Notifications)**: Notification management, delivery preferences, SSE stream broker, AI digest generation and conversational assistant (`student-1-database` PostgreSQL 16 on port 5432).
+- **`student-2` (Automations)**: Assignment extension requests, scheduled Canvas posts, AI quiz answering with `ai-mode`, and periodic execution runner.
+- **`student-3` (Deadlines & Tasks)**: Coursework deadlines, subtask hierarchies, Canvas synchronization, AI breakdown planning, and push notifications to `student-1-backend` (`student-3-database` internal SQLite service on `student-3-data`).
+- **`student-4` (Account & Authentication)**: User registration, login authentication, MailHog password reset workflows, profile AI summaries (`student-4-database` internal SQLite service on `student-4-data`).
+- **`student-5` (Grades & Progress)**: Marks calculation, target GPA simulation ("what-if" marks), and progress tracking (`student-5-database` internal SQLite service on `student-5-data`).
 
 ---
 
@@ -100,8 +116,8 @@ The Nginx server running inside `shared-shell` is the sole entry point exposed o
 - `/deadlines/` → Proxies to `http://student-3-frontend:80/`.
 - `/api/deadlines/` → Proxies to `http://student-3-backend:8080/api/`.
 - `/account/` → Proxies to `http://student-4-frontend:80/`.
-- `/api/auth/` → Proxies to `http://student-4-authentication:8080`.
-- `/api/users/`, `/api/students/`, `/api/teachers/` → Proxy to `http://student-4-backend:8080`.
+- `/api/auth/` → Proxies to `http://student-4-authentication:8080/`.
+- `/api/users/`, `/api/students/`, `/api/teachers/` → Proxy to `http://student-4-backend:8080/`.
 - `/grades/` → Proxies to `http://student-5-frontend:80/`.
 - `/api/grades/` → Proxies to `http://student-5-backend:8080/`.
 
@@ -113,22 +129,18 @@ permanently to their trailing-slash form.
 ## 4. Cross-Service Boundaries & Communication Rules
 
 ### Database Isolation
-Each persistence-owning service uses its own isolated database in a persistent
-Docker volume: EF Core over SQLite for `shared-backend` (`shared-db`),
-`student-2-backend` (`student-2-db`), `student-3-database` (`student-3-db`),
-`student-4-database` (`student-4-db`), and `student-5-database`
-(`student-5-db`), plus a dedicated PostgreSQL container for Student 1
-(`student-1-postgres-data`).
-- No service reads or writes another service's database file.
-- Direct database connection strings point only to the local service database.
-- `student-3-database`, `student-4-database`, and `student-5-database`
-  exclusively mount their volumes; the matching public APIs use internal HTTP
-  contracts and contain no EF Core dependency.
-- Each of those database services is attached only to its internal
-  `student-N-data` Docker network. The matching public services (the backend,
-  plus `student-4-authentication` for Student 4) join both that private network
-  and the default application network; no other service can directly reach a
-  private persistence API.
+Each bounded context maintains its own strictly isolated persistence mechanism:
+- **`student-1`**: Runs a dedicated PostgreSQL 16 container (`student-1-database`) mounting named volume `student-1-postgres-data`.
+- **`student-2`**: Runs SQLite with persistent volume `student-2-db`.
+- **`student-3`**: Dedicated internal database service `student-3-database` exclusively mounts `student-3-db` on the private `student-3-data` network.
+- **`student-4`**: Dedicated internal database service `student-4-database` exclusively mounts `student-4-db` on the private `student-4-data` network.
+- **`student-5`**: Dedicated internal database service `student-5-database` exclusively mounts `student-5-db` on the private `student-5-data` network.
+- **`shared-backend`**: Dedicated SQLite audit log mounting `shared-db`.
+
+No service reads or writes another service's database directly; all cross-service communication occurs over HTTP.
+Direct database connection strings point only to the local service database.
+`student-3-database`, `student-4-database`, and `student-5-database` exclusively mount their volumes; the matching public APIs use internal HTTP contracts and contain no EF Core dependency.
+Each of those database services is attached only to its internal `student-N-data` Docker network. The matching public services join both that private network and the default application network; no other service can directly reach a private persistence API.
 
 ### Canvas Data Boundary
 - `shared-backend` holds the `CANVAS_BASE_URL` and `CANVAS_API_TOKEN`.
@@ -162,7 +174,7 @@ Notifications carry structured action metadata enabling cross-service operations
 ### D. Scheduled Canvas Automations
 - `student-2-backend` stores assignment-extension, scheduled-post, and quiz-filler automations in its owned SQLite database.
 - A periodic execution worker durably claims due work, accesses Canvas only through `shared-backend`, and records execution history.
-- Quiz-filler automations send eligible Canvas quiz questions to `ai-mode`, validate the structured answers, and submit them through the Canvas gateway.
+- Quiz-filler automations send eligible Canvas quiz questions to `ai-mode`, validate the structured answers, and save draft attempts through the Canvas gateway without automatically submitting.
 
 ### E. Account, Authentication, and AI Profiles
 - `student-4-authentication` provides login, password change, account deletion, and email password-reset workflows; both authentication and profile APIs access `student-4-database` exclusively over HTTP.
