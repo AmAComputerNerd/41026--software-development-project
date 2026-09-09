@@ -65,3 +65,6 @@ When the loop runs, `core/doc_loader.py` automatically reads:
    ```bash
    python tools/agentic_loop.py
    ```
+
+   Each run is also written to
+   `tools/agentic_loop/logs/<target>/<timestamp>_<layer>.log`.

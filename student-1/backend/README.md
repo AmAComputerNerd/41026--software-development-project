@@ -9,6 +9,18 @@ cd Api
 dotnet restore
 ```
 
+### Database (required)
+
+Persistence lives in the dedicated `student-1-database` PostgreSQL container
+(see `../database/README.md`). The backend connects with EF Core + Npgsql via
+`ConnectionStrings:DefaultConnection`; Docker Compose points it at
+`Host=student-1-database`. To run the backend standalone, start just the
+database first:
+
+```bash
+docker compose up -d student-1-database
+```
+
 ### AI gateway (required for AI digest generation)
 
 `POST /digest/generate` calls the shared `ai-mode` gateway service, which holds the
@@ -24,4 +36,14 @@ If the base URL is missing at startup, the app logs a warning to the console.
 ```bash
 cd Api
 dotnet run
+```
+
+## Tests
+
+`Api.Tests` holds xUnit unit tests (stream broker, DTO extensions, Canvas
+notification sync, OpenRouter digest service) and integration tests built on
+`Microsoft.AspNetCore.Mvc.Testing` with an in-memory SQLite test database.
+
+```bash
+dotnet test student-1/backend/NotificationService.sln
 ```

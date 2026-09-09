@@ -10,14 +10,18 @@ For the complete extraction process, see
 ## 1. Database Architecture & Boundaries
 
 ### Strict Isolation Rule
-Each persistence-owning service maintains an **independent SQLite database**:
-- `student-1/backend/Api`: `notifications.db` (or configured database name)
-- `student-3/database/Database`: `app.db` in Docker Compose
-- `student-5/backend/Api`: `grades.db`
-- `shared/backend/Api`: `canvas_audit.db`
+Each persistence-owning service maintains an **independent database**:
+- `student-1/database`: PostgreSQL 16 container (`notifications_db`), schema and
+  seed data from `init.sql`; `student-1/backend/Api` connects to it with EF Core
+  and `Npgsql`
+- `student-2/backend/Api`: `automations.db` (SQLite)
+- `student-3/database/Database`: `app.db` (SQLite) in Docker Compose
+- `student-4/database/Database`: `app.db` (SQLite)
+- `student-5/database/Database`: `app.db` (SQLite)
+- `shared/backend/Api`: `shared.db` — Canvas request audit log (SQLite)
 
 > [!CAUTION]
-> **Zero Cross-Database Access**: Microservices must never open another service's SQLite file directly or attach to another database context. Cross-service data requests must always proceed via HTTP API endpoints.
+> **Zero Cross-Database Access**: Microservices must never open another service's database directly or attach to another database context. Cross-service data requests must always proceed via HTTP API endpoints.
 
 ---
 
@@ -26,19 +30,22 @@ Each persistence-owning service maintains an **independent SQLite database**:
 Whenever you modify an entity class or `DbContext` model configuration:
 
 ### Step 1: Create a Migration
-New slices place migrations in their dedicated database service:
+Slices with a dedicated database service place migrations in that service:
 
 ```bash
 dotnet ef migrations add <DescriptiveMigrationName> \
   --project student-N/database/Database/Database.csproj
 ```
 
-Existing legacy services continue using their current persistence-owning
-project until migrated. For example:
+Services that still own EF Core inside their API project use that project
+instead. For example:
 
 ```bash
 dotnet ef migrations add <DescriptiveMigrationName> \
   --project student-1/backend/Api/Api.csproj
+
+dotnet ef migrations add <DescriptiveMigrationName> \
+  --project student-2/backend/Api/Api.csproj
 ```
 
 ### Step 2: Review Generated Migration
@@ -56,9 +63,9 @@ dotnet ef database update \
 
 In Docker Compose mode, migrations are typically applied automatically during application startup via `context.Database.Migrate()` or `DatabaseMigrator`.
 
-For Student 3, only `student-3-database` may mount `student-3-db` or
-apply migrations. `student-3-backend` accesses persistence exclusively
-through the internal HTTP API.
+For Students 3, 4, and 5, only the `student-N-database` service may mount
+`student-N-db` or apply migrations. The matching public backend accesses
+persistence exclusively through the internal HTTP API.
 
 ---
 
@@ -80,4 +87,5 @@ through the internal HTTP API.
   - Fix: Enable WAL mode in DbContext setup (`PRAGMA journal_mode=WAL;`).
 - **Resetting Database to Fresh State**:
   - In Docker: `docker compose down -v && docker compose up --build`
-  - Outside Docker: Delete the local `.db` file and run `dotnet ef database update`.
+  - Outside Docker: delete the local `.db` file (or drop the PostgreSQL volume
+    for Student 1) and run `dotnet ef database update`.

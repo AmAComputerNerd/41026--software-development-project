@@ -23,4 +23,18 @@ Vue 3 SPA for managing notifications, delivery preferences, AI digests, and inte
 npm run dev --workspace=student-1-frontend
 ```
 
-Runs by default on `http://localhost:5173`. When accessing through the shared shell, visit `http://localhost:8080/notifications/`.
+Vite serves the app under its `/notifications/` base path, so the dev URL is
+`http://localhost:5173/notifications/`. When accessing through the shared
+shell, visit `http://localhost:8080/notifications/`.
+
+---
+
+## 3. End-to-End Tests
+
+Playwright specs live in `e2e/` (navigation, notifications, preferences,
+digest, and real-time toast flows):
+
+```bash
+npx playwright install --with-deps chromium
+npm run test:e2e --workspace=student-1-frontend
+```
