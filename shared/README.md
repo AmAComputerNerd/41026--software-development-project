@@ -98,8 +98,8 @@ location /api/automations/ {
 }
 ```
 
-Route prefix must match your tile's `route` in `tiles.ts` (step 4) and your API prefix
-must match what your frontend calls.
+Route prefix must match your tile's `route` in `shared/ui-kit/src/services.ts`
+(step 4) and your API prefix must match what your frontend calls.
 
 ### 3. Add your service to docker-compose.yml
 

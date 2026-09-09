@@ -1,36 +1,33 @@
-# Playbook: Running & Customizing the Shared Team Agentic Review Loop
+# Agentic Loop Evaluation Guide
 
-The `tools/agentic_loop` tool implements the **Plan → Act → Observe → Adapt** Agentic AI workflow to evaluate code quality, database boundaries, frontend design system compliance, and microservices architecture.
+> Operating instructions for running automated multi-agent architecture evaluations, codebase linting, and compliance verification.
 
 ---
 
-## 1. The Plan → Act → Observe → Adapt Lifecycle
+## 1. Overview
+
+The `tools/agentic_loop.py` tool executes an automated multi-agent deliberation process over the codebase. It inspects service implementations against the universal architectural standards defined in `AGENTS.md`.
 
 ```
-                 [ Authoritative Documentation & System Context ]
-                 (AGENTS.md, docs/ library, owner READMEs)
-                                       │
-                                       ▼
-                              [ Stage 1: PLAN ]
-       (Resolves target, loads 5 Golden Rules, extracts architectural contracts)
-                                       │
-                                       ▼
-                               [ Stage 2: ACT ]
-      (Collectors execute live HTTP probes, minimal API scanning, SQLite PRAGMA)
-                                       │
-                                       ▼
-                             [ Stage 3: OBSERVE ]
-         (Structures runtime and schema evidence into clean observation facts)
-                                       │
-                                       ▼
-                              [ Stage 4: ADAPT ]
- ┌─────────────────────────────────────┴─────────────────────────────────────┐
- │ • Phase 1 (Propose): Implementation Agent produces evidence-backed fix    │
- │ • Phase 2 (Review): Review Agent critiques/confirms against docs & rules │
- └─────────────────────────────────────┬─────────────────────────────────────┘
-                                       │
-                                       ▼
-                             [ Evaluation Report ]
+┌────────────────────────────────────────────────────────┐
+│               Target Selection (e.g. student-1)        │
+└──────────────────────────┬─────────────────────────────┘
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│           Codebase & Documentation Ingestion           │
+│   (AGENTS.md, docs/architecture, owner prompt/docs)    │
+└──────────────────────────┬─────────────────────────────┘
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│             Layer Collectors (AST / File)              │
+│      Frontend (Vue), Backend (.NET), Database, Compose │
+└──────────────────────────┬─────────────────────────────┘
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│         LLM Multi-Agent Evaluator (ai-mode)            │
+│  - Proposer Agent (Drafts fixes / compliance report)   │
+│  - Reviewer Agent (Critiques and validates rules)      │
+└────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -70,7 +67,8 @@ When the loop runs, `core/doc_loader.py` automatically reads:
 
 ## 4. Automatic Logging & Audit Evidence
 
-The runner automatically records evaluation transcripts and structured evidence logs into timestamped folders (e.g. `graphify-out/YYYY-MM-DD/` and `tools/agentic_loop/logs/`):
+The runner automatically records evaluation transcripts and structured evidence logs into timestamped folders:
 - Collector execution traces and observed HTTP responses.
 - LLM proposal and review deliberation outputs.
 - Verification status against the Five Golden Architectural Rules.
+- Each run is written to `tools/agentic_loop/logs/<target>/<timestamp>_<layer>.log`.

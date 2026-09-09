@@ -1,7 +1,7 @@
 # Playbook: Adding a New Student Frontend Microservice
 
-Follow this guide when scaffolding a new frontend microservice (such as
-`student-4` for Account), using the implemented student frontends as reference
+Follow this guide when scaffolding a new frontend microservice, using the
+implemented student frontends (`student-1` through `student-5`) as reference
 implementations.
 
 ---
@@ -10,7 +10,7 @@ implementations.
 
 Use Vue 3 with TypeScript, `<script setup>`, and plain SCSS (no Vuetify). Match the existing project dependencies:
 - `vue ^3.5.x`
-- `vue-router ^4.x`
+- `vue-router ^5.x`
 - `sass-embedded`
 - `vue-tsc` (for type-checking)
 - `@better-canvas/ui-kit` (workspace dependency)
@@ -23,13 +23,13 @@ In root `package.json`, ensure your frontend path is listed in `"workspaces"`:
 
 ```json
 "workspaces": [
-  "shared/ui-kit",
   "shared/frontend",
+  "shared/ui-kit",
   "student-1/frontend",
-  "student-3/frontend",
-  "student-5/frontend",
   "student-2/frontend",
-  "student-4/frontend"
+  "student-3/frontend",
+  "student-4/frontend",
+  "student-5/frontend"
 ]
 ```
 
@@ -61,15 +61,16 @@ app.use(router)
 app.mount('#app')
 ```
 
-Use the shared `TopNav` component from `@better-canvas/ui-kit`:
+Use the shared `Navbar` component from `@better-canvas/ui-kit`, passing it the
+canonical service registry so cross-service links stay in sync:
 
 ```vue
 <script setup lang="ts">
-import { TopNav } from '@better-canvas/ui-kit'
+import { Navbar, SERVICES } from '@better-canvas/ui-kit'
 </script>
 
 <template>
-  <TopNav title="Automations" current-service="automations" />
+  <Navbar :services="SERVICES" badge="AUTOMATIONS" />
   <main class="page-container">
     <!-- Feature content -->
   </main>
@@ -131,9 +132,9 @@ server {
      build:
        context: .
        dockerfile: student-N/frontend/Dockerfile
-     networks:
-       - internal
    ```
+   Frontends stay on the default Compose network; only private database
+   services join an internal `student-N-data` network.
 2. In `shared/frontend/nginx.conf`, uncomment or add the proxy block:
    ```nginx
    location /feature/ {

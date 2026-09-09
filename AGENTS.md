@@ -26,7 +26,7 @@ This repository is an **LLM-enhanced microservices web platform** built on top o
 Any AI agent modifying or extending this codebase **must strictly follow these 5 rules**:
 
 ### Rule 1: Database Isolation (No Cross-Database Queries)
-- Each bounded context owns an independent database:
+- Each bounded context owns an independent database (EF Core over SQLite or PostgreSQL):
   - `student-1`: Dedicated PostgreSQL 16 container (`student-1-database`, `notifications_db`).
   - `student-2`: Dedicated SQLite database (`student-2-db`).
   - `student-3`: Dedicated internal SQLite persistence service (`student-3-database`, `student-3-db`) on private network `student-3-data`.
@@ -48,8 +48,8 @@ Any AI agent modifying or extending this codebase **must strictly follow these 5
 
 ### Rule 4: Neobrutalism Design System (`@better-canvas/ui-kit`)
 - Frontends are built with **Vue 3 `<script setup lang="ts">` and plain SCSS**.
-- All styles must use design tokens from `@better-canvas/ui-kit` (`--color-surface`, `--color-primary`, `--border-width-md`, `--shadow-offset-md`, `--font-mono`, etc.).
-- **Design rules**: Zero border-radius (`border-radius: 0`), prominent solid borders (`border: 4px solid var(--border-color)`), hard drop shadows without blur (`box-shadow: 4px 4px 0 var(--shadow-color)`), high contrast, and brutalist badges/buttons.
+- All styles must use design tokens from `@better-canvas/ui-kit` (`--nb-color-bg`, `--nb-color-ink`, `--nb-color-accent-orange`, `--nb-border-width-md`, `--nb-shadow`, `--nb-font-mono`, etc.).
+- **Design rules**: Zero border-radius (`--nb-border-radius: 0`), prominent solid ink borders (`var(--nb-border-width-md) solid var(--nb-color-ink)`), hard drop shadows without blur (`var(--nb-shadow)`), high contrast, and brutalist badges/buttons.
 - **Do NOT introduce Vuetify or heavy external UI component libraries** into new frontend services.
 
 ### Rule 5: Git & Contribution Workflow
@@ -66,19 +66,19 @@ Any AI agent modifying or extending this codebase **must strictly follow these 5
 | **`shared-shell`** | `shared/frontend` | Vue 3 + Nginx | `8080` | `http://shared-shell:80` | Dashboard shell (`/`), Nginx reverse proxy for all frontends & APIs |
 | **`shared-backend`** | `shared/backend` | ASP.NET Core (.NET 10) + SQLite | `5110` | `http://shared-backend:8080` | Canvas API gateway (`/api/canvas/*`), in-memory caching (3-min TTL), audit log |
 | **`ai-mode`** | `ai-services/ai-mode` | ASP.NET Core (.NET 10) | *Internal only* | `http://ai-mode:8080` | OpenRouter LLM gateway (`/v1/chat/completions`), health checks (`/health/live`, `/health/ready`) |
-| **`student-1-database`** | `student-1/database` | PostgreSQL 16 (Alpine) | `5432` | `student-1-database:5432` | Isolated PostgreSQL database (`notifications_db`) for notifications, preferences, and AI digests |
-| **`student-1-backend`** | `student-1/backend` | ASP.NET Core (.NET 10) + EF Core PostgreSQL | `5101` | `http://student-1-backend:8080` | Notifications, delivery preferences, AI digests & chat, SSE stream (`/notifications/*`, `/digest/*`, `/preferences/*`) |
+| **`student-1-backend`** | `student-1/backend` | ASP.NET Core (.NET 10) + EF Core PostgreSQL | `5101` | `http://student-1-backend:8080` | Notifications, delivery preferences, AI digests & chat, SSE stream, Canvas sync (`/notifications/*`, `/digest/*`, `/preferences/*`, `/api/canvas-sync`) |
+| **`student-1-database`** | `student-1/database` | PostgreSQL 16 (Alpine) | `5432` | `student-1-database:5432` | Dedicated PostgreSQL database (`notifications_db`), seeded by `init.sql` |
 | **`student-1-frontend`** | `student-1/frontend` | Vue 3 + TypeScript + Vite | *Proxied* | `http://student-1-frontend:80` | Notifications UI, SSE toast alerts, AI digest assistant (`/notifications/`, `/api/notifications/`) |
-| **`student-2-backend`** | `student-2/backend` | ASP.NET Core (.NET 10) + SQLite | `5102` | `http://student-2-backend:8080` | Automations service (assignment extensions, scheduled Canvas posts, AI quiz filling, run history) |
+| **`student-2-backend`** | `student-2/backend` | ASP.NET Core (.NET 10) + SQLite | `5102` | `http://student-2-backend:8080` | Automations service (assignment extensions, scheduled Canvas posts, AI quiz filling, run history) (`/api/automations`, `/api/automation-runs`) |
 | **`student-2-frontend`** | `student-2/frontend` | Vue 3 + TypeScript + Vite | *Proxied* | `http://student-2-frontend:80` | Automations UI (`/automations/`, `/api/automations/`) |
-| **`student-3-backend`** | `student-3/backend` | ASP.NET Core (.NET 10) | `5103` | `http://student-3-backend:8080` | Public deadline/task API, Canvas and AI orchestration, due-soon reminders (`/api/deadlines/*`, `/api/tasks/*`, `/api/canvas-sync`) |
+| **`student-3-backend`** | `student-3/backend` | ASP.NET Core (.NET 10) | `5103` | `http://student-3-backend:8080` | Public deadline/task API, Canvas and AI orchestration, due-soon reminders (`/api/deadlines/*`, `/api/tasks/*`, `/api/courses/*`, `/api/canvas-sync`) |
 | **`student-3-database`** | `student-3/database` | ASP.NET Core (.NET 10) + EF Core SQLite | *Internal only* (`5203` standalone) | `http://student-3-database:8080` | Exclusive owner of Student 3 persistence, migrations, seeding, and atomic task operations (isolated on `student-3-data`) |
 | **`student-3-frontend`** | `student-3/frontend` | Vue 3 + TypeScript + Vite | *Proxied* | `http://student-3-frontend:80` | Deadlines & task management UI, calendar view (`/deadlines/`, `/api/deadlines/`) |
 | **`student-4-backend`** | `student-4/backend` | ASP.NET Core (.NET 10) | `5104` | `http://student-4-backend:8080` | Account management API, user roles, AI profile summaries (`/api/users/*`, `/api/students/*`, `/api/teachers/*`) |
 | **`student-4-authentication`** | `student-4/authentication` | ASP.NET Core (.NET 10) | `5114` | `http://student-4-authentication:8080` | Auth & password management, MailHog password reset emails (`/api/auth/*`) |
 | **`student-4-database`** | `student-4/database` | ASP.NET Core (.NET 10) + EF Core SQLite | *Internal only* (`5204` standalone) | `http://student-4-database:8080` | Exclusive owner of Student 4 persistence, migrations, and accounts (isolated on `student-4-data`) |
 | **`student-4-frontend`** | `student-4/frontend` | Vue 3 + TypeScript + Vite | *Proxied* | `http://student-4-frontend:80` | Account UI, login, registration, password reset (`/account/`, `/api/auth/`) |
-| **`student-5-backend`** | `student-5/backend` | ASP.NET Core (.NET 10) | `5105` | `http://student-5-backend:8080` | Grades & progress API, what-if marks calculation (`/api/grades/*`) |
+| **`student-5-backend`** | `student-5/backend` | ASP.NET Core (.NET 10) | `5105` | `http://student-5-backend:8080` | Grades & progress API, what-if marks calculation, AI recommendations (`/api/grades/*`) |
 | **`student-5-database`** | `student-5/database` | ASP.NET Core (.NET 10) + EF Core SQLite | *Internal only* (`5205` standalone) | `http://student-5-database:8080` | Exclusive owner of Student 5 persistence, migrations, and grade records (isolated on `student-5-data`) |
 | **`student-5-frontend`** | `student-5/frontend` | Vue 3 + TypeScript + Vite | *Proxied* | `http://student-5-frontend:80` | Grades & progress UI, what-if simulator (`/grades/`, `/api/grades/`) |
 | **`mailhog`** | External Docker image | Go (`mailhog/mailhog:latest`) | `1025` (SMTP), `8025` (UI) | `mailhog:1025` | Local SMTP mock server & developer web mailbox UI for email verification |
@@ -137,7 +137,7 @@ Any AI agent modifying or extending this codebase **must strictly follow these 5
 │
 ├── tools/
 │   ├── agentic_loop.py                # Multi-agent architecture & code evaluation runner
-│   └── agentic_loop/                  # Collectors, pipelines, prompts for automated review
+│   └── agentic_loop/                  # Collectors, pipelines, prompts, run logs
 │
 └── docs/                              # Comprehensive documentation library
     ├── README.md                      # Documentation index
@@ -150,21 +150,23 @@ Any AI agent modifying or extending this codebase **must strictly follow these 5
 
 ## 5. Environment Variables & Secrets
 
-The root `.env` file (copied from `.env.example`) supplies configuration:
+The root `.env` (copied from `.env.example`) and Docker Compose environment entries supply configuration:
 
 | Variable | Target Service | Purpose |
 |---|---|---|
-| `OPENROUTER_API_KEY` | `ai-mode` | API key for OpenRouter LLM models (e.g. `minimax/minimax-m3:free`) |
+| `OPENROUTER_API_KEY` | `ai-mode` | API key for OpenRouter LLM models |
+| `OPENROUTER_MODEL` | `ai-mode` | Optional gateway-wide model override (default `nvidia/nemotron-3.5-lightning:free`) |
 | `CANVAS_BASE_URL` | `shared-backend` | Base URL of institution Canvas instance (`https://your-institution.instructure.com`) |
 | `CANVAS_API_TOKEN` | `shared-backend` | Personal Canvas access token |
 | `ASPNETCORE_ENVIRONMENT` | All .NET backends | Set to `Development` |
 | `ConnectionStrings__DefaultConnection` | `student-1-backend` | PostgreSQL connection string (`Host=student-1-database;Port=5432;Database=notifications_db;Username=postgres;Password=postgres`) |
 | `SharedService__BaseUrl` | `student-1`, `student-2`, `student-3` | Internal URL for Canvas gateway (`http://shared-backend:8080`) |
-| `AiGateway__BaseUrl` | `student-1`, `student-2`, `student-3`, `student-4`, `student-5` | Internal URL for AI gateway (`http://ai-mode:8080`) |
+| `AiGateway__BaseUrl` | `student-1` through `student-5` where AI is enabled | Internal URL for AI gateway (`http://ai-mode:8080`) |
+| `DatabaseService__BaseUrl` | `student-3`, `student-4` (API and authentication), `student-5` | Internal URL for private persistence API |
 | `NotificationService__BaseUrl` | `student-3` | Internal URL for notifications (`http://student-1-backend:8080`) |
-| `DatabaseService__BaseUrl` | `student-3`, `student-4`, `student-5` | Internal URL for private database service |
 | `Email__Smtp__Host` | `student-4-authentication` | SMTP server host (`mailhog`) |
 | `Email__Smtp__Port` | `student-4-authentication` | SMTP server port (`1025`) |
+| `Email__*` | `student-4-authentication` | SMTP sender and password-reset URL configuration (MailHog in development) |
 
 ---
 
@@ -178,7 +180,7 @@ docker compose up --build
 # Start specific services
 docker compose up -d shared-shell shared-backend ai-mode student-1-database student-1-backend student-1-frontend
 
-# Stop all services and clean up volumes (forces fresh seeding)
+# Stop all services and clean up volumes (forces fresh database seeding)
 docker compose down -v
 ```
 
@@ -201,12 +203,10 @@ dotnet test student-3/backend/DeadlineTaskTracker.sln
 dotnet format --verify-no-changes
 
 # Add an EF Core migration (run against the persistence-owning project)
-dotnet ef migrations add <MigrationName> \
-  --project student-3/database/Database/Database.csproj
+dotnet ef migrations add <MigrationName>   --project <persistence-owning-project.csproj>
 
 # Update the owned database schema manually
-dotnet ef database update \
-  --project student-3/database/Database/Database.csproj
+dotnet ef database update   --project <persistence-owning-project.csproj>
 ```
 
 ### Frontend Operations (from root or workspace directory)
@@ -225,7 +225,11 @@ npm run dev --workspace=student-4-frontend
 npm run dev --workspace=student-5-frontend
 
 # Typecheck and build all frontends
-npm run build --workspaces
+# (--if-present is required: @better-canvas/ui-kit has no build script)
+npm run build --workspaces --if-present
+
+# Playwright end-to-end tests
+npm run test:e2e --workspace=student-1-frontend
 ```
 
 ---
@@ -276,9 +280,9 @@ npm run build --workspaces
 
 ### Key Interactive Flows
 1. **Canvas Assignment Ingestion**: User/Job invokes `POST /api/canvas-sync` on `student-3-backend` → calls `shared-backend` → fetches sanitized Canvas assignments → sends one snapshot command to `student-3-database` for an atomic SQLite upsert.
-2. **Proactive Deadline Reminders & Task Push**: `student-3-backend` creates tasks or generates subtasks and dispatches `POST /notifications/push` to `student-1-backend` → persisted to PostgreSQL and emitted via SSE.
-3. **Automations Execution**: `student-2-backend` background worker queries due scheduled posts or quizzes → sends Canvas messages via `shared-backend` or resolves quiz answers via `ai-mode` + `shared-backend` Quiz Submission Questions API → records execution history in SQLite.
-4. **Account & Password Reset Flow**: `student-4-authentication` processes registration/reset requests → generates secure token → dispatches email through `mailhog` SMTP (`mailhog:1025`) → user views reset email at `http://localhost:8025`.
+2. **Proactive Deadline Reminders & Task Push**: `student-3-backend` queries due candidates from `student-3-database` → dispatches `POST /notifications/push` to `student-1-backend` → persisted to PostgreSQL and emitted via SSE.
+3. **Automations Execution**: `student-2-backend` periodically queries/claims enabled automations from SQLite → sends Canvas messages via `shared-backend` or resolves quiz answers via `ai-mode` + `shared-backend` Quiz Submission Questions API → records execution history in SQLite.
+4. **Account & Password Reset Flow**: `/api/auth/*` requests go to `student-4-authentication`, while `/api/users/*`, `/api/students/*`, and `/api/teachers/*` go to `student-4-backend` → both access `student-4-database` over its private HTTP API; password resets dispatch email through MailHog SMTP (`mailhog:1025`), and profile summaries call `ai-mode`.
 5. **Real-time SSE Notification Stream**: `student-1-frontend` establishes `GET /notifications/stream` (`text/event-stream`) → `NotificationStreamBroker` pushes live events to toasts and shell unread bell badge.
 6. **Cross-Service Action Buttons**:
    - `AI BREAK DOWN`: Notification on `student-1` triggers dialog calling `POST /api/deadlines/tasks/{id}/ai-breakdown` on `student-3`.
@@ -301,7 +305,7 @@ npm run build --workspaces
   - Fix: Add origin to `Cors:AllowedOrigins` in `appsettings.Development.json` or `docker-compose.yml`.
 - **EF Core Database Drift / Missing Tables**:
   - Cause: Model entity changed without migration.
-  - Fix: Run `dotnet ef migrations add <Name> --project student-N/database/Database/Database.csproj` and restart the database service.
+  - Fix: Run `dotnet ef migrations add <Name> --project <persistence-owning-project.csproj>` and restart the persistence-owning service.
 - **Frontend Shows 404 / 502 for New Microservice**:
   - Cause: Nginx location block missing or misconfigured in `shared/frontend/nginx.conf`.
   - Fix: Ensure the route block in `shared/frontend/nginx.conf` matches the service and `shared-shell` has `depends_on` the service.
@@ -321,4 +325,3 @@ npm run build --workspaces
 - [Playbook: New Backend Slice](docs/playbooks/new-backend-microservice.md)
 - [Playbook: Split Database Service](docs/playbooks/split-database-service.md)
 - [Playbook: Agentic Loop Evaluation](docs/playbooks/agentic-loop-guide.md)
-

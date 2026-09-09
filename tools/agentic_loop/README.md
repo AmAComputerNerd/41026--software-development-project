@@ -19,7 +19,7 @@ An automated multi-agent architecture, code quality, and compliance review pipel
 - **OpenRouter & Local LLM Support**:
   - Out-of-the-box support for OpenRouter (`minimax/minimax-m3:free` / OpenAI-compatible endpoints) as approved by the tutor, with fallback to local Ollama.
 - **Frontend Discovery for `@better-canvas/ui-kit`**:
-  - Inspects Vue 3 `<script setup>` SFCs, Vue Router definitions, and `@better-canvas/ui-kit` Neobrutalism tokens and components (`TopNav`, `--nb-*`).
+  - Inspects Vue 3 `<script setup>` SFCs, Vue Router definitions, and `@better-canvas/ui-kit` Neobrutalism `--nb-*` token and shared-component usage.
 
 ---
 
@@ -38,6 +38,7 @@ tools/
     │   ├── ai_runner.py        # OpenRouter / OpenAI / Ollama client
     │   ├── prompt_registry.py  # Prompt loader
     │   ├── compose_utils.py    # docker-compose.yml parser
+    │   ├── log_writer.py       # Tees each run to a timestamped transcript
     │   └── reporter.py         # Terminal output formatting
     ├── collectors/
     │   ├── frontend_collector.py  # Vue 3 + @better-canvas/ui-kit static & live collector
@@ -53,9 +54,14 @@ tools/
     ├── prompts/
     │   ├── service/               # Shared system baseline & task prompts
     │   └── owners/                # Owner-specific feature context prompts
+    ├── logs/                      # Timestamped run transcripts, one folder per target
     ├── .env.example
     └── requirements.txt
 ```
+
+Every run is mirrored to `logs/<target>/<timestamp>_<layer>.log` in addition to
+the terminal output, so each Plan → Act → Observe → Adapt cycle leaves a durable
+record of the evidence gathered and the agents' conclusions.
 
 ---
 

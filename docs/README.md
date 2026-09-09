@@ -1,24 +1,21 @@
-# Documentation Index & Architecture Hub
+# Better Canvas — System Documentation Library
 
-Welcome to the documentation suite for the **41026 Advanced Software Development Project**. This directory contains detailed guides for both human engineers and AI coding agents to navigate, develop, test, and contribute to the microservices ecosystem.
-
----
-
-## 🧭 Navigation Map
-
-### 1. Universal Agent Entry Points
-- [**`AGENTS.md`**](../AGENTS.md) — The universal AI agent specification, golden rules, CLI cheat-sheet, and port maps.
-- [**`CLAUDE.md`**](../CLAUDE.md) — High-density quick-reference guide for Claude / prompt-based tools.
-- [**`CONTRIBUTING.md`**](../CONTRIBUTING.md) — Team git conventions, branch workflows, and PR standards.
+Welcome to the documentation suite for the **Better Canvas** microservices web platform (41026 Software Development Project).
 
 ---
 
-### 2. Architecture & Design
-- [**Architecture Overview**](architecture/overview.md) — High-level system architecture, service topology, reverse proxy routing, and technology stack.
-- [**Microservices Catalog**](architecture/services.md) — In-depth breakdown of every service (`shared-shell`, `shared-backend`, `ai-mode`, and `student-1` through `student-5`), endpoints, data models, and configurations.
-- [**Data Flows & Sequences**](architecture/data-flows.md) — Sequence diagrams and trace walkthroughs for Canvas sync, SSE real-time streaming, due-soon reminders, AI digests, and cross-service actions.
+## Documentation Index
 
----
+### 1. Architecture Specifications
+- [**Architecture Overview**](architecture/overview.md) — System boundaries, microservices topology, network architecture, and security policies.
+- [**Microservices Catalog**](architecture/services.md) — Service-by-service specification, technology stacks, endpoints, ownership, and port allocations.
+- [**Data Flows & Sequences**](architecture/data-flows.md) — Sequence diagrams detailing Canvas ingestion, AI processing, SSE notifications, auth workflows, and cross-service actions.
+
+### 2. Implementation Playbooks
+- [**Creating a New Frontend Microservice**](playbooks/new-frontend-microservice.md) — Step-by-step guide for scaffolding, styling with `@better-canvas/ui-kit`, configuring Vite proxying, and registering routes in Nginx.
+- [**Building a New Backend Microservice**](playbooks/new-backend-microservice.md) — Guide for ASP.NET Core minimal APIs, database configuration, Dockerfile setup, and health check endpoints.
+- [**Splitting API and Database Services**](playbooks/split-database-service.md) — Architectural pattern and step-by-step instructions for separating public APIs from private database persistence microservices.
+- [**Agentic Loop Evaluation Guide**](playbooks/agentic-loop-guide.md) — Running and interpreting automated multi-agent code analysis and architectural compliance checks.
 
 ### 3. Development Runbooks
 - [**Getting Started & Local Setup**](development/getting-started.md) — Step-by-step setup for Docker Compose, standalone .NET backends, standalone Vue frontends, and environment variables.
@@ -27,21 +24,14 @@ Welcome to the documentation suite for the **41026 Advanced Software Development
 
 ---
 
-### 4. Playbooks & Workflows
-- [**Playbook: New Frontend Microservice**](playbooks/new-frontend-microservice.md) — How to scaffold a new Vue 3 frontend, integrate `@better-canvas/ui-kit`, configure Nginx proxying, and register dashboard tiles.
-- [**Playbook: New Backend Slice**](playbooks/new-backend-microservice.md) — How to scaffold a public ASP.NET Core API, private EF Core database service, shared contracts, Docker isolation, and CI.
-- [**Playbook: Split API and Database Services**](playbooks/split-database-service.md) — How to extract EF Core and database ownership into a private internal service while preserving public contracts, data, transactions, and Git history.
-- [**Playbook: Agentic Review Loop**](playbooks/agentic-loop-guide.md) — Guide to using `tools/agentic_loop`, adding custom feature context prompts, and running automated code evaluations.
+## Team & Slice Quick Links
 
----
-
-### 5. Microservice Subsystem Documentation
-- [**`shared/ui-kit/README.md`**](../shared/ui-kit/README.md) — `@better-canvas/ui-kit` design tokens, Neobrutalism CSS primitives, and components.
-- [**`shared/README.md`**](../shared/README.md) — Shared backend Canvas gateway and dashboard shell.
-- [**`ai-services/ai-mode/README.md`**](../ai-services/ai-mode/README.md) — Shared OpenRouter AI gateway.
+- [**`shared/backend/README.md`**](../shared/backend/README.md) — Canvas LMS API Gateway & Cache.
+- [**`shared/frontend/README.md`**](../shared/frontend/README.md) — Dashboard Shell & Nginx Reverse Proxy.
+- [**`shared/ui-kit/README.md`**](../shared/ui-kit/README.md) — `@better-canvas/ui-kit` Design Tokens & Components.
+- [**`ai-services/ai-mode/README.md`**](../ai-services/ai-mode/README.md) — OpenRouter AI Gateway.
 - [**`student-1/backend/README.md`**](../student-1/backend/README.md), [**`student-1/database/README.md`**](../student-1/database/README.md) & [**`student-1/frontend/README.md`**](../student-1/frontend/README.md) — Notifications microservice.
 - [**`student-2/README.md`**](../student-2/README.md) — Automations microservice.
 - [**`student-3/README.md`**](../student-3/README.md) — Deadlines & Task Tracker microservice.
 - [**`student-4/README.md`**](../student-4/README.md) — Account & Authentication microservice.
 - [**`student-5/backend/README.md`**](../student-5/backend/README.md) & [**`student-5/frontend/README.md`**](../student-5/frontend/README.md) — Grades & Progress microservice.
-

@@ -66,7 +66,7 @@ Once running, access the services:
 - **Deadlines & Tasks**: [http://localhost:8080/deadlines/](http://localhost:8080/deadlines/)
 - **Account & Auth**: [http://localhost:8080/account/](http://localhost:8080/account/)
 - **Grades & Progress**: [http://localhost:8080/grades/](http://localhost:8080/grades/)
-- **MailHog Web Mailbox**: [http://localhost:8025](http://localhost:8025)
+- **MailHog inbox** (Student 4 password-reset emails): [http://localhost:8025](http://localhost:8025)
 
 ---
 
@@ -97,7 +97,11 @@ npm run dev --workspace=student-5-frontend
 ### C. Running a Backend & Database
 
 #### Student 1 (Notifications)
-Start PostgreSQL (via Docker or local PostgreSQL on port 5432), then run:
+Student 1 needs its PostgreSQL container before the backend will start. Start just that service:
+```bash
+docker compose up -d student-1-database
+```
+Then run the backend:
 ```bash
 dotnet run --project student-1/backend/Api/Api.csproj
 ```
@@ -136,4 +140,4 @@ dotnet run --project student-5/backend/GradesManager/GradesManager/GradesManager
 > When running a backend outside Docker:
 > - Set environment variable `ASPNETCORE_ENVIRONMENT=Development`.
 > - If connecting to `shared-backend` or `ai-mode`, you must provide their URLs via `appsettings.Development.json` or environment variables (e.g. `AiGateway__BaseUrl=http://localhost:8080`).
-
+> - The standalone default for `student-3-database` is `http://localhost:5203` (matching `DatabaseService:BaseUrl` in `student-3/backend/Api/appsettings.json`), `student-4-database` is `http://localhost:5204`, and `student-5-database` is `http://localhost:5205`.

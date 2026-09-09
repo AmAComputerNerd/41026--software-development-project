@@ -1,51 +1,54 @@
-# Testing & Continuous Integration (CI)
+# Testing & Continuous Integration Guide
 
-This guide documents the automated testing, code validation, and continuous integration workflows used across the repository.
+> Guide to local testing commands, format verification, and GitHub Actions CI pipelines.
 
 ---
 
-## 1. Local Testing & Verification Commands
+## 1. Local Testing & Verification Cheatsheet
 
-### .NET Backend Testing & Code Quality
-Run these commands from the repository root or the service's `backend/` directory:
+Run these commands locally before committing and opening a Pull Request:
 
+### Backend .NET Tests & Linters
 ```bash
-# 1. Run all unit/integration tests for solutions
+# 1. Run the automated test suites
+#    student-1 is currently the primary slice with a .NET test project (unit + integration tests)
 dotnet test student-1/backend/NotificationService.sln
 dotnet test student-3/backend/DeadlineTaskTracker.sln
-dotnet test shared/backend/SharedBackend.sln
 
-# 2. Check for code formatting compliance
+# 2. Check code formatting against .editorconfig
 dotnet format student-1/backend/NotificationService.sln --verify-no-changes
-dotnet format student-2/backend/Api/Api.csproj --verify-no-changes
+dotnet format student-2/backend/Automations.sln --verify-no-changes
 dotnet format student-3/backend/DeadlineTaskTracker.sln --verify-no-changes
-dotnet format student-4/backend/Api/Api.csproj --verify-no-changes
-dotnet format student-5/backend/Student5.sln --verify-no-changes
+dotnet format student-4/backend/AccountService.sln --verify-no-changes
+dotnet format student-5/backend/GradesManager/GradesManager.slnx --verify-no-changes
 dotnet format shared/backend/SharedBackend.sln --verify-no-changes
 
 # 3. Check for EF Core migration drift (ensure models match migrations)
-dotnet ef migrations has-pending-model-changes \
-  --project student-3/database/Database/Database.csproj
-dotnet ef migrations has-pending-model-changes \
-  --project student-4/database/Database/Database.csproj
-dotnet ef migrations has-pending-model-changes \
-  --project student-5/database/Database/Database.csproj
+#    Run against whichever project owns persistence for that slice
+dotnet ef migrations has-pending-model-changes   --project student-1/backend/Api/Api.csproj
+dotnet ef migrations has-pending-model-changes   --project student-2/backend/Api/Api.csproj
+dotnet ef migrations has-pending-model-changes   --project student-3/database/Database/Database.csproj
+dotnet ef migrations has-pending-model-changes   --project student-4/database/Database/Database.csproj
+dotnet ef migrations has-pending-model-changes   --project student-5/database/Database/Database.csproj
+dotnet ef migrations has-pending-model-changes   --project shared/backend/Api/Api.csproj
 ```
 
-### Frontend Typechecking & Building
-Run these commands from the repository root:
-
+### Frontend TypeScript & Vite Builds
 ```bash
-# Typecheck all frontend workspaces
-npm run build --workspaces
+# Typecheck and build all frontends
+npm run build --workspaces --if-present
 
-# Or build individual workspaces
+# Or build individual frontend slices
 npm run build --workspace=shared-frontend
 npm run build --workspace=student-1-frontend
 npm run build --workspace=student-2-frontend
 npm run build --workspace=student-3-frontend
 npm run build --workspace=student-4-frontend
 npm run build --workspace=student-5-frontend
+
+# Playwright end-to-end tests (student-1/frontend/e2e)
+npx playwright install --with-deps chromium
+npm run test:e2e --workspace=student-1-frontend
 ```
 
 ### End-to-End (E2E) Testing
@@ -60,33 +63,30 @@ npx playwright test
 
 ## 2. GitHub Actions CI Architecture
 
-The repository enforces CI checks on all Pull Requests targeting `main` and pushes to `main`. Workflows are modularized under `.github/workflows/` with precise path triggers:
+The repository enforces CI checks on all pull requests targeting `main` and all pushes to `main`.
 
 | Workflow File | Trigger Paths | Key Jobs Executed |
 |---|---|---|
-| **`docker-ci.yml`** | `ai-services/**`, `shared/**`, `student-*/**`, `docker-compose.yml`, `package.json` | Compose contract validation, dynamically discovered parallel image builds, and focused integration smoke tests |
-| **`shared-ci.yml`** | `shared/**` | Frontend build, .NET build/test, `dotnet format` check, EF migrations check, NuGet vulnerability audit |
-| **`student-1-ci.yml`** | `student-1/**` | Notifications frontend typecheck/build, .NET build/test, Playwright e2e test, format check, EF migration check |
-| **`student-2-ci.yml`** | `student-2/**` | Automations frontend typecheck/build, .NET build, format check, EF migration check |
-| **`student-3-ci.yml`** | `student-3/**` | Deadlines frontend typecheck/build, .NET build/test, format check, EF migration check |
-| **`student-4-ci.yml`** | `student-4/**` | Account & Auth frontend typecheck/build, .NET build, format check, EF migration check |
-| **`student-5-ci.yml`** | `student-5/**` | Grades frontend typecheck/build, .NET build/test, format check, EF migration check |
+| **`docker-ci.yml`** | `ai-services/**`, `shared/**`, `student-*/**`, `docker-compose.yml`, `package.json`, `package-lock.json`, `.env.example` | Compose contract validation, dynamically discovered parallel image builds, and a Student 3 Compose integration smoke test |
+| **`shared-ci.yml`** | `shared/backend/**`, `shared/frontend/**`, `shared/ui-kit/**` | Frontend build, .NET build/format check, EF migrations drift check, NuGet vulnerability audit |
+| **`student-1-ci.yml`** | `student-1/**`, `shared/ui-kit/**` | Notifications frontend build + Playwright E2E, .NET build/test/format check, EF migration drift check, NuGet audit |
+| **`student-2-ci.yml`** | `student-2/**`, `shared/ui-kit/**` | Automations frontend build, .NET build/format check, EF migration drift check, NuGet audit |
+| **`student-3-ci.yml`** | `student-3/**`, `shared/ui-kit/**` | Deadlines frontend build, .NET build/format check, API contract & browser CORS smoke test, EF migration drift check, NuGet audit |
+| **`student-4-ci.yml`** | `student-4/**`, `shared/ui-kit/**` | Account & Auth frontend build, .NET build/format check, EF migration drift check, NuGet audit |
+| **`student-5-ci.yml`** | `student-5/**`, `shared/ui-kit/**` | Grades frontend build, .NET build/format check, API contract smoke test, EF migration drift check, NuGet audit |
 
 Docker image targets are discovered from the rendered Compose configuration
 rather than maintained as a second service list. Each image builds in a
-four-wide matrix with its own BuildKit GitHub Actions cache scope. The stable
-`Validate Compose & build images` aggregate check succeeds only when the
-Compose contract, every image build, and the Student 3 integration smoke test
-all pass.
+separate matrix job, with bake-cache acceleration so repeated runs build only
+what changed.
 
 ---
 
-## 3. Pre-PR Checklist for AI Agents & Developers
+## 3. Pre-PR Checklist
 
 Before opening a PR, ensure:
 1. `dotnet format --verify-no-changes` passes on all modified .NET projects.
-2. `dotnet test` passes with zero failures.
-3. `npm run build --workspaces` succeeds without TypeScript or Vite errors.
+2. `dotnet test` passes with zero failures for any slice that has a test project.
+3. `npm run build --workspaces --if-present` succeeds without TypeScript or Vite errors.
 4. If database models were modified, an EF Core migration was generated and committed.
 5. All commits follow Conventional Commits format (`feat:`, `fix:`, `docs:`, `test:`, `chore:`).
-

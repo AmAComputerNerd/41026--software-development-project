@@ -29,21 +29,32 @@ To use it in any frontend microservice:
 All design tokens are defined in `src/styles/tokens.css` and use `--nb-*` custom properties:
 
 ### Colors
-- Surface / Background: `var(--nb-color-surface)`, `var(--nb-color-bg)`
-- Text / Ink: `var(--nb-color-ink)`
-- Brand / Accent: `var(--nb-color-primary)`, `var(--nb-color-accent)`
-- Status Colors: `var(--nb-color-danger)`, `var(--nb-color-success)`, `var(--nb-color-warning)`
+- Background / surface: `var(--nb-color-bg)`, `var(--nb-color-white)`
+- Text / ink (also border colour): `var(--nb-color-ink)`, `var(--nb-color-muted)`
+- Accents: `var(--nb-color-accent-orange)`, `var(--nb-color-accent-yellow)`
+- Shadow colour: `var(--nb-color-shadow)`
+
+Dark mode overrides the same token names, so components never need theme
+branches.
 
 ### Borders & Shadows
-- Borders: `var(--nb-border-width-md) solid var(--nb-color-ink)` (default 4px solid black)
-- Shadows: `var(--nb-shadow-offset-md) var(--nb-shadow-offset-md) 0 var(--nb-shadow-color)` (hard 4px drop shadow)
-- Border Radius: `0px` (strict sharp corners)
+- Borders: `var(--nb-border-width-md) solid var(--nb-color-ink)` (`sm` 2px, `md` 3px, `lg` 4px)
+- Shadows: `var(--nb-shadow)` — `6px 6px 0 var(--nb-color-shadow)`, hard and unblurred
+- Border Radius: `var(--nb-border-radius)` is `0` (strict sharp corners)
+
+### Typography, Spacing & Motion
+- Fonts: `var(--nb-font-display)` (Space Grotesk) and `var(--nb-font-mono)` (JetBrains Mono); import `@better-canvas/ui-kit/styles/fonts.css` to pull them in from Google Fonts.
+- Spacing scale: `--nb-space-1` … `--nb-space-16`.
+- Motion: `--nb-duration-fast|base|slow`, `--nb-ease-standard|out|pop`, `--nb-transition-fast|base`.
 
 ---
 
-## 3. Shared Components
+## 3. Shared Components & Composables
 
-- **`TopNav`**: Global navigation header with breadcrumbs, service switcher, theme toggle, and SSE-driven live unread notification badge.
-- **`ModalDialog`**: Neobrutalist modal container with thick borders and focus trap.
-- **`Badge`**: Status badge tags (`info`, `warning`, `danger`, `success`, `ai`).
-- **`Button`**: Neobrutalist button with active translation states.
+Exported from `@better-canvas/ui-kit`:
+
+- **`Navbar`**: Global navigation header. Takes a `services` array (pass the exported `SERVICES` registry) plus optional `homeHref` and `badge` props; renders cross-service links and the theme toggle, with a default slot for per-app content.
+- **`ThemeToggle`**: Light/dark theme switch.
+- **`ChannelToggle`**: Neobrutalist on/off toggle used for delivery-channel style settings.
+- **`useTheme()`** and the `Theme` type: shared theme state and persistence.
+- **`SERVICES`** and the `Service` / `ServiceId` types: the canonical microservice registry consumed by the dashboard tile grid and every navbar.

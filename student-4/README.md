@@ -15,32 +15,43 @@ permissions.
 
 ## Standalone development
 
-It is suggested to run all services together using docker using the 
-following command:
+It is suggested to run all services together with Docker from the repository
+root:
 
-```cd C:\Users\tetec\source\repos\41026--software-development-project
+```powershell
 docker compose up --build
 ```
 
-The account and authentication APIs can run without other services:
+Standalone, the slice needs three processes, each in its own terminal — the
+private database service first, then the profile API and the authentication
+API:
+
+```powershell
+dotnet run --project student-4\database\Database
+```
 
 ```powershell
 dotnet run --project student-4\backend\Api
 ```
 
-In a second terminal, run the frontend at
-`http://localhost:3004/account/`:
+```powershell
+dotnet run --project student-4\authentication\Authentication
+```
+
+In another terminal, run the frontend. Vite serves it under its `/account/`
+base path, so the dev URL is `http://localhost:5173/account/`:
 
 ```powershell
 npm run dev --workspace=student-4-frontend
 ```
 
-The frontend calls the published standalone API on port 5104. Ai
-prompts are unavailable unless the shared backend is also configured.
+The dev server proxies `/api` to the profile API on port 5104. AI prompts are
+unavailable unless the `ai-mode` gateway is also configured.
 
 ## Forgot Password Functionality
 
-In testing, the email service will send an email via MailHog on port 8025. 
+In testing, the email service sends mail to MailHog; read it in the web inbox
+at `http://localhost:8025` (SMTP listens on port 1025).
 
 When deployed in Release 1, SMTP details can be edited and set in the .env
 file.

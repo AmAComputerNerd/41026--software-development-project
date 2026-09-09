@@ -16,7 +16,7 @@ saving.
 
 ## Standalone development
 
-The task tracker backend delegates persistence to `student-3-database`:
+The task and course APIs need their private database service running first:
 
 ```bash
 # Terminal 1: Run Database Service (default port 5203)
@@ -26,15 +26,21 @@ dotnet run --project student-3/database/Database/Database.csproj
 dotnet run --project student-3/backend/Api/Api.csproj
 ```
 
-In a third terminal, run the frontend at `http://localhost:3003/deadlines/`:
+The API reads `DatabaseService:BaseUrl`, which defaults to
+`http://localhost:5203` — the database service's standalone URL.
+
+In a third terminal, run the frontend at
+`http://localhost:3003/deadlines/`:
 
 ```bash
 npm run dev --workspace=student-3-frontend
 ```
 
-The frontend calls the published standalone API on port 5103. Canvas sync is
-unavailable unless the shared backend is also configured.
-
+The frontend calls port 5103 by default, while `dotnet run` uses the `http`
+launch profile on port 5014. Start the API with
+`--urls http://localhost:5103` (or set `VITE_DEADLINES_API_BASE_URL`) when
+running both outside Docker. Canvas sync is unavailable unless the shared
+backend is also configured.
 
 ## Canvas sync
 
