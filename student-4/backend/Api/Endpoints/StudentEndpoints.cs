@@ -38,6 +38,8 @@ public static class StudentEndpoints
     private static async Task<IResult> UpdateStudent(
         Guid userId,
         IAccountDatabaseClient db,
+        INotificationClient notificationClient,
+        ILoggerFactory loggerFactory,
         [FromBody] UpdateStudentRequestDto request,
         CancellationToken cancellationToken)
     {
@@ -50,6 +52,23 @@ public static class StudentEndpoints
             );
 
             var student = await db.UpdateStudentAsync(userId, command, cancellationToken);
+
+            try
+            {
+                await notificationClient.PushAsync(new PushNotificationDto(
+                    StudentId: userId,
+                    Type: "Account",
+                    SourceMicroservice: "account",
+                    Message: "Student profile updated successfully.",
+                    RelatedEntityType: "User",
+                    RelatedEntityId: userId), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                var logger = loggerFactory.CreateLogger("Api.Endpoints.StudentEndpoints");
+                StudentEndpointsLog.PushNotificationFailed(logger, userId, ex);
+            }
+
             return Results.Ok(student.ToDto());
         }
         catch (DatabaseServiceException ex)
@@ -57,4 +76,10 @@ public static class StudentEndpoints
             return Results.Problem(detail: ex.Message, statusCode: 503);
         }
     }
+}
+
+internal static partial class StudentEndpointsLog
+{
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to push notification for student {UserId}.")]
+    public static partial void PushNotificationFailed(ILogger logger, Guid userId, Exception ex);
 }

@@ -17,6 +17,9 @@ public static partial class AuthEndpoints
     [LoggerMessage(LogLevel.Error, "forgot-password: email send failed for {Email}.")]
     private static partial void LogEmailSendFailed(ILogger logger, Exception exception, string email);
 
+    [LoggerMessage(LogLevel.Warning, "Failed to push notification for {Email}.")]
+    private static partial void LogNotificationFailed(ILogger logger, Exception exception, string email);
+
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/auth");
@@ -60,6 +63,8 @@ public static partial class AuthEndpoints
 
     private static async Task<IResult> ChangePassword(
         IAccountDatabaseClient db,
+        INotificationClient notificationClient,
+        ILogger<PasswordResetTokenGenerator> logger,
         [FromBody] ChangePasswordRequestDto request,
         CancellationToken cancellationToken)
     {
@@ -79,9 +84,30 @@ public static partial class AuthEndpoints
             );
 
             var success = await db.ChangePasswordAsync(command, cancellationToken);
-            return success
-                ? Results.Ok(new { message = "Password changed successfully." })
-                : Results.Unauthorized();
+            if (!success)
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                var users = await db.GetUsersAsync(cancellationToken);
+                var user = users.FirstOrDefault(u => string.Equals(u.Email, request.Email, StringComparison.OrdinalIgnoreCase));
+                var userId = user?.Id ?? Guid.Parse("11111111-1111-1111-1111-111111111111");
+                await notificationClient.PushAsync(new PushNotificationDto(
+                    StudentId: userId,
+                    Type: "Account",
+                    SourceMicroservice: "account",
+                    Message: "Your account password has been changed successfully.",
+                    RelatedEntityType: "User",
+                    RelatedEntityId: userId), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                LogNotificationFailed(logger, ex, request.Email);
+            }
+
+            return Results.Ok(new { message = "Password changed successfully." });
         }
         catch (DatabaseServiceException ex)
         {
@@ -189,6 +215,8 @@ public static partial class AuthEndpoints
 
     private static async Task<IResult> ResetPassword(
         IAccountDatabaseClient db,
+        INotificationClient notificationClient,
+        ILogger<PasswordResetTokenGenerator> logger,
         [FromBody] ResetPasswordRequestDto request,
         CancellationToken cancellationToken)
     {
@@ -215,6 +243,21 @@ public static partial class AuthEndpoints
             if (updatedUser is null)
             {
                 return Results.BadRequest("This reset link is invalid or has expired. Please request a new one.");
+            }
+
+            try
+            {
+                await notificationClient.PushAsync(new PushNotificationDto(
+                    StudentId: updatedUser.Id,
+                    Type: "Account",
+                    SourceMicroservice: "account",
+                    Message: "Your account password has been reset successfully.",
+                    RelatedEntityType: "User",
+                    RelatedEntityId: updatedUser.Id), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                LogNotificationFailed(logger, ex, updatedUser.Email);
             }
 
             return Results.Ok(new { message = "Password reset successfully. You can now log in with your new password." });

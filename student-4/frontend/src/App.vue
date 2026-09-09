@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { Navbar, SERVICES } from '@better-canvas/ui-kit'
 import { useAuth } from '@/composables/useAuth'
+import NotificationButton from '@/components/NotificationButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -29,6 +30,7 @@ function handleSignOut() {
   <div class="nb-app">
     <Navbar :services="SERVICES" badge="ACCOUNT & SETTINGS">
       <template #actions>
+        <NotificationButton />
         <div v-if="isAuthenticated" class="nb-navbar__user">
           <span class="nb-navbar__user-name nb-mono">
             {{ currentUser?.firstName?.toUpperCase() }}

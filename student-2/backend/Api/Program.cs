@@ -56,6 +56,20 @@ builder.Services.AddHttpClient<IAiQuizAnswerService, AiQuizAnswerService>((servi
     client.BaseAddress = new Uri($"{baseUrl.TrimEnd('/')}/", UriKind.Absolute);
     client.Timeout = TimeSpan.FromSeconds(120);
 });
+builder.Services
+    .AddOptions<NotificationServiceOptions>()
+    .Bind(builder.Configuration.GetSection(NotificationServiceOptions.SectionName))
+    .Validate(
+        options => Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps),
+        "NotificationService:BaseUrl must be an absolute HTTP or HTTPS URL.")
+    .ValidateOnStart();
+builder.Services.AddHttpClient<INotificationClient, NotificationClient>((services, client) =>
+{
+    var baseUrl = services.GetRequiredService<IOptions<NotificationServiceOptions>>().Value.BaseUrl;
+    client.BaseAddress = new Uri($"{baseUrl.TrimEnd('/')}/", UriKind.Absolute);
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 var executorTypes = typeof(IAutomationExecutor).Assembly
     .GetTypes()
     .Where(type => !type.IsAbstract && typeof(IAutomationExecutor).IsAssignableFrom(type));

@@ -1,4 +1,4 @@
-﻿using GradesManager.Contracts;
+using GradesManager.Contracts;
 using GradesManager.DTOs;
 using GradesManager.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -101,6 +101,8 @@ namespace GradesManager.Endpoints
         private static async Task<IResult> AddTempMark(
             ModifyTempMarkDto modifyTempMarkDto,
             IDatabaseClient databaseClient,
+            INotificationClient notificationClient,
+            ILoggerFactory loggerFactory,
             CancellationToken cancellationToken = default)
         {
             if (modifyTempMarkDto.StudentId == Guid.Empty || modifyTempMarkDto.AssignmentId == Guid.Empty)
@@ -121,6 +123,25 @@ namespace GradesManager.Endpoints
                 var updated = await databaseClient.UpdateStudentAssignmentAsync(new UpdateStudentAssignmentCommand(
                     modifyTempMarkDto.StudentId, modifyTempMarkDto.AssignmentId, modifyTempMarkDto.TempMark, null), cancellationToken);
 
+                if (updated != null)
+                {
+                    try
+                    {
+                        await notificationClient.PushAsync(new PushNotificationDto(
+                            StudentId: modifyTempMarkDto.StudentId,
+                            Type: "Grade",
+                            SourceMicroservice: "grades",
+                            Message: $"Temporary mark of {modifyTempMarkDto.TempMark} recorded for assignment.",
+                            RelatedEntityType: "Assignment",
+                            RelatedEntityId: modifyTempMarkDto.AssignmentId), cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        var logger = loggerFactory.CreateLogger("GradesManager.Endpoints.AssignmentEndpoints");
+                        AssignmentEndpointsLog.PushNotificationFailed(logger, modifyTempMarkDto.AssignmentId, ex);
+                    }
+                }
+
                 return updated == null
                     ? Results.NotFound()
                     : Results.Ok(new StudentAssignmentDto(updated.StudentId, updated.AssignmentId, updated.TempMark, updated.FinalMark));
@@ -128,6 +149,25 @@ namespace GradesManager.Endpoints
 
             var created = await databaseClient.CreateStudentAssignmentAsync(new CreateStudentAssignmentCommand(
                 modifyTempMarkDto.StudentId, modifyTempMarkDto.AssignmentId, modifyTempMarkDto.TempMark, null), cancellationToken);
+
+            if (created != null)
+            {
+                try
+                {
+                    await notificationClient.PushAsync(new PushNotificationDto(
+                        StudentId: modifyTempMarkDto.StudentId,
+                        Type: "Grade",
+                        SourceMicroservice: "grades",
+                        Message: $"Temporary mark of {modifyTempMarkDto.TempMark} recorded for assignment.",
+                        RelatedEntityType: "Assignment",
+                        RelatedEntityId: modifyTempMarkDto.AssignmentId), cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    var logger = loggerFactory.CreateLogger("GradesManager.Endpoints.AssignmentEndpoints");
+                    AssignmentEndpointsLog.PushNotificationFailed(logger, modifyTempMarkDto.AssignmentId, ex);
+                }
+            }
 
             return created == null
                 ? Results.BadRequest("Could not create student assignment.")
@@ -137,6 +177,8 @@ namespace GradesManager.Endpoints
         private static async Task<IResult> UpdateTempMark(
             ModifyTempMarkDto modifyTempMarkDto,
             IDatabaseClient databaseClient,
+            INotificationClient notificationClient,
+            ILoggerFactory loggerFactory,
             CancellationToken cancellationToken = default)
         {
             if (modifyTempMarkDto.StudentId == Guid.Empty || modifyTempMarkDto.AssignmentId == Guid.Empty)
@@ -159,6 +201,25 @@ namespace GradesManager.Endpoints
 
             var updated = await databaseClient.UpdateStudentAssignmentAsync(new UpdateStudentAssignmentCommand(
                 modifyTempMarkDto.StudentId, modifyTempMarkDto.AssignmentId, modifyTempMarkDto.TempMark, existing.FinalMark), cancellationToken);
+
+            if (updated != null)
+            {
+                try
+                {
+                    await notificationClient.PushAsync(new PushNotificationDto(
+                        StudentId: modifyTempMarkDto.StudentId,
+                        Type: "Grade",
+                        SourceMicroservice: "grades",
+                        Message: $"Temporary mark updated to {modifyTempMarkDto.TempMark} for assignment.",
+                        RelatedEntityType: "Assignment",
+                        RelatedEntityId: modifyTempMarkDto.AssignmentId), cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    var logger = loggerFactory.CreateLogger("GradesManager.Endpoints.AssignmentEndpoints");
+                    AssignmentEndpointsLog.PushNotificationFailed(logger, modifyTempMarkDto.AssignmentId, ex);
+                }
+            }
 
             return updated == null
                 ? Results.NotFound()
@@ -193,5 +254,11 @@ namespace GradesManager.Endpoints
 
             return deleted ? Results.NoContent() : Results.NotFound();
         }
+    }
+
+    internal static partial class AssignmentEndpointsLog
+    {
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to push notification for assignment {AssignmentId}.")]
+        public static partial void PushNotificationFailed(ILogger logger, Guid assignmentId, Exception ex);
     }
 }

@@ -89,6 +89,7 @@ services:
             Cors__AllowedOrigins__1: http://localhost:8080
             SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__BaseUrl: http://ai-mode:8080
+            NotificationService__BaseUrl: http://student-1-backend:8080
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -181,10 +182,7 @@ services:
             ASPNETCORE_ENVIRONMENT: Development
             DatabaseService__BaseUrl: http://student-4-database:8080
             AiGateway__BaseUrl: http://ai-mode:8080
-            NotificationService__BaseUrl: http://student-4-backend:8080
-            DueSoonReminder__IntervalMinutes: "15"
-            DueSoonReminder__HoursBeforeDue: "24"
-            DueSoonReminder__FinalHoursBeforeDue: "3"
+            NotificationService__BaseUrl: http://student-1-backend:8080
         networks:
             - default
             - student-4-data
@@ -214,6 +212,7 @@ services:
         environment:
             ASPNETCORE_ENVIRONMENT: Development
             DatabaseService__BaseUrl: http://student-4-database:8080
+            NotificationService__BaseUrl: http://student-1-backend:8080
             Email__Smtp__Host: mailhog
             Email__Smtp__Port: "1025"
             Email__Smtp__UseSsl: "false"
@@ -265,6 +264,7 @@ services:
             ASPNETCORE_ENVIRONMENT: Development
             DatabaseService__BaseUrl: http://student-5-database:8080
             AiGateway__BaseUrl: http://ai-mode:8080
+            NotificationService__BaseUrl: http://student-1-backend:8080
         networks:
             - default
             - student-5-data
