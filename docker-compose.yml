@@ -139,6 +139,8 @@ services:
             SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__BaseUrl: http://ai-mode:8080
             NotificationService__BaseUrl: http://student-1-backend:8080
+            McpServer__Enabled: "true"
+            McpServer__BaseUrl: http://mcp-server:8080/mcp
             DueSoonReminder__IntervalMinutes: "15"
             DueSoonReminder__HoursBeforeDue: "24"
             DueSoonReminder__FinalHoursBeforeDue: "3"
@@ -155,10 +157,6 @@ services:
             start_period: 15s
         depends_on:
             student-3-database:
-                condition: service_healthy
-            shared-backend:
-                condition: service_healthy
-            ai-mode:
                 condition: service_healthy
 
     student-4-database:
@@ -340,6 +338,7 @@ services:
             dockerfile: McpServer/Dockerfile
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+            Student3__BaseUrl: http://student-3-backend:8080
         networks:
             - ai
         restart: unless-stopped
