@@ -139,7 +139,7 @@ services:
             SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__BaseUrl: http://ai-mode:8080
             NotificationService__BaseUrl: http://student-1-backend:8080
-            McpServer__Enabled: "true"
+            McpServer__Enabled: ${MCP_ENABLED:-true}
             McpServer__BaseUrl: http://mcp-server:8080/mcp
             DueSoonReminder__IntervalMinutes: "15"
             DueSoonReminder__HoursBeforeDue: "24"

@@ -138,6 +138,7 @@ jobs:
           SharedService__BaseUrl=http://127.0.0.1:5110 \
           AiGateway__BaseUrl=http://127.0.0.1:5200 \
           NotificationService__BaseUrl=http://127.0.0.1:5101 \
+          McpServer__Enabled=false \
           DueSoonReminder__IntervalMinutes=60 \
           dotnet run \
             --project "${{ env.API_PROJECT }}" \
@@ -172,12 +173,12 @@ jobs:
           done
           test -s courses.json
 
-          # The process is live, but required microservices are unavailable in this job.
+          # Optional integrations are disabled or unavailable, but the database is ready.
           readiness_status=$(
             curl --silent --output /dev/null --write-out "%{http_code}" \
               http://127.0.0.1:5103/health/ready
           )
-          test "$readiness_status" = "503"
+          test "$readiness_status" = "200"
 
           created=$(
             curl --fail --silent \
