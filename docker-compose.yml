@@ -60,6 +60,9 @@ services:
             SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__BaseUrl: http://ai-mode:8080
             CanvasSync__IntervalMinutes: "2"
+        networks:
+            - default
+            - ai
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -90,6 +93,9 @@ services:
             SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__BaseUrl: http://ai-mode:8080
             NotificationService__BaseUrl: http://student-1-backend:8080
+        networks:
+            - default
+            - ai
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -138,6 +144,7 @@ services:
             DueSoonReminder__FinalHoursBeforeDue: "3"
         networks:
             - default
+            - ai
             - student-3-data
         restart: unless-stopped
         healthcheck:
@@ -185,6 +192,7 @@ services:
             NotificationService__BaseUrl: http://student-1-backend:8080
         networks:
             - default
+            - ai
             - student-4-data
         restart: unless-stopped
         healthcheck:
@@ -267,6 +275,7 @@ services:
             NotificationService__BaseUrl: http://student-1-backend:8080
         networks:
             - default
+            - ai
             - student-5-data
         restart: unless-stopped
         healthcheck:
@@ -315,6 +324,40 @@ services:
               required: false
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+        networks:
+            - ai
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+            start_period: 10s
+
+    mcp-server:
+        build:
+            context: ./ai-services/mcp-server
+            dockerfile: McpServer/Dockerfile
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+        networks:
+            - ai
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+            start_period: 10s
+
+    rag-server:
+        build:
+            context: ./ai-services/rag-server
+            dockerfile: RagServer/Dockerfile
+        environment:
+            ASPNETCORE_ENVIRONMENT: Development
+        networks:
+            - ai
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -371,6 +414,7 @@ volumes:
 
 networks:
     default:
+    ai:
     student-3-data:
         internal: true
     student-4-data:
