@@ -42,6 +42,7 @@ def _run_all(ai: AIRunner) -> None:
         for key, _label in LAYERS:
             _run_and_report(key, owner, ai)
     _run_and_report("compose", None, ai)
+    _run_and_report("mcp", None, ai)
 
 
 def main() -> None:
@@ -65,13 +66,17 @@ def main() -> None:
             continue
 
         if choice == str(len(OWNERS) + 2):
+            _run_and_report("mcp", None, ai)
+            continue
+
+        if choice == str(len(OWNERS) + 3):
             _run_all(ai)
             continue
 
         try:
             owner = OWNERS[int(choice) - 1]
         except (ValueError, IndexError):
-            print(f"Invalid choice. Select 0-{len(OWNERS) + 2}.")
+            print(f"Invalid choice. Select 0-{len(OWNERS) + 3}.")
             continue
 
         _owner_submenu(owner, ai)

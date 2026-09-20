@@ -44,12 +44,14 @@ tools/
     │   ├── frontend_collector.py  # Vue 3 + @better-canvas/ui-kit static & live collector
     │   ├── backend_collector.py   # .NET minimal-API route discovery + live GET prober
     │   ├── database_collector.py  # SQLite PRAGMA schema introspector
-    │   └── compose_collector.py   # docker-compose.yml configuration collector
+    │   ├── compose_collector.py   # docker-compose.yml configuration collector
+    │   └── mcp_collector.py       # Static boundaries + live MCP invocation
     ├── pipelines/
     │   ├── frontend_pipeline.py
     │   ├── backend_pipeline.py
     │   ├── database_pipeline.py
     │   ├── compose_pipeline.py
+    │   ├── mcp_pipeline.py
     │   └── review_pipeline.py     # Second-pass critique & validation prompt builder
     ├── prompts/
     │   ├── service/               # Shared system baseline & task prompts
@@ -86,4 +88,5 @@ From repository root:
 python tools/agentic_loop.py
 ```
 
-Select a target owner (`student-1` through `student-5`, `shared`), `docker-compose`, or `Run All`.
+Select a target owner (`student-1` through `student-5`, `shared`),
+`docker-compose`, `MCP`, or `Run All`.

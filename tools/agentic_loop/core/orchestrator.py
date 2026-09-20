@@ -2,18 +2,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from collectors import backend_collector, compose_collector, database_collector, frontend_collector
+from collectors import backend_collector, compose_collector, database_collector, frontend_collector, mcp_collector
 from config.review_config import PROMPT_ROOT, get_owner_context
 from core.ai_runner import AIRunner
 from core.doc_loader import load_documentation
 from core.prompt_registry import PromptRegistry
-from pipelines import backend_pipeline, compose_pipeline, database_pipeline, frontend_pipeline, review_pipeline
+from pipelines import backend_pipeline, compose_pipeline, database_pipeline, frontend_pipeline, mcp_pipeline, review_pipeline
 
 COLLECTORS = {
     "frontend": frontend_collector.collect,
     "backend": backend_collector.collect,
     "database": database_collector.collect,
     "compose": compose_collector.collect,
+    "mcp": mcp_collector.collect,
 }
 
 TASK_PROMPTS = {
@@ -21,6 +22,7 @@ TASK_PROMPTS = {
     "backend": "backend_task_prompt.txt",
     "database": "database_task_prompt.txt",
     "compose": "compose_task_prompt.txt",
+    "mcp": "mcp_task_prompt.txt",
 }
 
 IMPLEMENTATION_PIPELINES = {
@@ -28,6 +30,7 @@ IMPLEMENTATION_PIPELINES = {
     "backend": backend_pipeline.build_user_prompt,
     "database": database_pipeline.build_user_prompt,
     "compose": compose_pipeline.build_user_prompt,
+    "mcp": mcp_pipeline.build_user_prompt,
 }
 
 
