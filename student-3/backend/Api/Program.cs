@@ -41,9 +41,16 @@ builder.Services
         options => IsAbsoluteHttpUrl(options.BaseUrl),
         "NotificationService:BaseUrl must be an absolute HTTP or HTTPS URL.")
     .ValidateOnStart();
+builder.Services
+    .AddOptions<McpServerOptions>()
+    .Bind(builder.Configuration.GetSection(McpServerOptions.SectionName))
+    .Validate(
+        options => !options.Enabled || IsAbsoluteHttpUrl(options.BaseUrl),
+        "McpServer:BaseUrl must be an absolute HTTP or HTTPS URL when MCP is enabled.")
+    .ValidateOnStart();
 // Http clients and retry behaviour
 builder.Services
-    .AddHttpClient<IStudent3DatabaseClient, Student3DatabaseClient>((services, client) =>
+    .AddHttpClient<IDatabaseClient, DatabaseClient>((services, client) =>
         ConfigureClient(
             client,
             services.GetRequiredService<IOptions<DatabaseServiceOptions>>().Value.BaseUrl))
@@ -93,6 +100,7 @@ builder.Services
         options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
         options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(35);
     });
+builder.Services.AddSingleton<IMcpDeadlineClient, McpDeadlineClient>();
 // Health check services
 builder.Services.AddHttpClient(
     RemoteServiceHealthCheck.DatabaseServiceClientName,
@@ -103,24 +111,6 @@ builder.Services.AddHttpClient(
             services.GetRequiredService<IOptions<DatabaseServiceOptions>>().Value.BaseUrl);
         client.Timeout = TimeSpan.FromSeconds(3);
     });
-builder.Services.AddHttpClient(
-    RemoteServiceHealthCheck.SharedServiceClientName,
-    (services, client) =>
-    {
-        ConfigureClient(
-            client,
-            services.GetRequiredService<IOptions<SharedServiceOptions>>().Value.BaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(3);
-    });
-builder.Services.AddHttpClient(
-    RemoteServiceHealthCheck.AiGatewayClientName,
-    (services, client) =>
-    {
-        ConfigureClient(
-            client,
-            services.GetRequiredService<IOptions<AiGatewayOptions>>().Value.BaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(3);
-    });
 builder.Services
     .AddHealthChecks()
     .AddCheck(
@@ -129,12 +119,6 @@ builder.Services
         tags: ["live"])
     .AddCheck<DatabaseServiceHealthCheck>(
         "database-service",
-        tags: ["ready"])
-    .AddCheck<SharedServiceHealthCheck>(
-        "shared-service",
-        tags: ["ready"])
-    .AddCheck<AiGatewayHealthCheck>(
-        "ai-gateway",
         tags: ["ready"]);
 // Remote services
 builder.Services.AddScoped<CanvasSyncOrchestrator>();
@@ -168,6 +152,7 @@ app.UseHttpsRedirection();
 app.MapCourseEndpoints();
 app.MapTaskEndpoints();
 app.MapCanvasSyncEndpoints();
+app.MapMcpIntegrationEndpoints();
 app.MapHealthChecks(
     "/health/live",
     new HealthCheckOptions

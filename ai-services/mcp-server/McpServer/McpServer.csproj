@@ -11,4 +11,8 @@
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
+    </ItemGroup>
+
 </Project>
