@@ -2,13 +2,18 @@
 
 > **Authoritative Architectural Specification for Better Canvas**  
 > Workspace: `41026--software-development-project`  
-> Topology: Microservices over Docker Compose, Nginx Reverse Proxy, ASP.NET Core & Vue 3
+> Topology: Containerised feature microservices plus local MCP/RAG services, Nginx Reverse Proxy, ASP.NET Core & Vue 3
 
 ---
 
 ## 1. High-Level System Architecture
 
 Better Canvas is an **LLM-enhanced microservices web platform** designed around autonomous vertical slices. Each student owns a bounded business context, backed by dedicated infrastructure services for Canvas LMS connectivity, OpenRouter AI completions, and unified dashboard proxying.
+
+Release 1 adds shared MCP and RAG services that run as local host processes,
+not Docker Compose services. Containerised feature backends reach them through
+`host.docker.internal`; the services are launched together by
+`python tools/run_release1_services.py`.
 
 ```
                                   [ Browser / Client ]
@@ -74,6 +79,7 @@ Better Canvas is an **LLM-enhanced microservices web platform** designed around 
                                       │       → student-3-database
                                       │       → shared-backend and ai-mode
                                       │       → student-1-backend (notification push)
+                                      │       → host MCP and RAG services
                                       │
                                       ├── /account, /api/auth|users|students|teachers
                                       │     → student-4-backend / authentication
@@ -87,12 +93,20 @@ Better Canvas is an **LLM-enhanced microservices web platform** designed around 
 
 shared-backend ──HTTPS──→ [ Canvas LMS API ]
 ai-mode ────────HTTPS──→ [ OpenRouter API ]
+
+student-3-backend (Docker)
+  ├──HTTP via host.docker.internal:5002──→ MCP (host)
+  │                                        └──HTTP localhost:5103──→ Student 3 bounded API
+  └──HTTP via host.docker.internal:5003──→ RAG (host)
+                                           └──HTTP localhost:5001──→ ai-mode (Docker)
 ```
 
 ### Infrastructure & Shared Services
 - **`shared-shell`** (Port 8080): Vue 3 shell dashboard and Nginx reverse proxy routing web requests and API paths.
 - **`shared-backend`** (Port 5110): Exclusive Canvas LMS API client with 3-minute in-memory caching and HTML sanitization.
 - **`ai-mode`** (Internal 8080): Unified chat completions gateway proxying requests to OpenRouter LLMs.
+- **`mcp-server`** (Host 5002): Non-containerised MCP server exposing bounded tools; Student 3 reaches it through `host.docker.internal`.
+- **`rag-server`** (Host 5003): Non-containerised grounded-answer service using curated project documentation and AI Mode through its loopback-only port 5001.
 - **`mailhog`** (SMTP: 1025 / Web UI: 8025): Local SMTP mock service for developer email verification.
 
 ### Vertical Microservice Slices
@@ -150,7 +164,22 @@ Each of those database services is attached only to its internal `student-N-data
 ### Centralized AI Mode Boundary
 - `ai-services/ai-mode` is the only service that reads `OPENROUTER_API_KEY`.
 - Downstream services send chat completion requests to `http://ai-mode:8080/v1/chat/completions`.
+- Host RAG temporarily reaches the containerised gateway through
+  `http://127.0.0.1:5001`; the binding is loopback-only and exists to support
+  the Release 1 host/container boundary.
 - Standard model: `nvidia/nemotron-3.5-lightning:free` (override per request with `model`, or gateway-wide with `OPENROUTER_MODEL`).
+
+### MCP and RAG Host Boundary
+- MCP and RAG are .NET host processes and are not defined in
+  `docker-compose.yml`.
+- `tools/run_release1_services.py` prepares the curated RAG corpus, starts both
+  services, waits for readiness, streams prefixed logs, and shuts both down
+  together.
+- Student 3 uses `host.docker.internal:5002` for MCP and
+  `host.docker.internal:5003` for RAG. Both integrations remain optional and
+  never participate in Student 3 readiness.
+- MCP accesses Student 3 only through its bounded host-published HTTP API; RAG
+  does not access feature databases.
 
 ---
 

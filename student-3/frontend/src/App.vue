@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { Navbar, SERVICES } from '@better-canvas/ui-kit'
+import IntegrationAssistant from '@/components/IntegrationAssistant.vue'
 import NotificationButton from '@/components/NotificationButton.vue'
 
 const route = useRoute()
@@ -29,6 +30,7 @@ const navLinks = [
       >
         {{ link.label }}
       </RouterLink>
+      <IntegrationAssistant />
     </nav>
 
     <main class="nb-main">
@@ -38,5 +40,6 @@ const navLinks = [
         </Transition>
       </RouterView>
     </main>
+
   </div>
 </template>

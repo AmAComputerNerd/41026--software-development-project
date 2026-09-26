@@ -23,7 +23,7 @@ public static class TaskEndpoints
 
     private static async Task<IResult> GetTasks(
         [AsParameters] TaskFilterDto filter,
-        IStudent3DatabaseClient database,
+        IDatabaseClient database,
         CancellationToken cancellationToken)
     {
         var tasks = await database.GetTasksAsync(filter, cancellationToken);
@@ -32,7 +32,7 @@ public static class TaskEndpoints
 
     private static async Task<IResult> GetTask(
         [FromRoute] Guid id,
-        IStudent3DatabaseClient database,
+        IDatabaseClient database,
         CancellationToken cancellationToken)
     {
         var task = await database.GetTaskAsync(id, cancellationToken);
@@ -48,7 +48,7 @@ public static class TaskEndpoints
 
     private static async Task<IResult> AddTask(
         CreateTaskRequestDto request,
-        IStudent3DatabaseClient database,
+        IDatabaseClient database,
         INotificationClient notificationClient,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
@@ -114,7 +114,7 @@ public static class TaskEndpoints
     private static async Task<IResult> GenerateBreakdown(
         [FromRoute] Guid id,
         GenerateTaskBreakdownRequestDto request,
-        IStudent3DatabaseClient database,
+        IDatabaseClient database,
         IAiTaskService aiTaskService,
         INotificationClient notificationClient,
         ILoggerFactory loggerFactory,
@@ -186,7 +186,7 @@ public static class TaskEndpoints
 
     private static async Task<IResult> GenerateDescription(
         GenerateTaskDescriptionRequestDto request,
-        IStudent3DatabaseClient database,
+        IDatabaseClient database,
         IAiTaskService aiTaskService,
         CancellationToken cancellationToken)
     {
@@ -246,7 +246,7 @@ public static class TaskEndpoints
     private static async Task<IResult> UpdateTask(
         [FromRoute] Guid id,
         ModifyTaskRequestDto request,
-        IStudent3DatabaseClient database,
+        IDatabaseClient database,
         CancellationToken cancellationToken)
     {
         var existing = await database.GetTaskAsync(id, cancellationToken);
@@ -281,7 +281,7 @@ public static class TaskEndpoints
 
     private static async Task<IResult> DeleteTask(
         [FromRoute] Guid id,
-        IStudent3DatabaseClient database,
+        IDatabaseClient database,
         CancellationToken cancellationToken)
     {
         return await database.DeleteTaskAsync(id, cancellationToken)

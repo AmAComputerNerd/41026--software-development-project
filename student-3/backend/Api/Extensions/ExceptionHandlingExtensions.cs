@@ -22,22 +22,28 @@ public static class ExceptionHandlingExtensions
                         title: "The shared service is not configured"
                     ).ExecuteAsync(context);
                 }
-                else if (exception is AiGatewayConfigurationException)
+                else if (exception is AiGatewayConfigurationException or
+                    McpIntegrationDisabledException or
+                    RagIntegrationDisabledException)
                 {
                     context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
 
                     await Results.Problem(
                         statusCode: StatusCodes.Status503ServiceUnavailable,
-                        title: "The AI gateway is not configured"
+                        title: "AI assistant unavailable",
+                        detail: "This AI feature is disabled in the current environment."
                     ).ExecuteAsync(context);
                 }
-                else if (exception is AiGatewayException)
+                else if (exception is AiGatewayException or
+                    McpServiceException or
+                    RagServiceException)
                 {
                     context.Response.StatusCode = StatusCodes.Status502BadGateway;
 
                     await Results.Problem(
                         statusCode: StatusCodes.Status502BadGateway,
-                        title: "The AI generation request failed"
+                        title: "AI assistant unavailable",
+                        detail: "The required AI service could not be reached or complete the request. Make sure it is running, then try again."
                     ).ExecuteAsync(context);
                 }
                 else if (exception is DatabaseServiceException databaseException)

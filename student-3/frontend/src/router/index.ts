@@ -18,6 +18,10 @@ const router = createRouter({
       name: 'assignments',
       component: () => import('@/views/AssignmentsView.vue'),
     },
+    {
+      path: '/mcp',
+      redirect: '/',
+    },
   ],
 })
 

@@ -3,7 +3,7 @@ using Student3.Contracts;
 
 namespace Api.Services;
 
-public interface IStudent3DatabaseClient
+public interface IDatabaseClient
 {
     Task<IReadOnlyList<TaskRecord>> GetTasksAsync(
         TaskFilterDto filter,

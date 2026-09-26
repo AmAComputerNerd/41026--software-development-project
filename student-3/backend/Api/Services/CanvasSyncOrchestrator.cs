@@ -5,7 +5,7 @@ namespace Api.Services;
 
 public sealed class CanvasSyncOrchestrator(
     ISharedCanvasClient canvasClient,
-    IStudent3DatabaseClient database)
+    IDatabaseClient database)
 {
     private static readonly SemaphoreSlim SyncLock = new(1, 1);
 

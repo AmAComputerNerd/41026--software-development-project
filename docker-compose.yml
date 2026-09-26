@@ -60,6 +60,9 @@ services:
             SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__BaseUrl: http://ai-mode:8080
             CanvasSync__IntervalMinutes: "2"
+        networks:
+            - default
+            - ai
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -90,6 +93,9 @@ services:
             SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__BaseUrl: http://ai-mode:8080
             NotificationService__BaseUrl: http://student-1-backend:8080
+        networks:
+            - default
+            - ai
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -133,12 +139,19 @@ services:
             SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__BaseUrl: http://ai-mode:8080
             NotificationService__BaseUrl: http://student-1-backend:8080
+            McpServer__Enabled: ${MCP_ENABLED:-true}
+            McpServer__BaseUrl: http://host.docker.internal:${MCP_HOST_PORT:-5002}/mcp
+            RagServer__Enabled: ${RAG_ENABLED:-true}
+            RagServer__BaseUrl: http://host.docker.internal:${RAG_HOST_PORT:-5003}
             DueSoonReminder__IntervalMinutes: "15"
             DueSoonReminder__HoursBeforeDue: "24"
             DueSoonReminder__FinalHoursBeforeDue: "3"
         networks:
             - default
+            - ai
             - student-3-data
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -148,10 +161,6 @@ services:
             start_period: 15s
         depends_on:
             student-3-database:
-                condition: service_healthy
-            shared-backend:
-                condition: service_healthy
-            ai-mode:
                 condition: service_healthy
 
     student-4-database:
@@ -185,6 +194,7 @@ services:
             NotificationService__BaseUrl: http://student-1-backend:8080
         networks:
             - default
+            - ai
             - student-4-data
         restart: unless-stopped
         healthcheck:
@@ -267,6 +277,7 @@ services:
             NotificationService__BaseUrl: http://student-1-backend:8080
         networks:
             - default
+            - ai
             - student-5-data
         restart: unless-stopped
         healthcheck:
@@ -315,6 +326,10 @@ services:
               required: false
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+        ports:
+            - "127.0.0.1:${AI_MODE_HOST_PORT:-5001}:8080"
+        networks:
+            - ai
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -371,6 +386,7 @@ volumes:
 
 networks:
     default:
+    ai:
     student-3-data:
         internal: true
     student-4-data:

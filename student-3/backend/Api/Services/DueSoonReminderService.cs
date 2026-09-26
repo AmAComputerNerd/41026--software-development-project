@@ -3,7 +3,7 @@ using Api.DTOs;
 namespace Api.Services;
 
 public sealed class DueSoonReminderService(
-    IStudent3DatabaseClient database,
+    IDatabaseClient database,
     INotificationClient notificationClient,
     IConfiguration configuration)
 {

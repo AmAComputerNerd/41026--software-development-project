@@ -1,0 +1,24 @@
+Review Target: Shared MCP Integration
+
+Live MCP Evidence:
+{{VALIDATION_EVIDENCE}}
+
+Project Context:
+{{PROJECT_CONTEXT}}
+
+{{DOCUMENTATION_CONTEXT}}
+
+Task:
+Validate only what the evidence establishes:
+- The registered tool is genuinely invoked through the MCP protocol.
+- Inputs and structured outputs match the documented contract.
+- Invalid input is rejected.
+- The tool reads through the owning Student 3 backend instead of its database.
+- The MCP server remains restricted to the Docker ai network without a host port.
+
+If no issue is supported by the evidence, say exactly: "No evidence-backed improvement identified."
+
+Output Format:
+- Return exactly two bullet points (Finding + Recommendation), or the no-evidence sentence.
+- Maximum 100 words total.
+- Do not invent tools, endpoints, failures, or security requirements.

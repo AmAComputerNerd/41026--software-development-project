@@ -9,7 +9,7 @@ using Student3.Contracts;
 
 namespace Api.Services;
 
-public sealed class Student3DatabaseClient(HttpClient httpClient) : IStudent3DatabaseClient
+public sealed class DatabaseClient(HttpClient httpClient) : IDatabaseClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 

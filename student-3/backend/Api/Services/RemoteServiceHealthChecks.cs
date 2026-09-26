@@ -8,8 +8,6 @@ public abstract class RemoteServiceHealthCheck(
     string serviceName,
     string healthPath) : IHealthCheck
 {
-    public const string SharedServiceClientName = "shared-service-health";
-    public const string AiGatewayClientName = "ai-gateway-health";
     public const string DatabaseServiceClientName = "database-service-health";
 
     public async Task<HealthCheckResult> CheckHealthAsync(
@@ -43,20 +41,6 @@ public abstract class RemoteServiceHealthCheck(
         }
     }
 }
-
-public sealed class SharedServiceHealthCheck(IHttpClientFactory httpClientFactory)
-    : RemoteServiceHealthCheck(
-        httpClientFactory,
-        SharedServiceClientName,
-        "The shared service",
-        "health/ready");
-
-public sealed class AiGatewayHealthCheck(IHttpClientFactory httpClientFactory)
-    : RemoteServiceHealthCheck(
-        httpClientFactory,
-        AiGatewayClientName,
-        "The AI gateway",
-        "health/ready");
 
 public sealed class DatabaseServiceHealthCheck(IHttpClientFactory httpClientFactory)
     : RemoteServiceHealthCheck(

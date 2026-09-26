@@ -63,6 +63,14 @@ When the loop runs, `core/doc_loader.py` automatically reads:
    python tools/agentic_loop.py
    ```
 
+4. Choose **MCP (live tool validation)** to validate the shared deadline tool
+   through Student 3.
+
+5. Choose **RAG (grounding validation)** to run one grounded project question
+   and one unrelated question through Student 3. The transcript under
+   `tools/agentic_loop/logs/rag/` captures citations, confidence, and the
+   insufficient-context response.
+
 ---
 
 ## 4. Automatic Logging & Audit Evidence

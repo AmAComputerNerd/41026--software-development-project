@@ -15,7 +15,7 @@ public static class CourseEndpoints
     }
 
     private static async Task<IResult> GetCourses(
-        IStudent3DatabaseClient database,
+        IDatabaseClient database,
         bool includeInactiveCanvas = false,
         CancellationToken cancellationToken = default)
     {
@@ -27,7 +27,7 @@ public static class CourseEndpoints
 
     private static async Task<IResult> GetCourse(
         [FromRoute] Guid id,
-        IStudent3DatabaseClient database,
+        IDatabaseClient database,
         CancellationToken cancellationToken)
     {
         var course = await database.GetCourseAsync(id, cancellationToken);
