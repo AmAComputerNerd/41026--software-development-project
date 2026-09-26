@@ -141,6 +141,8 @@ services:
             NotificationService__BaseUrl: http://student-1-backend:8080
             McpServer__Enabled: ${MCP_ENABLED:-true}
             McpServer__BaseUrl: http://mcp-server:8080/mcp
+            RagServer__Enabled: ${RAG_ENABLED:-true}
+            RagServer__BaseUrl: http://rag-server:8080
             DueSoonReminder__IntervalMinutes: "15"
             DueSoonReminder__HoursBeforeDue: "24"
             DueSoonReminder__FinalHoursBeforeDue: "3"
@@ -351,10 +353,11 @@ services:
 
     rag-server:
         build:
-            context: ./ai-services/rag-server
-            dockerfile: RagServer/Dockerfile
+            context: .
+            dockerfile: ai-services/rag-server/RagServer/Dockerfile
         environment:
             ASPNETCORE_ENVIRONMENT: Development
+            AiGateway__BaseUrl: http://ai-mode:8080
         networks:
             - ai
         restart: unless-stopped

@@ -45,13 +45,15 @@ tools/
     │   ├── backend_collector.py   # .NET minimal-API route discovery + live GET prober
     │   ├── database_collector.py  # SQLite PRAGMA schema introspector
     │   ├── compose_collector.py   # docker-compose.yml configuration collector
-    │   └── mcp_collector.py       # Static boundaries + live MCP invocation
+    │   ├── mcp_collector.py       # Static boundaries + live MCP invocation
+    │   └── rag_collector.py       # Grounded + insufficient-context validation
     ├── pipelines/
     │   ├── frontend_pipeline.py
     │   ├── backend_pipeline.py
     │   ├── database_pipeline.py
     │   ├── compose_pipeline.py
     │   ├── mcp_pipeline.py
+    │   ├── rag_pipeline.py
     │   └── review_pipeline.py     # Second-pass critique & validation prompt builder
     ├── prompts/
     │   ├── service/               # Shared system baseline & task prompts
@@ -89,4 +91,9 @@ python tools/agentic_loop.py
 ```
 
 Select a target owner (`student-1` through `student-5`, `shared`),
-`docker-compose`, `MCP`, or `Run All`.
+`docker-compose`, `MCP`, `RAG`, or `Run All`.
+
+MCP mode invokes the live Student 3 deadline tool. RAG mode submits one
+documented Deadline Tracker question and one unrelated question through the
+Student 3 backend. The RAG transcript captures source citations, confidence,
+and the required insufficient-context result under `logs/rag/`.

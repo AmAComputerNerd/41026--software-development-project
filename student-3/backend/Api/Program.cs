@@ -48,6 +48,13 @@ builder.Services
         options => !options.Enabled || IsAbsoluteHttpUrl(options.BaseUrl),
         "McpServer:BaseUrl must be an absolute HTTP or HTTPS URL when MCP is enabled.")
     .ValidateOnStart();
+builder.Services
+    .AddOptions<RagServerOptions>()
+    .Bind(builder.Configuration.GetSection(RagServerOptions.SectionName))
+    .Validate(
+        options => !options.Enabled || IsAbsoluteHttpUrl(options.BaseUrl),
+        "RagServer:BaseUrl must be an absolute HTTP or HTTPS URL when RAG is enabled.")
+    .ValidateOnStart();
 // Http clients and retry behaviour
 builder.Services
     .AddHttpClient<IDatabaseClient, DatabaseClient>((services, client) =>
@@ -101,6 +108,20 @@ builder.Services
         options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(35);
     });
 builder.Services.AddSingleton<IMcpDeadlineClient, McpDeadlineClient>();
+builder.Services
+    .AddHttpClient<IRagClient, RagClient>((services, client) =>
+        ConfigureClient(
+            client,
+            services.GetRequiredService<IOptions<RagServerOptions>>().Value.BaseUrl))
+    .AddStandardResilienceHandler(options =>
+    {
+        options.Retry.MaxRetryAttempts = 1;
+        options.Retry.Delay = TimeSpan.FromMilliseconds(500);
+        options.Retry.DisableForUnsafeHttpMethods();
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(95);
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(200);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(100);
+    });
 // Health check services
 builder.Services.AddHttpClient(
     RemoteServiceHealthCheck.DatabaseServiceClientName,
@@ -153,6 +174,7 @@ app.MapCourseEndpoints();
 app.MapTaskEndpoints();
 app.MapCanvasSyncEndpoints();
 app.MapMcpIntegrationEndpoints();
+app.MapRagIntegrationEndpoints();
 app.MapHealthChecks(
     "/health/live",
     new HealthCheckOptions

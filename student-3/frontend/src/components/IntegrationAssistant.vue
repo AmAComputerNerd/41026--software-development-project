@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getUpcomingDeadlines } from '@/api/mcp'
+import { askProjectQuestion } from '@/api/rag'
 import type { McpDeadlineResult } from '@/types/mcp'
+import type { RagAnswerResult } from '@/types/rag'
 
 type AssistantMode = 'mcp' | 'rag'
 
@@ -10,9 +12,13 @@ const mode = ref<AssistantMode>('mcp')
 const closeButton = ref<HTMLButtonElement | null>(null)
 const days = ref(7)
 const limit = ref(10)
-const loading = ref(false)
-const error = ref('')
-const result = ref<McpDeadlineResult | null>(null)
+const mcpLoading = ref(false)
+const mcpError = ref('')
+const mcpResult = ref<McpDeadlineResult | null>(null)
+const question = ref('')
+const ragLoading = ref(false)
+const ragError = ref('')
+const ragResult = ref<RagAnswerResult | null>(null)
 
 watch(open, async (isOpen) => {
   if (isOpen) {
@@ -31,19 +37,36 @@ function handleKeydown(event: KeyboardEvent) {
 }
 
 async function runTool() {
-  loading.value = true
-  error.value = ''
-  result.value = null
+  mcpLoading.value = true
+  mcpError.value = ''
+  mcpResult.value = null
 
   try {
-    result.value = await getUpcomingDeadlines(days.value, limit.value)
-    if (result.value.status === 'error') {
-      error.value = result.value.error?.message ?? 'The MCP tool returned an error.'
+    mcpResult.value = await getUpcomingDeadlines(days.value, limit.value)
+    if (mcpResult.value.status === 'error') {
+      mcpError.value = mcpResult.value.error?.message ?? 'The MCP tool returned an error.'
     }
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : 'Unable to invoke the MCP tool.'
+    mcpError.value = reason instanceof Error ? reason.message : 'Unable to invoke the MCP tool.'
   } finally {
-    loading.value = false
+    mcpLoading.value = false
+  }
+}
+
+async function askQuestion() {
+  const value = question.value.trim()
+  if (!value) return
+
+  ragLoading.value = true
+  ragError.value = ''
+  ragResult.value = null
+
+  try {
+    ragResult.value = await askProjectQuestion(value)
+  } catch (reason) {
+    ragError.value = reason instanceof Error ? reason.message : 'Unable to query project knowledge.'
+  } finally {
+    ragLoading.value = false
   }
 }
 
@@ -145,29 +168,29 @@ function formatDate(value: string) {
                 <input v-model.number="limit" type="number" min="1" max="50" required />
               </label>
             </div>
-            <button class="nb-btn nb-btn--accent" type="submit" :disabled="loading">
-              {{ loading ? 'Checking live data...' : 'Show upcoming deadlines' }}
+            <button class="nb-btn nb-btn--accent" type="submit" :disabled="mcpLoading">
+              {{ mcpLoading ? 'Checking live data...' : 'Show upcoming deadlines' }}
             </button>
           </form>
 
-          <div v-if="error" class="nb-alert nb-alert--error" role="alert">
-            {{ error }}
+          <div v-if="mcpError" class="nb-alert nb-alert--error" role="alert">
+            {{ mcpError }}
           </div>
 
           <section
-            v-if="result?.data"
+            v-if="mcpResult?.data"
             class="nb-assistant-message nb-assistant-message--result"
             aria-live="polite"
           >
             <div class="nb-assistant-message__heading">
-              <strong>{{ result.data.count }} DEADLINES FOUND</strong>
+              <strong>{{ mcpResult.data.count }} DEADLINES FOUND</strong>
               <span class="nb-tag">LIVE</span>
             </div>
-            <p v-if="!result.data.items.length">
-              No incomplete tasks are due in the next {{ result.data.days }} days.
+            <p v-if="!mcpResult.data.items.length">
+              No incomplete tasks are due in the next {{ mcpResult.data.days }} days.
             </p>
             <ul v-else class="nb-assistant-deadlines">
-              <li v-for="item in result.data.items" :key="item.id">
+              <li v-for="item in mcpResult.data.items" :key="item.id">
                 <div>
                   <strong>{{ item.title }}</strong>
                   <span>{{ item.courseName || 'No course' }}</span>
@@ -186,18 +209,68 @@ function formatDate(value: string) {
         <section
           v-else
           id="assistant-rag-panel"
-          class="nb-assistant__body nb-assistant__body--unavailable"
+          class="nb-assistant__body"
           role="tabpanel"
           aria-labelledby="assistant-rag-tab"
         >
-          <span class="nb-assistant__glyph" aria-hidden="true">?</span>
-          <p class="nb-eyebrow">PROJECT HELP / RAG</p>
-          <h3>KNOWLEDGE SEARCH IS COMING NEXT</h3>
-          <p>
-            This mode will answer questions from indexed project documentation with source
-            citations and a confidence rating.
-          </p>
-          <span class="nb-tag nb-tag--medium">NOT CONNECTED</span>
+          <div class="nb-assistant-message nb-assistant-message--system">
+            <span class="nb-tag nb-tag--medium">GROUNDED RAG</span>
+            <p>Ask how the Deadline Tracker works. Answers use indexed project documentation.</p>
+          </div>
+
+          <form class="nb-assistant-form" @submit.prevent="askQuestion">
+            <label class="nb-field">
+              <span>Project question</span>
+              <textarea
+                v-model="question"
+                rows="4"
+                minlength="3"
+                maxlength="500"
+                placeholder="How does Canvas assignment sync work?"
+                required
+              />
+            </label>
+            <button class="nb-btn nb-btn--accent" type="submit" :disabled="ragLoading">
+              {{ ragLoading ? 'Searching project knowledge...' : 'Ask project help' }}
+            </button>
+          </form>
+
+          <div v-if="ragError" class="nb-alert nb-alert--error" role="alert">
+            {{ ragError }}
+          </div>
+
+          <section
+            v-if="ragResult"
+            class="nb-assistant-message nb-assistant-message--result"
+            :class="{ 'nb-assistant-message--insufficient': ragResult.status === 'insufficient_context' }"
+            aria-live="polite"
+          >
+            <div class="nb-assistant-message__heading">
+              <strong>
+                {{ ragResult.status === 'success' ? 'GROUNDED ANSWER' : 'INSUFFICIENT CONTEXT' }}
+              </strong>
+              <span class="nb-tag" :class="`nb-confidence--${ragResult.confidence}`">
+                {{ ragResult.confidence }} confidence
+              </span>
+            </div>
+            <p class="nb-rag-answer">{{ ragResult.answer }}</p>
+
+            <div v-if="ragResult.citations.length" class="nb-rag-citations">
+              <p class="nb-eyebrow">SOURCES</p>
+              <ol>
+                <li v-for="citation in ragResult.citations" :key="`${citation.sourceId}:${citation.heading}`">
+                  <strong>{{ citation.title }}</strong>
+                  <span>{{ citation.heading }}</span>
+                  <code>{{ citation.sourceId }}</code>
+                </li>
+              </ol>
+            </div>
+
+            <p class="nb-rag-retrieval nb-mono">
+              {{ ragResult.retrieval.matchedChunks }} of
+              {{ ragResult.retrieval.consideredChunks }} chunks matched
+            </p>
+          </section>
         </section>
       </aside>
     </div>

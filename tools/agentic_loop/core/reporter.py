@@ -6,7 +6,8 @@ def print_owner_menu(owners: list[str]) -> None:
         print(f"{index} - {owner}")
     print(f"{len(owners) + 1} - docker-compose (architecture review)")
     print(f"{len(owners) + 2} - MCP (live tool validation)")
-    print(f"{len(owners) + 3} - Run All (every owner/layer + compose + MCP)")
+    print(f"{len(owners) + 3} - RAG (grounding validation)")
+    print(f"{len(owners) + 4} - Run All (every owner/layer + compose + MCP + RAG)")
     print("0 - Exit")
     print("=" * 70)
 

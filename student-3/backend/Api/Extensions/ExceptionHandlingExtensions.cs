@@ -58,6 +58,24 @@ public static class ExceptionHandlingExtensions
                         title: "The MCP request failed"
                     ).ExecuteAsync(context);
                 }
+                else if (exception is RagIntegrationDisabledException)
+                {
+                    context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+
+                    await Results.Problem(
+                        statusCode: StatusCodes.Status503ServiceUnavailable,
+                        title: "RAG integration is disabled"
+                    ).ExecuteAsync(context);
+                }
+                else if (exception is RagServiceException)
+                {
+                    context.Response.StatusCode = StatusCodes.Status502BadGateway;
+
+                    await Results.Problem(
+                        statusCode: StatusCodes.Status502BadGateway,
+                        title: "The RAG request failed"
+                    ).ExecuteAsync(context);
+                }
                 else if (exception is DatabaseServiceException databaseException)
                 {
                     var statusCode = databaseException.StatusCode is null

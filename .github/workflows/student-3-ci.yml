@@ -139,6 +139,7 @@ jobs:
           AiGateway__BaseUrl=http://127.0.0.1:5200 \
           NotificationService__BaseUrl=http://127.0.0.1:5101 \
           McpServer__Enabled=false \
+          RagServer__Enabled=false \
           DueSoonReminder__IntervalMinutes=60 \
           dotnet run \
             --project "${{ env.API_PROJECT }}" \

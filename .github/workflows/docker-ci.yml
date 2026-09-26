@@ -50,6 +50,7 @@ jobs:
           CANVAS_BASE_URL=https://canvas.example.invalid
           CANVAS_API_TOKEN=ci-placeholder
           MCP_ENABLED=false
+          RAG_ENABLED=false
           EOF
 
       - name: Validate Compose configuration
@@ -107,6 +108,7 @@ jobs:
           CANVAS_BASE_URL=https://canvas.example.invalid
           CANVAS_API_TOKEN=ci-placeholder
           MCP_ENABLED=false
+          RAG_ENABLED=false
           EOF
 
       - name: Set up Docker Buildx
@@ -137,6 +139,7 @@ jobs:
           CANVAS_BASE_URL=https://canvas.example.invalid
           CANVAS_API_TOKEN=ci-placeholder
           MCP_ENABLED=false
+          RAG_ENABLED=false
           EOF
 
       - name: Start Student 3 core services

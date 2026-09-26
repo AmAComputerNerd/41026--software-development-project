@@ -6,10 +6,10 @@ EXPOSE 8080
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["RagServer/RagServer.csproj", "RagServer/"]
-RUN dotnet restore "RagServer/RagServer.csproj"
-COPY . .
-WORKDIR "/src/RagServer"
+COPY ["ai-services/rag-server/RagServer/RagServer.csproj", "ai-services/rag-server/RagServer/"]
+RUN dotnet restore "ai-services/rag-server/RagServer/RagServer.csproj"
+COPY ai-services/rag-server/RagServer/ ai-services/rag-server/RagServer/
+WORKDIR "/src/ai-services/rag-server/RagServer"
 RUN dotnet build "RagServer.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
@@ -19,6 +19,9 @@ RUN dotnet publish "RagServer.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY AGENTS.md ./Corpus/AGENTS.md
+COPY docs/architecture/data-flows.md ./Corpus/docs/architecture/data-flows.md
+COPY student-3/README.md ./Corpus/student-3/README.md
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \

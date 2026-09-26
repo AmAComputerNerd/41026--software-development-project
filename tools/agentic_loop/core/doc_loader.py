@@ -126,6 +126,19 @@ def load_documentation(
             doc_sections.append(_format_doc_section("Architecture Topology & Routing", overview_doc, content))
             loaded_paths.append("docs/architecture/overview.md")
 
+    elif layer == "rag":
+        rag_readme = repo_root / "ai-services" / "rag-server" / "README.md"
+        content = _read_file_safe(rag_readme)
+        if content:
+            doc_sections.append(_format_doc_section("RAG Retrieval and Grounding Contract", rag_readme, content))
+            loaded_paths.append("ai-services/rag-server/README.md")
+
+        data_flows_doc = repo_root / "docs" / "architecture" / "data-flows.md"
+        content = _read_file_safe(data_flows_doc)
+        if content:
+            doc_sections.append(_format_doc_section("Cross-Service Data Flows", data_flows_doc, content))
+            loaded_paths.append("docs/architecture/data-flows.md")
+
     # 3. Owner-level README (if present)
     if owner and owner != "shared":
         owner_readme = repo_root / owner / "README.md"
