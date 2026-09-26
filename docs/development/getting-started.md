@@ -11,6 +11,7 @@ Ensure you have the following installed locally:
 - **Docker Desktop** (or equivalent container runtime supporting Docker Compose v2)
 - **Node.js 22 LTS** (for standalone frontend development and npm workspace tooling)
 - **.NET 10 SDK** (for standalone ASP.NET Core backend development)
+- **Python 3.11+** (for the local MCP/RAG launcher and agentic loop)
 - **Git**
 
 ---
@@ -39,7 +40,8 @@ Ensure you have the following installed locally:
 
 ## 3. Option A: Running with Docker Compose (Recommended)
 
-Running via Docker Compose builds and networks all microservices together automatically, setting up internal DNS and volume persistence.
+Docker Compose builds and networks the containerised feature services. MCP and
+RAG intentionally run as host processes and are started separately.
 
 ```bash
 # Build and start all services
@@ -47,6 +49,9 @@ docker compose up --build
 
 # Run in background (detached mode)
 docker compose up -d
+
+# In another terminal, start local MCP and RAG
+python tools/run_release1_services.py
 
 # View logs from all services or a specific service
 docker compose logs -f
@@ -141,3 +146,18 @@ dotnet run --project student-5/backend/GradesManager/GradesManager/GradesManager
 > - Set environment variable `ASPNETCORE_ENVIRONMENT=Development`.
 > - If connecting to `shared-backend` or `ai-mode`, you must provide their URLs via `appsettings.Development.json` or environment variables (e.g. `AiGateway__BaseUrl=http://localhost:8080`).
 > - The standalone default for `student-3-database` is `http://localhost:5203` (matching `DatabaseService:BaseUrl` in `student-3/backend/Api/appsettings.json`), `student-4-database` is `http://localhost:5204`, and `student-5-database` is `http://localhost:5205`.
+
+### Local Release 1 services
+
+`tools/run_release1_services.py` is the lifecycle entrypoint for the
+non-containerised MCP and RAG .NET services. By default it uses:
+
+| Service | Host URL | Docker caller URL |
+|---|---|---|
+| MCP | `http://127.0.0.1:5002/mcp` | `http://host.docker.internal:5002/mcp` |
+| RAG | `http://127.0.0.1:5003` | `http://host.docker.internal:5003` |
+| AI Mode bridge | `http://127.0.0.1:5001` | Existing Docker-internal `http://ai-mode:8080` |
+
+The ports can be changed with `MCP_HOST_PORT`, `RAG_HOST_PORT`, and
+`AI_MODE_HOST_PORT` in the root `.env`. Restart the affected containers and
+the launcher after changing them.

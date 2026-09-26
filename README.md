@@ -51,6 +51,8 @@ ai-mode ────────HTTPS──→ [ OpenRouter API ]
 | **`shared/frontend`** | Shared | Vue 3 + TypeScript + Nginx | Shared dashboard shell, Nginx reverse proxy at `http://localhost:8080` |
 | **`shared/ui-kit`** | Shared | SCSS + Vue 3 components | `@better-canvas/ui-kit` design system library |
 | **`ai-services/ai-mode`** | Shared | ASP.NET Core (.NET 10) | OpenRouter LLM gateway (`/v1/chat/completions`) |
+| **`ai-services/mcp-server`** | Shared | Local ASP.NET Core (.NET 10) | Non-containerised MCP tools accessed by Docker backends through `host.docker.internal` |
+| **`ai-services/rag-server`** | Shared | Local ASP.NET Core (.NET 10) | Non-containerised grounded project-documentation retrieval and generation |
 | **`student-1`** | Bryan Lee | ASP.NET Core + PostgreSQL 16 + Vue 3 | Notifications, delivery preferences, SSE stream, AI digests & chat assistant |
 | **`student-2`** | Isaac Thomas | ASP.NET Core + SQLite + Vue 3 | Automations, scheduled Canvas posts, AI quiz filling, execution runner |
 | **`student-3`** | Jonathon Thomson | ASP.NET Core + SQLite + Vue 3 | Deadlines & task tracking, Canvas sync, AI subtasks, push notifications |
@@ -71,8 +73,11 @@ cp .env.example .env
 # 2. Edit .env with your OpenRouter API key and Canvas credentials
 # (OPENROUTER_API_KEY, CANVAS_BASE_URL, CANVAS_API_TOKEN)
 
-# 3. Build and launch all microservices
+# 3. Build and launch the containerised application
 docker compose up --build
+
+# 4. In another terminal, launch the local MCP and RAG services
+python tools/run_release1_services.py
 ```
 
 Access services via the shared shell at [http://localhost:8080](http://localhost:8080).
@@ -84,7 +89,9 @@ Access services via the shared shell at [http://localhost:8080](http://localhost
 ```
 .
 ├── ai-services/
-│   └── ai-mode/         # OpenRouter LLM proxy gateway
+│   ├── ai-mode/         # Containerised OpenRouter LLM proxy gateway
+│   ├── mcp-server/      # Non-containerised MCP server
+│   └── rag-server/      # Non-containerised grounded RAG server
 ├── shared/
 │   ├── backend/         # Canvas LMS gateway + audit database
 │   ├── frontend/        # Vue 3 dashboard shell + Nginx proxy
@@ -149,6 +156,16 @@ The shared Canvas and task-tracker databases persist timestamps as
 `DateTime` normalized to UTC.
 
 ## Running a single service outside Docker
+
+MCP and RAG intentionally run outside Docker. After starting Compose, launch
+both host services from the repository root:
+
+```bash
+python tools/run_release1_services.py
+```
+
+The launcher prepares the curated RAG corpus, starts both .NET projects,
+waits for their readiness endpoints, and stops both processes together.
 
 Each backend is a standalone ASP.NET project (`Api/` for most slices,
 `backend/GradesManager/GradesManager/` for student 5). The easiest way

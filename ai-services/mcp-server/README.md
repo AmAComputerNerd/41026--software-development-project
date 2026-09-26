@@ -1,7 +1,8 @@
 # MCP Server
 
-Shared ASP.NET Core service for controlled Model Context Protocol tools using
-the official C# MCP SDK and stateless Streamable HTTP transport.
+Shared non-containerised ASP.NET Core service for controlled Model Context
+Protocol tools using the official C# MCP SDK and stateless Streamable HTTP
+transport.
 
 ## Registered tools
 
@@ -13,6 +14,13 @@ the official C# MCP SDK and stateless Streamable HTTP transport.
 - Boundary: reads through Student 3's bounded HTTP API; it never accesses the
   Student 3 database service or volume directly
 
-The MCP endpoint is `/mcp`. Access is limited by Docker network membership:
-the container is available only to services attached to the Docker Compose
-`ai` network and does not publish a host port.
+Run it together with the RAG service from the repository root:
+
+```bash
+python tools/run_release1_services.py
+```
+
+The MCP endpoint is `http://127.0.0.1:5002/mcp` by default. The launcher
+configures its Student 3 dependency as `http://127.0.0.1:5103`; the
+containerised Student 3 backend reaches MCP through
+`http://host.docker.internal:5002/mcp`.

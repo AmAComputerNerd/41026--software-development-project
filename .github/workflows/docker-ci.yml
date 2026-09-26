@@ -11,6 +11,7 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".env.example"
+      - "tools/run_release1_services.py"
       - ".github/workflows/docker-ci.yml"
   pull_request:
     paths:
@@ -21,6 +22,7 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".env.example"
+      - "tools/run_release1_services.py"
       - ".github/workflows/docker-ci.yml"
 
 concurrency:
@@ -55,6 +57,25 @@ jobs:
 
       - name: Validate Compose configuration
         run: docker compose config --quiet
+
+      - name: Verify host-service boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          config=$(docker compose config --format json)
+          jq --exit-status '
+            (.services | has("mcp-server") | not) and
+            (.services | has("rag-server") | not) and
+            (.services["student-3-backend"].environment.McpServer__Enabled == "false") and
+            (.services["student-3-backend"].environment.RagServer__Enabled == "false") and
+            (.services["student-3-backend"].environment.McpServer__BaseUrl |
+              startswith("http://host.docker.internal:")) and
+            (.services["student-3-backend"].environment.RagServer__BaseUrl |
+              startswith("http://host.docker.internal:"))
+          ' <<< "$config" > /dev/null
+
+          python -m py_compile tools/run_release1_services.py
 
       - name: Verify Student 3 database isolation
         shell: bash
@@ -155,7 +176,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          for service in student-1-backend shared-backend ai-mode mcp-server rag-server; do
+          for service in student-1-backend shared-backend ai-mode; do
             if docker compose ps --all --services |
               grep --fixed-strings --line-regexp "$service"; then
               echo "::error::$service was started as a Student 3 dependency."

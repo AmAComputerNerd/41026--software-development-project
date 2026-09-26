@@ -140,9 +140,9 @@ services:
             AiGateway__BaseUrl: http://ai-mode:8080
             NotificationService__BaseUrl: http://student-1-backend:8080
             McpServer__Enabled: ${MCP_ENABLED:-true}
-            McpServer__BaseUrl: http://mcp-server:8080/mcp
+            McpServer__BaseUrl: http://host.docker.internal:${MCP_HOST_PORT:-5002}/mcp
             RagServer__Enabled: ${RAG_ENABLED:-true}
-            RagServer__BaseUrl: http://rag-server:8080
+            RagServer__BaseUrl: http://host.docker.internal:${RAG_HOST_PORT:-5003}
             DueSoonReminder__IntervalMinutes: "15"
             DueSoonReminder__HoursBeforeDue: "24"
             DueSoonReminder__FinalHoursBeforeDue: "3"
@@ -150,6 +150,8 @@ services:
             - default
             - ai
             - student-3-data
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -324,40 +326,8 @@ services:
               required: false
         environment:
             ASPNETCORE_ENVIRONMENT: Development
-        networks:
-            - ai
-        restart: unless-stopped
-        healthcheck:
-            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
-            interval: 10s
-            timeout: 3s
-            retries: 5
-            start_period: 10s
-
-    mcp-server:
-        build:
-            context: ./ai-services/mcp-server
-            dockerfile: McpServer/Dockerfile
-        environment:
-            ASPNETCORE_ENVIRONMENT: Development
-            Student3__BaseUrl: http://student-3-backend:8080
-        networks:
-            - ai
-        restart: unless-stopped
-        healthcheck:
-            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
-            interval: 10s
-            timeout: 3s
-            retries: 5
-            start_period: 10s
-
-    rag-server:
-        build:
-            context: .
-            dockerfile: ai-services/rag-server/RagServer/Dockerfile
-        environment:
-            ASPNETCORE_ENVIRONMENT: Development
-            AiGateway__BaseUrl: http://ai-mode:8080
+        ports:
+            - "127.0.0.1:${AI_MODE_HOST_PORT:-5001}:8080"
         networks:
             - ai
         restart: unless-stopped

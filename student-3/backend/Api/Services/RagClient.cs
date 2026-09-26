@@ -1,7 +1,10 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using Api.Configuration;
 using Api.DTOs;
 using Microsoft.Extensions.Options;
+using Polly.CircuitBreaker;
+using Polly.Timeout;
 
 namespace Api.Services;
 
@@ -20,19 +23,50 @@ public sealed class RagClient(
             throw new RagIntegrationDisabledException();
         }
 
-        using var response = await httpClient.PostAsJsonAsync(
-            "api/answers",
-            new RagAnswerRequestDto(question, "student-3"),
-            cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        try
+        {
+            using var response = await httpClient.PostAsJsonAsync(
+                "api/answers",
+                new RagAnswerRequestDto(question, "student-3"),
+                cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new RagServiceException(
+                    $"The RAG server returned HTTP {(int)response.StatusCode}.");
+            }
+
+            return await response.Content.ReadFromJsonAsync<RagAnswerResponseDto>(
+                cancellationToken)
+                ?? throw new RagServiceException("The RAG server returned an empty response.");
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new RagServiceException("The RAG request timed out.");
+        }
+        catch (RagServiceException)
+        {
+            throw;
+        }
+        catch (HttpRequestException exception)
+        {
+            throw new RagServiceException("The RAG server could not be reached.", exception);
+        }
+        catch (TimeoutRejectedException exception)
+        {
+            throw new RagServiceException("The RAG request timed out.", exception);
+        }
+        catch (BrokenCircuitException exception)
         {
             throw new RagServiceException(
-                $"The RAG server returned HTTP {(int)response.StatusCode}.");
+                "The RAG server is temporarily unavailable.",
+                exception);
         }
-
-        return await response.Content.ReadFromJsonAsync<RagAnswerResponseDto>(
-            cancellationToken)
-            ?? throw new RagServiceException("The RAG server returned an empty response.");
+        catch (JsonException exception)
+        {
+            throw new RagServiceException(
+                "The RAG server returned an unreadable response.",
+                exception);
+        }
     }
 }
 
