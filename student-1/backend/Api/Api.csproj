@@ -20,6 +20,7 @@
         </PackageReference>
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
         <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.0.0" />
+        <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
     </ItemGroup>
 

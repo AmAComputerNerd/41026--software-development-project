@@ -1,3 +1,4 @@
+using Api.Configuration;
 using Api.Data;
 using Api.Endpoints;
 using Api.Extensions;
@@ -5,6 +6,7 @@ using Api.Services;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +53,26 @@ builder.Services.AddHttpClient<IAiDigestService, OpenRouterDigestService>(client
 builder.Services.AddScoped<CanvasNotificationSyncService>();
 builder.Services.AddSingleton<INotificationStreamBroker, NotificationStreamBroker>();
 builder.Services.AddHostedService<CanvasSyncBackgroundService>();
+
+builder.Services
+    .AddOptions<McpServerOptions>()
+    .Bind(builder.Configuration.GetSection(McpServerOptions.SectionName));
+builder.Services.AddSingleton<IMcpClient, McpClient>();
+
+builder.Services
+    .AddOptions<RagServerOptions>()
+    .Bind(builder.Configuration.GetSection(RagServerOptions.SectionName));
+builder.Services.AddHttpClient<IRagClient, RagClient>((services, client) =>
+{
+    var options = services.GetRequiredService<IOptions<RagServerOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var uri))
+    {
+        client.BaseAddress = uri;
+    }
+    client.Timeout = TimeSpan.FromSeconds(90);
+});
+
+builder.Services.AddScoped<IChatAssistantService, ChatAssistantService>();
 builder.Services
     .AddHealthChecks()
     .AddCheck(
@@ -84,6 +106,8 @@ app.MapNotificationEndpoints();
 app.MapPreferenceEndpoints();
 app.MapAiDigestEndpoints();
 app.MapCanvasSyncEndpoints();
+app.MapChatEndpoints();
+app.MapMcpRagIntegrationEndpoints();
 app.MapHealthChecks(
     "/health/live",
     new HealthCheckOptions

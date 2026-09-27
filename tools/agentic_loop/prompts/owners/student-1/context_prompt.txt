@@ -1,23 +1,9 @@
-Feature: Notifications
+Feature: Notifications, AI Chat Assistant & MCP/RAG Integration
 
-This service manages a student's notifications, their delivery
-preferences, and AI-generated digests of that activity. Core
-functionality:
+This service manages a student's notifications, delivery preferences, AI Chat Assistant sessions, and shared MCP/RAG integrations. Core functionality:
 
-- Notifications: create/read notifications with a StudentId, Type
-  (Deadline/Grade/Automation/Account/AI), SourceMicroservice, Message,
-  IsRead flag, and CreatedAtUtc; list/filter, mark a single notification
-  or all notifications as read, delete a notification, and push new
-  notifications in from other services.
-- NotificationPreferences: create/read/update/delete a per-student
-  preference keyed by NotificationType and NotificationChannel
-  (InApp/Email), with an Enabled flag and UpdatedAtUtc, controlling
-  whether/how a student receives notifications of that type.
-- AiDigests: generate and list AI-produced summaries (Summary,
-  GeneratedAtUtc) of a student's recent notifications, keyed by
-  StudentId.
-
-Out of scope for Release 0: authentication/user accounts, any UI,
-cross-service or shared-database context (the service only knows about
-notifications pushed to it, not the originating domain data), and any
-MCP integration - digest generation calls an LLM directly, not via MCP.
+- Notifications: create/read notifications with StudentId, Type (Deadline/Grade/Automation/Account/AI), SourceMicroservice, Message, IsRead flag, and CreatedAtUtc; list/filter, mark as read/unread, delete notification, and push new notifications from other services via HTTP and real-time SSE stream.
+- NotificationPreferences: per-student preferences keyed by NotificationType and NotificationChannel (InApp/Email) with Enabled flag and UpdatedAtUtc.
+- AI Chat Assistant: persistent session-based conversation assistant (ChatSessions and ChatMessages in PostgreSQL) replacing static digests. Every new chat session automatically generates an unread notification summary as its opening greeting with an animated Neobrutalist loader. Supports a collapsible Past Chats drawer.
+- Shared MCP Tool Integration: exposes shared tool `notifications_broadcast_alert` on the non-containerised MCP server, reachable via `IMcpClient` and `/api/notifications/mcp/broadcast` with urgency validation and structured content.
+- Shared RAG Query Integration: consumes the shared local RAG server via `IRagClient` and `/api/notifications/rag/query`, returning grounded answers with citations and confidence metrics (HIGH/MEDIUM/LOW/INSUFFICIENT_CONTEXT) for course policies and deadlines.

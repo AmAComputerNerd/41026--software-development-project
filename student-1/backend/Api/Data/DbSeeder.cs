@@ -12,6 +12,7 @@ public static class DbSeeder
         SeedNotifications(db);
         SeedNotificationPreferences(db);
         SeedAiDigests(db);
+        SeedChatSessions(db);
     }
 
     private static void SeedNotifications(AppDbContext db)
@@ -83,6 +84,113 @@ public static class DbSeeder
                 new AiDigest { StudentId = Student2Id, Summary = "No new grades this week.", GeneratedAtUtc = now.AddDays(-4) },
                 new AiDigest { StudentId = Student2Id, Summary = "Digest generated: all systems normal.", GeneratedAtUtc = now.AddDays(-5) }
             );
+
+            db.SaveChanges();
+        }
+    }
+
+    private static void SeedChatSessions(AppDbContext db)
+    {
+        var chatSessions = db.ChatSessions;
+        if (!chatSessions.Any())
+        {
+            var now = DateTime.UtcNow;
+
+            var session1 = new ChatSession
+            {
+                Id = Guid.NewGuid(),
+                StudentId = Student1Id,
+                Title = "Study Plan & Assessment 1 Priority",
+                CreatedAtUtc = now.AddDays(-2),
+                UpdatedAtUtc = now.AddDays(-2).AddMinutes(15)
+            };
+
+            var session1Msg1 = new ChatMessage
+            {
+                ChatSessionId = session1.Id,
+                Role = "assistant",
+                Content = "Hello Bryan! Here is your quick notification digest: You have 2 approaching deadlines (Assignment due soon and task deadline), plus 1 unread grade posted. I recommend prioritizing your upcoming assignment due tomorrow.",
+                CreatedAtUtc = now.AddDays(-2),
+                Confidence = "HIGH"
+            };
+
+            var session1Msg2 = new ChatMessage
+            {
+                ChatSessionId = session1.Id,
+                Role = "user",
+                Content = "What is the penalty if I submit 1 day late?",
+                CreatedAtUtc = now.AddDays(-2).AddMinutes(5)
+            };
+
+            var session1Msg3 = new ChatMessage
+            {
+                ChatSessionId = session1.Id,
+                Role = "assistant",
+                Content = "According to course policies, a **5% penalty per 24-hour period** applies to late submissions. Submissions more than 5 days late receive 0% unless an extension is granted.",
+                CreatedAtUtc = now.AddDays(-2).AddMinutes(6),
+                Confidence = "HIGH",
+                CitationsJson = "[\"docs/knowledge-base/course_policies.md\"]"
+            };
+
+            var session2 = new ChatSession
+            {
+                Id = Guid.NewGuid(),
+                StudentId = Student1Id,
+                Title = "Grade Query & Special Consideration",
+                CreatedAtUtc = now.AddDays(-1),
+                UpdatedAtUtc = now.AddDays(-1).AddMinutes(8)
+            };
+
+            var session2Msg1 = new ChatMessage
+            {
+                ChatSessionId = session2.Id,
+                Role = "assistant",
+                Content = "Notification digest: 1 new grade posted in Advanced Software Development. Check your Grade Impact in the notifications feed!",
+                CreatedAtUtc = now.AddDays(-1),
+                Confidence = "HIGH"
+            };
+
+            var session2Msg2 = new ChatMessage
+            {
+                ChatSessionId = session2.Id,
+                Role = "user",
+                Content = "Can I request special consideration?",
+                CreatedAtUtc = now.AddDays(-1).AddMinutes(3)
+            };
+
+            var session2Msg3 = new ChatMessage
+            {
+                ChatSessionId = session2.Id,
+                Role = "assistant",
+                Content = "Yes. Extensions up to 48 hours must be requested through the Student Portal at least 24 hours prior to the due date, accompanied by relevant documentation.",
+                CreatedAtUtc = now.AddDays(-1).AddMinutes(4),
+                Confidence = "HIGH",
+                CitationsJson = "[\"docs/knowledge-base/course_policies.md\"]"
+            };
+
+            var session3 = new ChatSession
+            {
+                Id = Guid.NewGuid(),
+                StudentId = Student2Id,
+                Title = "Weekly Planning Overview",
+                CreatedAtUtc = now.AddDays(-1),
+                UpdatedAtUtc = now.AddDays(-1).AddMinutes(10)
+            };
+
+            var session3Msg1 = new ChatMessage
+            {
+                ChatSessionId = session3.Id,
+                Role = "assistant",
+                Content = "Good day! You have 1 unread grade and 1 pending automation task requiring follow-up.",
+                CreatedAtUtc = now.AddDays(-1),
+                Confidence = "HIGH"
+            };
+
+            chatSessions.AddRange(session1, session2, session3);
+            db.ChatMessages.AddRange(
+                session1Msg1, session1Msg2, session1Msg3,
+                session2Msg1, session2Msg2, session2Msg3,
+                session3Msg1);
 
             db.SaveChanges();
         }

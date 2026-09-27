@@ -32,6 +32,8 @@ CORPUS_SOURCES = (
     Path("AGENTS.md"),
     Path("docs/architecture/data-flows.md"),
     Path("student-3/README.md"),
+    Path("student-1/README.md"),
+    Path("docs/knowledge-base/course_policies.md"),
 )
 
 
@@ -89,6 +91,11 @@ def parse_args(root_environment: dict[str, str]) -> argparse.Namespace:
         "--student-3-port",
         type=int,
         default=5103,
+    )
+    parser.add_argument(
+        "--student-1-port",
+        type=int,
+        default=5101,
     )
     return parser.parse_args()
 
@@ -203,9 +210,9 @@ def main() -> int:
             base_environment["DOTNET_NOLOGO"] = "true"
             base_environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "true"
 
-            openrouter_api_key = os.environ.get(
-                "OPENROUTER_API_KEY",
-                root_environment.get("OPENROUTER_API_KEY", ""),
+            openrouter_api_key = (
+                root_environment.get("OPENROUTER_API_KEY")
+                or os.environ.get("OPENROUTER_API_KEY", "")
             ).strip()
             if not openrouter_api_key:
                 raise ValueError(
@@ -232,6 +239,7 @@ def main() -> int:
                     **base_environment,
                     "ASPNETCORE_URLS": f"http://127.0.0.1:{args.mcp_port}",
                     "Student3__BaseUrl": f"http://127.0.0.1:{args.student_3_port}",
+                    "Student1__BaseUrl": f"http://127.0.0.1:{args.student_1_port}",
                 },
                 "rag": {
                     **base_environment,

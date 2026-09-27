@@ -99,6 +99,38 @@ test.describe('Notifications View', () => {
       })
     })
 
+    await page.route('**/api/notifications/rag/query', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          question: 'What is the late submission penalty?',
+          answer: 'Late submissions incur a 5% per day penalty.',
+          citations: ['course_policies.md'],
+          confidence: 'HIGH',
+          hasSufficientContext: true,
+        }),
+      })
+    })
+
+    await page.route('**/api/notifications/mcp/broadcast', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          status: 'success',
+          tool: 'notifications_broadcast_alert',
+          data: {
+            notificationId: '99999999-9999-9999-9999-999999999999',
+            title: 'Exam Period Reminder',
+            message: 'Final examinations commence next week.',
+            urgency: 'High',
+          },
+        }),
+      })
+    })
+
     await page.goto('./')
   })
 
@@ -168,5 +200,44 @@ test.describe('Notifications View', () => {
     // Close dialog
     await page.locator('.nb-dialog__close').click()
     await expect(page.locator('.nb-dialog')).not.toBeVisible()
+  })
+
+  test('opens RAG query modal and receives grounded answer with citations and confidence', async ({ page }) => {
+    const ragBtn = page.getByRole('button', { name: /QUERY COURSE RAG/ })
+    await expect(ragBtn).toBeVisible()
+    await ragBtn.click()
+
+    await expect(page.locator('.nb-modal')).toBeVisible()
+    await expect(page.locator('.nb-modal__title')).toContainText('COURSE KNOWLEDGE RETRIEVAL')
+
+    const input = page.locator('.nb-modal .nb-input')
+    await input.fill('What is the late submission penalty?')
+    await page.getByRole('button', { name: /SEARCH RAG/ }).click()
+
+    await expect(page.locator('.nb-confidence-badge--high')).toBeVisible()
+    await expect(page.locator('.nb-answer-text')).toContainText('Late submissions incur a 5% per day penalty')
+    await expect(page.locator('.nb-citation-item')).toContainText('course_policies.md')
+
+    await page.locator('.nb-modal__close-btn').click()
+    await expect(page.locator('.nb-modal')).not.toBeVisible()
+  })
+
+  test('opens MCP broadcast tool modal and dispatches alert', async ({ page }) => {
+    const mcpBtn = page.getByRole('button', { name: /MCP BROADCAST TOOL/ })
+    await expect(mcpBtn).toBeVisible()
+    await mcpBtn.click()
+
+    await expect(page.locator('.nb-modal')).toBeVisible()
+    await expect(page.locator('.nb-modal__title')).toContainText('MODEL CONTEXT PROTOCOL TOOL')
+
+    await page.locator('.nb-modal input[placeholder*="Sprint 2"]').fill('Exam Period Reminder')
+    await page.locator('.nb-modal textarea').fill('Final examinations commence next week.')
+    await page.getByRole('button', { name: /EXECUTE MCP BROADCAST TOOL/ }).click()
+
+    await expect(page.locator('.nb-result-status--ok')).toBeVisible()
+    await expect(page.locator('.nb-result-tool')).toContainText('notifications_broadcast_alert')
+
+    await page.locator('.nb-modal__close-btn').click()
+    await expect(page.locator('.nb-modal')).not.toBeVisible()
   })
 })

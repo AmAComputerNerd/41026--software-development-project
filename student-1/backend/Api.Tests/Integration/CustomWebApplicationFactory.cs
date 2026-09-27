@@ -16,6 +16,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
     public Mock<IAiDigestService> AiDigestServiceMock { get; } = new();
     public Mock<ISharedCanvasClient> SharedCanvasClientMock { get; } = new();
+    public Mock<IMcpClient> McpClientMock { get; } = new();
+    public Mock<IRagClient> RagClientMock { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -72,6 +74,22 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 services.Remove(canvasClientDescriptor);
             }
             services.AddSingleton(SharedCanvasClientMock.Object);
+
+            var mcpClientDescriptor = services.SingleOrDefault(d =>
+                d.ServiceType == typeof(IMcpClient));
+            if (mcpClientDescriptor != null)
+            {
+                services.Remove(mcpClientDescriptor);
+            }
+            services.AddSingleton(McpClientMock.Object);
+
+            var ragClientDescriptor = services.SingleOrDefault(d =>
+                d.ServiceType == typeof(IRagClient));
+            if (ragClientDescriptor != null)
+            {
+                services.Remove(ragClientDescriptor);
+            }
+            services.AddSingleton(RagClientMock.Object);
         });
     }
 
