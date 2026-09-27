@@ -18,6 +18,7 @@ const html = computed(() => DOMPurify.sanitize(marked.parse(props.source, { asyn
 .nb-markdown {
   white-space: normal;
   word-break: break-word;
+  color: var(--nb-color-ink);
 }
 
 .nb-markdown :deep(p) {
@@ -72,8 +73,9 @@ const html = computed(() => DOMPurify.sanitize(marked.parse(props.source, { asyn
 
 .nb-markdown :deep(code) {
   font-family: var(--nb-font-mono, monospace);
-  background: rgba(0, 0, 0, 0.07);
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: var(--nb-color-bg);
+  color: var(--nb-color-ink);
+  border: 1px solid var(--nb-color-ink);
   padding: 1px 5px;
   font-size: 12px;
 }

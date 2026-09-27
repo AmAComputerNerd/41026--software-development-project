@@ -93,9 +93,9 @@ function formatDate(dateString: string) {
   bottom: 0;
   width: 320px;
   max-width: 85vw;
-  background: var(--nb-color-bg, #fff);
-  border-right: var(--nb-border-width-md, 3px) solid var(--nb-color-ink, #000);
-  box-shadow: 6px 0 0 rgba(0, 0, 0, 0.9);
+  background: var(--nb-color-bg);
+  border-right: var(--nb-border-width-md, 3px) solid var(--nb-color-ink);
+  box-shadow: 6px 0 0 var(--nb-color-shadow);
   z-index: 1000;
   transform: translateX(-100%);
   transition: transform 220ms ease-out;
@@ -109,8 +109,9 @@ function formatDate(dateString: string) {
 
 .nb-drawer__header {
   padding: 16px;
-  border-bottom: var(--nb-border-width-md, 3px) solid var(--nb-color-ink, #000);
-  background: var(--nb-color-accent-yellow, #ffe600);
+  border-bottom: var(--nb-border-width-md, 3px) solid var(--nb-color-ink);
+  background: var(--nb-color-accent-yellow);
+  color: var(--nb-color-ink);
 }
 
 .nb-drawer__title-row {
@@ -125,17 +126,19 @@ function formatDate(dateString: string) {
   font-weight: 800;
   margin: 0;
   letter-spacing: 0.5px;
+  color: var(--nb-color-ink);
 }
 
 .nb-drawer__close-btn {
-  background: var(--nb-color-bg, #fff);
-  border: var(--nb-border-width-sm, 2px) solid var(--nb-color-ink, #000);
+  background: var(--nb-color-bg);
+  color: var(--nb-color-ink);
+  border: var(--nb-border-width-sm, 2px) solid var(--nb-color-ink);
   font-weight: 800;
   font-size: 16px;
   width: 32px;
   height: 32px;
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--nb-color-ink, #000);
+  box-shadow: 2px 2px 0 var(--nb-color-shadow);
 }
 
 .nb-drawer__close-btn:hover {
@@ -148,22 +151,23 @@ function formatDate(dateString: string) {
   font-weight: 800;
   font-size: 14px;
   background: var(--nb-color-accent-green, #00e676);
-  color: var(--nb-color-ink, #000);
-  border: var(--nb-border-width-sm, 2px) solid var(--nb-color-ink, #000);
+  color: #000;
+  border: var(--nb-border-width-sm, 2px) solid var(--nb-color-ink);
   padding: 10px;
-  box-shadow: 3px 3px 0 var(--nb-color-ink, #000);
+  box-shadow: 3px 3px 0 var(--nb-color-shadow);
   cursor: pointer;
 }
 
 .nb-drawer__new-btn:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 var(--nb-color-ink, #000);
+  box-shadow: 4px 4px 0 var(--nb-color-shadow);
 }
 
 .nb-drawer__body {
   flex: 1;
   overflow-y: auto;
   padding: 12px;
+  background: var(--nb-color-bg);
 }
 
 .nb-drawer__empty {
@@ -187,22 +191,28 @@ function formatDate(dateString: string) {
   align-items: center;
   justify-content: space-between;
   padding: 10px;
-  background: var(--nb-color-card-bg, #fbfbfb);
-  border: var(--nb-border-width-sm, 2px) solid var(--nb-color-ink, #000);
-  box-shadow: 2px 2px 0 var(--nb-color-ink, #000);
+  background: var(--nb-color-white);
+  color: var(--nb-color-ink);
+  border: var(--nb-border-width-sm, 2px) solid var(--nb-color-ink);
+  box-shadow: 2px 2px 0 var(--nb-color-shadow);
   cursor: pointer;
   transition: all 120ms ease-out;
 }
 
 .nb-drawer__item:hover {
-  background: #f0f0f0;
+  background: var(--nb-color-bg);
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--nb-color-ink, #000);
+  box-shadow: 3px 3px 0 var(--nb-color-shadow);
 }
 
 .nb-drawer__item--active {
   background: #e3f2fd;
-  border-left: 6px solid var(--nb-color-ink, #000);
+  border-left: 6px solid var(--nb-color-ink);
+}
+
+:root[data-theme='dark'] .nb-drawer__item--active {
+  background: #1e293b;
+  border-left: 6px solid var(--nb-color-ink);
 }
 
 .nb-drawer__item-main {
@@ -216,6 +226,7 @@ function formatDate(dateString: string) {
 .nb-drawer__item-title {
   font-weight: 700;
   font-size: 13px;
+  color: var(--nb-color-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -237,6 +248,7 @@ function formatDate(dateString: string) {
 .nb-drawer__delete-btn {
   background: none;
   border: none;
+  color: var(--nb-color-ink);
   cursor: pointer;
   padding: 6px;
   font-size: 14px;

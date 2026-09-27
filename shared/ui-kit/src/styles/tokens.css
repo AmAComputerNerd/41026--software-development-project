@@ -16,6 +16,7 @@
   --nb-color-white: #FFFFFF; /* pure white, used for unread row backgrounds / AI tag */
   --nb-color-muted: #555555; /* secondary/meta text (timestamps, captions) */
   --nb-color-shadow: var(--nb-color-ink); /* hard-shadow colour, independent of ink so dark mode shadows stay dark */
+  --nb-color-card-bg: var(--nb-color-white); /* card/surface elevated fill */
 
   /* Borders (solid ink, no radius) */
   --nb-border-width-sm: 2px;
