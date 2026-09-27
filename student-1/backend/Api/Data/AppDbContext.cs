@@ -9,6 +9,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<NotificationPreference> NotificationPreferences { get; set; } = null!;
     public DbSet<AiDigest> AiDigests { get; set; } = null!;
     public DbSet<CanvasAssignmentWatermark> CanvasAssignmentWatermarks { get; set; } = null!;
+    public DbSet<ChatSession> ChatSessions { get; set; } = null!;
+    public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -20,6 +22,24 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<AiDigest>()
             .HasKey(d => d.Id);
+
+        modelBuilder.Entity<ChatSession>()
+            .HasKey(s => s.Id);
+
+        modelBuilder.Entity<ChatSession>()
+            .HasIndex(s => new { s.StudentId, s.UpdatedAtUtc });
+
+        modelBuilder.Entity<ChatMessage>()
+            .HasKey(m => m.Id);
+
+        modelBuilder.Entity<ChatMessage>()
+            .HasOne(m => m.ChatSession)
+            .WithMany(s => s.Messages)
+            .HasForeignKey(m => m.ChatSessionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ChatMessage>()
+            .HasIndex(m => new { m.ChatSessionId, m.CreatedAtUtc });
 
         modelBuilder.Entity<CanvasAssignmentWatermark>()
             .HasKey(w => w.Id);
