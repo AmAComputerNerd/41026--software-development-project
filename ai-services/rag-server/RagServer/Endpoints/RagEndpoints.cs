@@ -25,11 +25,17 @@ public static class RagEndpoints
             });
         }
 
-        if (!string.Equals(request.Scope, "student-3", StringComparison.Ordinal))
+        var scope = string.IsNullOrWhiteSpace(request.Scope) ? "all" : request.Scope.Trim();
+        var allowedScopes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "student-1", "student-2", "student-3", "student-4", "student-5", "shared", "all"
+        };
+
+        if (!allowedScopes.Contains(scope))
         {
             return Results.ValidationProblem(new Dictionary<string, string[]>
             {
-                ["scope"] = ["Only the student-3 knowledge scope is currently available."]
+                ["scope"] = [$"Unknown scope '{request.Scope}'. Allowed scopes: {string.Join(", ", allowedScopes)}."]
             });
         }
 
