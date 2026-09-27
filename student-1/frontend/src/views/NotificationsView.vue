@@ -5,8 +5,13 @@ import NotificationRow from '@/components/notifications/NotificationRow.vue'
 import NotificationToast from '@/components/notifications/NotificationToast.vue'
 import BreakdownDialog from '@/components/notifications/BreakdownDialog.vue'
 import GradeImpactDialog from '@/components/notifications/GradeImpactDialog.vue'
+import RagQueryModal from '@/components/notifications/RagQueryModal.vue'
+import McpBroadcastModal from '@/components/notifications/McpBroadcastModal.vue'
 import { useNotifications, type NotificationDto } from '@/composables/useNotifications'
 import { useNotificationStream } from '@/composables/useNotificationStream'
+
+const ragModalOpen = ref(false)
+const mcpModalOpen = ref(false)
 
 const {
   loading,
@@ -70,8 +75,27 @@ onMounted(fetchNotifications)
 <template>
   <div class="nb-list">
     <div class="nb-list__header">
-      <h1 class="nb-list__title">ALL NOTIFICATIONS</h1>
-      <span class="nb-mono nb-list__count">{{ filteredNotifications.length }} SHOWN</span>
+      <div class="nb-list__title-group">
+        <h1 class="nb-list__title">ALL NOTIFICATIONS</h1>
+        <span class="nb-mono nb-list__count">{{ filteredNotifications.length }} SHOWN</span>
+      </div>
+
+      <div class="nb-list__actions">
+        <button
+          type="button"
+          class="nb-btn nb-btn--rag"
+          @click="ragModalOpen = true"
+        >
+          🧠 QUERY COURSE RAG
+        </button>
+        <button
+          type="button"
+          class="nb-btn nb-btn--mcp"
+          @click="mcpModalOpen = true"
+        >
+          ⚡ MCP BROADCAST TOOL
+        </button>
+      </div>
     </div>
 
     <div class="nb-list__controls">
@@ -144,16 +168,64 @@ onMounted(fetchNotifications)
       @dismiss="dismissToast"
       @mark-read="(id) => { markAsRead(id); dismissToast(); }"
     />
+
+    <!-- Shared Local RAG Course Knowledge Query Modal -->
+    <RagQueryModal :open="ragModalOpen" @close="ragModalOpen = false" />
+
+    <!-- Shared Local MCP Tool Dispatch Modal -->
+    <McpBroadcastModal :open="mcpModalOpen" @close="mcpModalOpen = false" />
   </div>
 </template>
 
 <style scoped>
 .nb-list__header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
   animation: nb-rise-in 320ms ease-out both;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.nb-list__title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.nb-list__actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.nb-btn--rag {
+  background: var(--nb-color-accent-purple, #b388ff);
+  color: var(--nb-color-ink, #000);
+  border: var(--nb-border-width-sm, 2px) solid var(--nb-color-ink, #000);
+  padding: 8px 14px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--nb-color-ink, #000);
+}
+
+.nb-btn--mcp {
+  background: var(--nb-color-accent-orange, #ff9100);
+  color: var(--nb-color-ink, #000);
+  border: var(--nb-border-width-sm, 2px) solid var(--nb-color-ink, #000);
+  padding: 8px 14px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--nb-color-ink, #000);
+}
+
+.nb-btn--rag:hover,
+.nb-btn--mcp:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--nb-color-ink, #000);
 }
 
 .nb-list__title {
