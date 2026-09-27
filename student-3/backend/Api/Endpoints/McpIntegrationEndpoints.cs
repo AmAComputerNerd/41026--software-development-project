@@ -63,7 +63,7 @@ public static class McpIntegrationEndpoints
         IDatabaseClient database,
         CancellationToken cancellationToken)
     {
-        if (!options.Value.Enabled)
+        if (options.Value.Enabled is not true)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status503ServiceUnavailable,

@@ -4,7 +4,7 @@ public sealed class RagServerOptions
 {
     public const string SectionName = "RagServer";
 
-    public bool Enabled { get; init; }
+    public bool? Enabled { get; init; }
 
-    public string BaseUrl { get; init; } = "http://rag-server:8080";
+    public string BaseUrl { get; init; } = string.Empty;
 }

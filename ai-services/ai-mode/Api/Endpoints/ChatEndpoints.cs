@@ -5,7 +5,6 @@ namespace Api.Endpoints;
 
 public static partial class ChatEndpoints
 {
-    private const string DefaultModel = "nvidia/nemotron-3.5-lightning:free";
     private const string OpenRouterEndpoint = "https://openrouter.ai/api/v1/chat/completions";
 
     public static IEndpointRouteBuilder MapChatEndpoints(this IEndpointRouteBuilder endpoints)
@@ -50,7 +49,14 @@ public static partial class ChatEndpoints
         var model = body["model"]?.GetValue<string>()?.Trim();
         if (string.IsNullOrWhiteSpace(model))
         {
-            model = configuration["OpenRouter:Model"] ?? DefaultModel;
+            model = configuration["OpenRouter:Model"];
+            if (string.IsNullOrWhiteSpace(model))
+            {
+                return Results.Problem(
+                    "OpenRouter:Model configuration value is not set.",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
+
             body["model"] = model;
         }
 

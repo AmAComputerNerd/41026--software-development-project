@@ -18,7 +18,7 @@ public sealed class RagClient(
         string question,
         CancellationToken cancellationToken)
     {
-        if (!_options.Enabled)
+        if (_options.Enabled is not true)
         {
             throw new RagIntegrationDisabledException();
         }

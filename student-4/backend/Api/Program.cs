@@ -79,7 +79,7 @@ builder.Services
 builder.Services
     .AddHttpClient(OpenRouterProfileSummaryService.HttpClientName, (services, client) =>
     {
-        var baseUrl = services.GetRequiredService<IConfiguration>()["AiGateway:BaseUrl"] ?? "http://ai-mode:8080";
+        var baseUrl = services.GetRequiredService<IOptions<AiGatewayOptions>>().Value.BaseUrl;
         ConfigureClient(client, baseUrl);
     })
     .AddStandardResilienceHandler(options =>
@@ -114,11 +114,6 @@ builder.Services.AddCors(options =>
 #endregion
 
 var app = builder.Build();
-
-if (string.IsNullOrWhiteSpace(builder.Configuration["AiGateway:BaseUrl"]))
-{
-    Log.AiGatewayBaseUrlNotSet(app.Logger);
-}
 
 #region Pipeline
 if (app.Environment.IsDevelopment())
@@ -165,12 +160,4 @@ static void ConfigureClient(HttpClient client, string baseUrl)
 {
     client.BaseAddress = new Uri($"{baseUrl.TrimEnd('/')}/", UriKind.Absolute);
     client.Timeout = Timeout.InfiniteTimeSpan;
-}
-
-internal static partial class Log
-{
-    [LoggerMessage(Level = LogLevel.Warning, Message =
-        "AiGateway:BaseUrl is not set. AI generation will fail until you set it " +
-        "(see student-4/backend/README.md).")]
-    public static partial void AiGatewayBaseUrlNotSet(ILogger logger);
 }

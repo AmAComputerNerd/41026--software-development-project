@@ -1,15 +1,21 @@
 # ai-mode gateway
 
-Shared OpenRouter proxy. Use this once your feature needs AI-mode — no
+Shared non-containerised OpenRouter proxy. Use this once your feature needs AI-mode — no
 need for your own OpenRouter key or account, gateway already holds shared
 one.
 
 ## Calling it
 
-From inside your own backend container:
+Start the shared AI services from the repository root:
 
+```bash
+python tools/run_ai_services.py
 ```
-POST http://ai-mode:8080/v1/chat/completions
+
+From inside a backend container:
+
+```http
+POST http://host.docker.internal:5001/v1/chat/completions
 ```
 
 Same request shape as OpenAI's chat completions API:
@@ -29,13 +35,12 @@ correctly.
 
 ## Model
 
-Defaults to Nemotron 3.5 Lightning (`nvidia/nemotron-3.5-lightning:free`)
-if you omit `model`. Override per request by setting `model` in the request
-body, or change the gateway-wide default with the `OPENROUTER_MODEL`
-environment variable (or the `OpenRouter:Model` configuration key).
+When a request omits `model`, AI Mode uses the required `OPENROUTER_MODEL`
+value generated from `.env.example`. A request can still override that model
+explicitly.
 
-## docker-compose
+## Health
 
-Add a health check and use `depends_on: condition: service_healthy` for
-`ai-mode`. Its `/health/live` endpoint reports process liveness and
-`/health/ready` verifies that the OpenRouter key is configured.
+AI Mode is not a Docker Compose service. Its `/health/live` endpoint reports
+process liveness and `/health/ready` verifies that the OpenRouter key and
+model loaded from the root `.env` are configured.

@@ -11,7 +11,6 @@ public sealed partial class OpenRouterDigestService(
     HttpClient httpClient,
     ILogger<OpenRouterDigestService> logger) : IAiDigestService
 {
-    private const string Model = "nvidia/nemotron-3.5-lightning:free";
     private const int MaxAttempts = 3;
     private const int MaxDigestCharacters = 4000;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -24,7 +23,6 @@ public sealed partial class OpenRouterDigestService(
         var prompt = BuildPrompt(studentId, unreadNotifications);
         var request = new ChatCompletionRequest
         {
-            Model = Model,
             Messages =
             [
                 new ChatMessage { Role = "user", Content = prompt }
@@ -116,7 +114,6 @@ public sealed partial class OpenRouterDigestService(
 
         var request = new ChatCompletionRequest
         {
-            Model = Model,
             Messages = messages,
             MaxTokens = 800,
             Temperature = 0.4,
@@ -280,9 +277,6 @@ public sealed partial class OpenRouterDigestService(
 
 internal sealed class ChatCompletionRequest
 {
-    [JsonPropertyName("model")]
-    public required string Model { get; init; }
-
     [JsonPropertyName("messages")]
     public required List<ChatMessage> Messages { get; init; }
 

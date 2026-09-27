@@ -45,7 +45,7 @@
 
 - **Path**: `ai-services/ai-mode/`
 - **Stack**: ASP.NET Core (.NET 10) Minimal API
-- **Port (Host)**: *Internal only* (mapped to `8080` on Docker network)
+- **Port (Host)**: `5001` (non-containerised; Docker callers use `host.docker.internal`)
 - **Owner**: Shared Infrastructure
 
 ### Responsibilities
@@ -55,7 +55,7 @@
 
 ### Key Endpoints
 - `POST /v1/chat/completions` — OpenAI-compatible chat completions endpoint.
-- `GET /health/live` & `GET /health/ready` — Container health probes.
+- `GET /health/live` & `GET /health/ready` — Process health probes.
 
 ---
 

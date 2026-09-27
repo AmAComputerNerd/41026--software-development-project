@@ -4,7 +4,6 @@ import argparse
 import os
 from pathlib import Path
 import shutil
-import signal
 import subprocess
 import sys
 import tempfile
@@ -16,6 +15,10 @@ from urllib.request import urlopen
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 SERVICE_SPECS = (
+    (
+        "ai-mode",
+        REPOSITORY_ROOT / "ai-services" / "ai-mode" / "Api" / "Api.csproj",
+    ),
     (
         "mcp",
         REPOSITORY_ROOT / "ai-services" / "mcp-server" / "McpServer" / "McpServer.csproj",
@@ -47,8 +50,13 @@ def load_root_environment() -> dict[str, str]:
     return values
 
 
-def configured_port(name: str, fallback: int, root_environment: dict[str, str]) -> int:
-    raw_value = os.environ.get(name, root_environment.get(name, str(fallback)))
+def configured_port(name: str, root_environment: dict[str, str]) -> int:
+    raw_value = os.environ.get(name, root_environment.get(name, "")).strip()
+    if not raw_value:
+        raise ValueError(
+            f"{name} must be configured in the root .env. "
+            "Run python tools/setup_env.py."
+        )
     try:
         port = int(raw_value)
     except ValueError as exception:
@@ -58,25 +66,24 @@ def configured_port(name: str, fallback: int, root_environment: dict[str, str]) 
     return port
 
 
-def parse_args() -> argparse.Namespace:
-    root_environment = load_root_environment()
+def parse_args(root_environment: dict[str, str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run the non-containerised Release 1 MCP and RAG services."
+        description="Run the non-containerised AI Mode, MCP, and RAG services."
     )
     parser.add_argument(
         "--mcp-port",
         type=int,
-        default=configured_port("MCP_HOST_PORT", 5002, root_environment),
+        default=configured_port("MCP_HOST_PORT", root_environment),
     )
     parser.add_argument(
         "--rag-port",
         type=int,
-        default=configured_port("RAG_HOST_PORT", 5003, root_environment),
+        default=configured_port("RAG_HOST_PORT", root_environment),
     )
     parser.add_argument(
         "--ai-mode-port",
         type=int,
-        default=configured_port("AI_MODE_HOST_PORT", 5001, root_environment),
+        default=configured_port("AI_MODE_HOST_PORT", root_environment),
     )
     parser.add_argument(
         "--student-3-port",
@@ -114,12 +121,6 @@ def start_service(
         str(project),
         "--no-launch-profile",
     ]
-    process_options: dict[str, object] = {}
-    if os.name == "nt":
-        process_options["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
-    else:
-        process_options["start_new_session"] = True
-
     process = subprocess.Popen(
         command,
         cwd=REPOSITORY_ROOT,
@@ -129,7 +130,6 @@ def start_service(
         text=True,
         encoding="utf-8",
         errors="replace",
-        **process_options,
     )
     threading.Thread(
         target=stream_output,
@@ -179,10 +179,7 @@ def stop_process(name: str, process: subprocess.Popen[str]) -> None:
     if process.poll() is not None:
         return
     try:
-        if os.name == "nt":
-            process.send_signal(signal.CTRL_BREAK_EVENT)
-        else:
-            os.killpg(process.pid, signal.SIGTERM)
+        process.terminate()
         process.wait(timeout=10)
     except (ProcessLookupError, subprocess.TimeoutExpired):
         process.kill()
@@ -191,7 +188,8 @@ def stop_process(name: str, process: subprocess.Popen[str]) -> None:
 
 
 def main() -> int:
-    args = parse_args()
+    root_environment = load_root_environment()
+    args = parse_args(root_environment)
     if len({args.mcp_port, args.rag_port, args.ai_mode_port, args.student_3_port}) != 4:
         print("Configured service ports must be distinct.", file=sys.stderr)
         return 2
@@ -205,7 +203,31 @@ def main() -> int:
             base_environment["DOTNET_NOLOGO"] = "true"
             base_environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "true"
 
+            openrouter_api_key = os.environ.get(
+                "OPENROUTER_API_KEY",
+                root_environment.get("OPENROUTER_API_KEY", ""),
+            ).strip()
+            if not openrouter_api_key:
+                raise ValueError(
+                    "OPENROUTER_API_KEY must be configured in the root .env or environment."
+                )
+            openrouter_model = os.environ.get(
+                "OPENROUTER_MODEL",
+                root_environment.get("OPENROUTER_MODEL", ""),
+            ).strip()
+            if not openrouter_model:
+                raise ValueError(
+                    "OPENROUTER_MODEL must be configured in the root .env. "
+                    "Run python tools/setup_env.py."
+                )
+
             environments = {
+                "ai-mode": {
+                    **base_environment,
+                    "ASPNETCORE_URLS": f"http://127.0.0.1:{args.ai_mode_port}",
+                    "OPENROUTER_API_KEY": openrouter_api_key,
+                    "OPENROUTER_MODEL": openrouter_model,
+                },
                 "mcp": {
                     **base_environment,
                     "ASPNETCORE_URLS": f"http://127.0.0.1:{args.mcp_port}",
@@ -223,25 +245,29 @@ def main() -> int:
                 process = start_service(name, project, environments[name])
                 processes.append((name, process))
 
-            wait_until_ready(
-                "MCP",
-                processes[0][1],
-                f"http://127.0.0.1:{args.mcp_port}/health/ready",
-            )
-            wait_until_ready(
-                "RAG",
-                processes[1][1],
-                f"http://127.0.0.1:{args.rag_port}/health/ready",
-            )
+            process_by_name = dict(processes)
+            readiness_urls = {
+                "AI Mode": (
+                    process_by_name["ai-mode"],
+                    f"http://127.0.0.1:{args.ai_mode_port}/health/ready",
+                ),
+                "MCP": (
+                    process_by_name["mcp"],
+                    f"http://127.0.0.1:{args.mcp_port}/health/ready",
+                ),
+                "RAG": (
+                    process_by_name["rag"],
+                    f"http://127.0.0.1:{args.rag_port}/health/ready",
+                ),
+            }
+            for name, (process, readiness_url) in readiness_urls.items():
+                wait_until_ready(name, process, readiness_url)
+
             report_dependency(
                 "Student 3 backend",
                 f"http://127.0.0.1:{args.student_3_port}/health/ready",
             )
-            report_dependency(
-                "AI Mode",
-                f"http://127.0.0.1:{args.ai_mode_port}/health/ready",
-            )
-            print("[launcher] Release 1 host services are running. Press Ctrl+C to stop.")
+            print("[launcher] AI services are running. Press Ctrl+C to stop.")
 
             while all(process.poll() is None for _, process in processes):
                 time.sleep(1)

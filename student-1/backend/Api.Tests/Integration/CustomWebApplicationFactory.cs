@@ -19,6 +19,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseSetting("AiGateway:BaseUrl", "http://localhost");
+
         builder.ConfigureServices(services =>
         {
             // Remove background hosted services so they don't block tests

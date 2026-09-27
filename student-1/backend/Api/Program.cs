@@ -28,10 +28,18 @@ builder.Services.AddHttpClient<ISharedCanvasClient, SharedCanvasClient>(client =
 {
     client.BaseAddress = new Uri(sharedServiceBaseUrl);
 });
-var aiGatewayBaseUrl = builder.Configuration["AiGateway:BaseUrl"] ?? "http://ai-mode:8080";
+var aiGatewayBaseUrl = builder.Configuration["AiGateway:BaseUrl"];
+if (!Uri.TryCreate(aiGatewayBaseUrl, UriKind.Absolute, out var aiGatewayUri) ||
+    (aiGatewayUri.Scheme != Uri.UriSchemeHttp &&
+     aiGatewayUri.Scheme != Uri.UriSchemeHttps))
+{
+    throw new InvalidOperationException(
+        "AiGateway:BaseUrl must be configured as an absolute HTTP or HTTPS URL.");
+}
+
 builder.Services.AddHttpClient<IAiDigestService, OpenRouterDigestService>(client =>
 {
-    client.BaseAddress = new Uri(aiGatewayBaseUrl);
+    client.BaseAddress = aiGatewayUri;
     client.Timeout = TimeSpan.FromSeconds(90);
 })
 .AddStandardResilienceHandler(options =>
@@ -59,11 +67,6 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-
-if (string.IsNullOrWhiteSpace(builder.Configuration["AiGateway:BaseUrl"]))
-{
-    Log.AiGatewayBaseUrlNotSet(app.Logger);
-}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -107,13 +110,4 @@ await app.InitialiseDatabaseAsync();
 
 app.Run();
 
-internal static partial class Log
-{
-    [LoggerMessage(Level = LogLevel.Warning, Message =
-        "AiGateway:BaseUrl is not set. AI digest generation will fail until you set it " +
-        "(see student-1/backend/README.md).")]
-    public static partial void AiGatewayBaseUrlNotSet(ILogger logger);
-}
-
 public partial class Program { }
-

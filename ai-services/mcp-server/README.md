@@ -17,7 +17,7 @@ transport.
 Run it together with the RAG service from the repository root:
 
 ```bash
-python tools/run_release1_services.py
+python tools/run_ai_services.py
 ```
 
 The MCP endpoint is `http://127.0.0.1:5002/mcp` by default. The launcher
