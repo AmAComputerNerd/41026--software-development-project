@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import argparse
+import sys
+
 from config.review_config import LAYERS, OWNERS, REPO_ROOT
 from core.ai_runner import AIRunner
 from core.log_writer import capture_run
@@ -47,8 +50,40 @@ def _run_all(ai: AIRunner) -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Shared Team Agentic AI Loop")
+    parser.add_argument("--target", "--owner", dest="target", choices=OWNERS, help="Target student or microservice")
+    parser.add_argument("--mode", "--layer", dest="mode", choices=["frontend", "backend", "database", "compose", "mcp", "rag", "all"], help="Layer or mode to evaluate")
+    args = parser.parse_args()
+
     ai = AIRunner(repo_root=REPO_ROOT)
 
+    # CLI execution mode
+    if args.mode or args.target:
+        mode = args.mode or "all"
+        target = args.target
+
+        if mode == "all":
+            if target:
+                for key, _ in LAYERS:
+                    _run_and_report(key, target, ai)
+                _run_and_report("mcp", target, ai)
+                _run_and_report("rag", target, ai)
+            else:
+                _run_all(ai)
+            return
+
+        if mode in {"compose", "mcp", "rag"}:
+            _run_and_report(mode, target, ai)
+            return
+
+        if not target:
+            print("Error: --target is required when specifying layer modes (frontend, backend, database).")
+            sys.exit(1)
+
+        _run_and_report(mode, target, ai)
+        return
+
+    # Interactive menu mode
     print("======================================================================")
     print("SHARED TEAM AGENTIC AI LOOP: Plan -> Act -> Observe -> Adapt")
     print("Authoritative Codebase Documentation & Multi-Agent Architecture Review")
