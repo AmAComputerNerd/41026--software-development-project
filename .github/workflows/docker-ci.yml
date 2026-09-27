@@ -271,6 +271,7 @@ jobs:
     if: ${{ !cancelled() }}
     needs:
       - compose-contract
+      - host-ai-services
       - build-images
       - student-3-integration
     runs-on: ubuntu-latest
@@ -278,9 +279,11 @@ jobs:
       - name: Require successful Docker checks
         env:
           COMPOSE_RESULT: ${{ needs.compose-contract.result }}
+          HOST_AI_RESULT: ${{ needs.host-ai-services.result }}
           BUILD_RESULT: ${{ needs.build-images.result }}
           INTEGRATION_RESULT: ${{ needs.student-3-integration.result }}
         run: |
           test "$COMPOSE_RESULT" = "success"
+          test "$HOST_AI_RESULT" = "success"
           test "$BUILD_RESULT" = "success"
           test "$INTEGRATION_RESULT" = "success"

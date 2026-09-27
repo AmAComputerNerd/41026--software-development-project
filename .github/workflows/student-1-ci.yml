@@ -95,6 +95,8 @@ jobs:
   ef-core-migrations-check:
     name: EF Core migrations drift check
     runs-on: ubuntu-latest
+    env:
+      AiGateway__BaseUrl: http://127.0.0.1:5001
     steps:
       - name: Checkout
         uses: actions/checkout@v4
