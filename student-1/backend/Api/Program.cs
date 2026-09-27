@@ -69,7 +69,7 @@ builder.Services.AddHttpClient<IRagClient, RagClient>((services, client) =>
     {
         client.BaseAddress = uri;
     }
-    client.Timeout = TimeSpan.FromSeconds(30);
+    client.Timeout = TimeSpan.FromSeconds(90);
 });
 
 builder.Services.AddScoped<IChatAssistantService, ChatAssistantService>();

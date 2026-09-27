@@ -77,7 +77,9 @@ public sealed class RagClient(
                 .Distinct()
                 .ToList() ?? [];
 
-            var isGrounded = string.Equals(data.Status, "grounded", StringComparison.OrdinalIgnoreCase);
+            var isGrounded = (string.Equals(data.Status, "success", StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(data.Status, "grounded", StringComparison.OrdinalIgnoreCase)) &&
+                             !string.Equals(data.Confidence, "insufficient", StringComparison.OrdinalIgnoreCase);
 
             return new RagQueryResponseDto(
                 Question: question,

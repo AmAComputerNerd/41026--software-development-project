@@ -210,9 +210,9 @@ def main() -> int:
             base_environment["DOTNET_NOLOGO"] = "true"
             base_environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "true"
 
-            openrouter_api_key = os.environ.get(
-                "OPENROUTER_API_KEY",
-                root_environment.get("OPENROUTER_API_KEY", ""),
+            openrouter_api_key = (
+                root_environment.get("OPENROUTER_API_KEY")
+                or os.environ.get("OPENROUTER_API_KEY", "")
             ).strip()
             if not openrouter_api_key:
                 raise ValueError(
