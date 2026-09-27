@@ -18,10 +18,9 @@ until corpus size or retrieval quality justifies the additional infrastructure.
 Run it together with MCP from the repository root:
 
 ```bash
-python tools/run_release1_services.py
+python tools/run_ai_services.py
 ```
 
 The RAG endpoint is `http://127.0.0.1:5003/api/answers` by default. The
 launcher copies the three curated sources into an isolated temporary corpus
-and configures RAG to call containerised AI Mode through its loopback-only
-`http://127.0.0.1:5001` bridge.
+and configures RAG to call host AI Mode at `http://127.0.0.1:5001`.

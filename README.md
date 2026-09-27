@@ -50,7 +50,7 @@ ai-mode ────────HTTPS──→ [ OpenRouter API ]
 | **`shared/backend`** | Shared | ASP.NET Core (.NET 10) + SQLite | Canvas LMS API gateway, in-memory caching (3-min TTL), HTML sanitization, audit log |
 | **`shared/frontend`** | Shared | Vue 3 + TypeScript + Nginx | Shared dashboard shell, Nginx reverse proxy at `http://localhost:8080` |
 | **`shared/ui-kit`** | Shared | SCSS + Vue 3 components | `@better-canvas/ui-kit` design system library |
-| **`ai-services/ai-mode`** | Shared | ASP.NET Core (.NET 10) | OpenRouter LLM gateway (`/v1/chat/completions`) |
+| **`ai-services/ai-mode`** | Shared | Local ASP.NET Core (.NET 10) | Non-containerised OpenRouter LLM gateway (`/v1/chat/completions`) |
 | **`ai-services/mcp-server`** | Shared | Local ASP.NET Core (.NET 10) | Non-containerised MCP tools accessed by Docker backends through `host.docker.internal` |
 | **`ai-services/rag-server`** | Shared | Local ASP.NET Core (.NET 10) | Non-containerised grounded project-documentation retrieval and generation |
 | **`student-1`** | Bryan Lee | ASP.NET Core + PostgreSQL 16 + Vue 3 | Notifications, delivery preferences, SSE stream, AI digests & chat assistant |
@@ -67,18 +67,20 @@ ai-mode ────────HTTPS──→ [ OpenRouter API ]
 The easiest way to run the entire system is via Docker Compose:
 
 ```bash
-# 1. Clone repository and copy environment file
-cp .env.example .env
+# 1. Generate .env and enter your OpenRouter/Canvas credentials
+python tools/setup_env.py
 
-# 2. Edit .env with your OpenRouter API key and Canvas credentials
-# (OPENROUTER_API_KEY, CANVAS_BASE_URL, CANVAS_API_TOKEN)
-
-# 3. Build and launch the containerised application
+# 2. Build and launch the containerised application
 docker compose up --build
 
-# 4. In another terminal, launch the local MCP and RAG services
-python tools/run_release1_services.py
+# 3. In another terminal, launch all local AI services
+python tools/run_ai_services.py
 ```
+
+The setup command copies every non-secret default from `.env.example` and
+prompts for credentials without echoing secrets. It refuses to replace an
+existing `.env`; use `python tools/setup_env.py --force` when replacement is
+intentional.
 
 Access services via the shared shell at [http://localhost:8080](http://localhost:8080).
 
@@ -89,7 +91,7 @@ Access services via the shared shell at [http://localhost:8080](http://localhost
 ```
 .
 ├── ai-services/
-│   ├── ai-mode/         # Containerised OpenRouter LLM proxy gateway
+│   ├── ai-mode/         # Non-containerised OpenRouter LLM proxy gateway
 │   ├── mcp-server/      # Non-containerised MCP server
 │   └── rag-server/      # Non-containerised grounded RAG server
 ├── shared/
@@ -157,15 +159,16 @@ The shared Canvas and task-tracker databases persist timestamps as
 
 ## Running a single service outside Docker
 
-MCP and RAG intentionally run outside Docker. After starting Compose, launch
-both host services from the repository root:
+AI Mode, MCP, and RAG intentionally run outside Docker. After starting
+Compose, launch all three host services from the repository root:
 
 ```bash
-python tools/run_release1_services.py
+python tools/run_ai_services.py
 ```
 
-The launcher prepares the curated RAG corpus, starts both .NET projects,
-waits for their readiness endpoints, and stops both processes together.
+The launcher loads OpenRouter configuration from the root `.env`, prepares
+the curated RAG corpus, starts all three .NET projects, waits for their
+readiness endpoints, and stops all processes together.
 
 Each backend is a standalone ASP.NET project (`Api/` for most slices,
 `backend/GradesManager/GradesManager/` for student 5). The easiest way

@@ -11,7 +11,8 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".env.example"
-      - "tools/run_release1_services.py"
+      - "tools/run_ai_services.py"
+      - "tools/setup_env.py"
       - ".github/workflows/docker-ci.yml"
   pull_request:
     paths:
@@ -22,7 +23,8 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".env.example"
-      - "tools/run_release1_services.py"
+      - "tools/run_ai_services.py"
+      - "tools/setup_env.py"
       - ".github/workflows/docker-ci.yml"
 
 concurrency:
@@ -52,7 +54,10 @@ jobs:
           CANVAS_BASE_URL=https://canvas.example.invalid
           CANVAS_API_TOKEN=ci-placeholder
           MCP_ENABLED=false
+          MCP_HOST_PORT=5002
           RAG_ENABLED=false
+          RAG_HOST_PORT=5003
+          AI_MODE_HOST_PORT=5001
           EOF
 
       - name: Validate Compose configuration
@@ -65,8 +70,15 @@ jobs:
 
           config=$(docker compose config --format json)
           jq --exit-status '
+            . as $config |
+            (.services | has("ai-mode") | not) and
             (.services | has("mcp-server") | not) and
             (.services | has("rag-server") | not) and
+            ([1, 2, 3, 4, 5] | all(
+              . as $student |
+              $config.services["student-\($student)-backend"].environment.AiGateway__BaseUrl |
+              startswith("http://host.docker.internal:")
+            )) and
             (.services["student-3-backend"].environment.McpServer__Enabled == "false") and
             (.services["student-3-backend"].environment.RagServer__Enabled == "false") and
             (.services["student-3-backend"].environment.McpServer__BaseUrl |
@@ -75,7 +87,7 @@ jobs:
               startswith("http://host.docker.internal:"))
           ' <<< "$config" > /dev/null
 
-          python -m py_compile tools/run_release1_services.py
+          python -m py_compile tools/run_ai_services.py
 
       - name: Verify Student 3 database isolation
         shell: bash
@@ -108,6 +120,28 @@ jobs:
           echo "services=$services" >> "$GITHUB_OUTPUT"
           jq --raw-output '.[]' <<< "$services"
 
+  host-ai-services:
+    name: Build non-containerised AI services
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build host services
+        run: |
+          dotnet build ai-services/ai-mode/Api/Api.csproj --configuration Release -warnaserror
+          dotnet build ai-services/mcp-server/McpServer/McpServer.csproj --configuration Release -warnaserror
+          dotnet build ai-services/rag-server/RagServer/RagServer.csproj --configuration Release -warnaserror
+
+      - name: Validate launcher
+        run: python -m py_compile tools/setup_env.py tools/run_ai_services.py
+
   build-images:
     name: Build image (${{ matrix.service }})
     needs: compose-contract
@@ -129,7 +163,10 @@ jobs:
           CANVAS_BASE_URL=https://canvas.example.invalid
           CANVAS_API_TOKEN=ci-placeholder
           MCP_ENABLED=false
+          MCP_HOST_PORT=5002
           RAG_ENABLED=false
+          RAG_HOST_PORT=5003
+          AI_MODE_HOST_PORT=5001
           EOF
 
       - name: Set up Docker Buildx
@@ -160,7 +197,10 @@ jobs:
           CANVAS_BASE_URL=https://canvas.example.invalid
           CANVAS_API_TOKEN=ci-placeholder
           MCP_ENABLED=false
+          MCP_HOST_PORT=5002
           RAG_ENABLED=false
+          RAG_HOST_PORT=5003
+          AI_MODE_HOST_PORT=5001
           EOF
 
       - name: Start Student 3 core services

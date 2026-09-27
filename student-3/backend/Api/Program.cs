@@ -45,14 +45,20 @@ builder.Services
     .AddOptions<McpServerOptions>()
     .Bind(builder.Configuration.GetSection(McpServerOptions.SectionName))
     .Validate(
-        options => !options.Enabled || IsAbsoluteHttpUrl(options.BaseUrl),
+        options => options.Enabled.HasValue,
+        "McpServer:Enabled must be configured.")
+    .Validate(
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
         "McpServer:BaseUrl must be an absolute HTTP or HTTPS URL when MCP is enabled.")
     .ValidateOnStart();
 builder.Services
     .AddOptions<RagServerOptions>()
     .Bind(builder.Configuration.GetSection(RagServerOptions.SectionName))
     .Validate(
-        options => !options.Enabled || IsAbsoluteHttpUrl(options.BaseUrl),
+        options => options.Enabled.HasValue,
+        "RagServer:Enabled must be configured.")
+    .Validate(
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
         "RagServer:BaseUrl must be an absolute HTTP or HTTPS URL when RAG is enabled.")
     .ValidateOnStart();
 // Http clients and retry behaviour

@@ -25,8 +25,8 @@ docker compose up -d student-1-database
 
 `POST /digest/generate` calls the shared `ai-mode` gateway service, which holds the
 OpenRouter API key. This service does not need the key itself, only the gateway's
-base URL, configured via `AiGateway:BaseUrl` (defaults to `http://ai-mode:8080`,
-the internal docker network address). See root `CLAUDE.md` / `README.md` for the
+base URL, configured via `AiGateway:BaseUrl` (defaults to `http://127.0.0.1:5001`
+for standalone development). See root `CLAUDE.md` / `README.md` for the
 project-wide setup.
 
 If the base URL is missing at startup, the app logs a warning to the console.

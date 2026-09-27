@@ -18,23 +18,21 @@ Ensure you have the following installed locally:
 
 ## 2. Environment Configuration
 
-1. Copy the `.env.example` template to `.env` in the repository root:
+1. Run the environment setup from the repository root:
    ```bash
-   cp .env.example .env
+   python tools/setup_env.py
    ```
-2. Edit `.env` and configure your API credentials:
-   ```dotenv
-   # OpenRouter API Key for AI features (ai-mode gateway)
-   OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxx
+2. Enter the requested OpenRouter API key, Canvas base URL, and Canvas API
+   token. Secret inputs are hidden. Other values are copied from
+   `.env.example`.
 
-   # Canvas LMS credentials (shared-backend)
-   CANVAS_BASE_URL=https://your-institution.instructure.com
-   CANVAS_API_TOKEN=your-personal-canvas-access-token
-   ```
+The command refuses to modify an existing `.env`. Run
+`python tools/setup_env.py --force` only when you intentionally want to
+replace it.
 
 > [!TIP]
 > If you do not have a Canvas API token during development, backend and frontend services will still run, but Canvas sync endpoints (`/api/canvas-sync`) will return error responses.
-> For AI features, a valid `OPENROUTER_API_KEY` is required; otherwise, AI calls will return HTTP 500.
+> For AI features, a valid `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` are required; otherwise, AI Mode readiness fails.
 
 ---
 
@@ -50,8 +48,8 @@ docker compose up --build
 # Run in background (detached mode)
 docker compose up -d
 
-# In another terminal, start local MCP and RAG
-python tools/run_release1_services.py
+# In another terminal, start local AI Mode, MCP, and RAG
+python tools/run_ai_services.py
 
 # View logs from all services or a specific service
 docker compose logs -f
@@ -144,20 +142,20 @@ dotnet run --project student-5/backend/GradesManager/GradesManager/GradesManager
 > [!IMPORTANT]
 > When running a backend outside Docker:
 > - Set environment variable `ASPNETCORE_ENVIRONMENT=Development`.
-> - If connecting to `shared-backend` or `ai-mode`, you must provide their URLs via `appsettings.Development.json` or environment variables (e.g. `AiGateway__BaseUrl=http://localhost:8080`).
+> - If connecting to `shared-backend` or `ai-mode`, you must provide their URLs via `appsettings.Development.json` or environment variables (e.g. `AiGateway__BaseUrl=http://127.0.0.1:5001`).
 > - The standalone default for `student-3-database` is `http://localhost:5203` (matching `DatabaseService:BaseUrl` in `student-3/backend/Api/appsettings.json`), `student-4-database` is `http://localhost:5204`, and `student-5-database` is `http://localhost:5205`.
 
 ### Local Release 1 services
 
-`tools/run_release1_services.py` is the lifecycle entrypoint for the
-non-containerised MCP and RAG .NET services. By default it uses:
+`tools/run_ai_services.py` is the lifecycle entrypoint for the
+non-containerised AI Mode, MCP, and RAG .NET services. By default it uses:
 
 | Service | Host URL | Docker caller URL |
 |---|---|---|
+| AI Mode | `http://127.0.0.1:5001` | `http://host.docker.internal:5001` |
 | MCP | `http://127.0.0.1:5002/mcp` | `http://host.docker.internal:5002/mcp` |
 | RAG | `http://127.0.0.1:5003` | `http://host.docker.internal:5003` |
-| AI Mode bridge | `http://127.0.0.1:5001` | Existing Docker-internal `http://ai-mode:8080` |
 
 The ports can be changed with `MCP_HOST_PORT`, `RAG_HOST_PORT`, and
-`AI_MODE_HOST_PORT` in the root `.env`. Restart the affected containers and
-the launcher after changing them.
+`AI_MODE_HOST_PORT` in the root `.env`. Restart the affected backend
+containers and the launcher after changing them.

@@ -19,7 +19,7 @@ public sealed class McpDeadlineClient(IOptions<McpServerOptions> options)
         int limit,
         CancellationToken cancellationToken)
     {
-        if (!_options.Enabled)
+        if (_options.Enabled is not true)
         {
             throw new McpIntegrationDisabledException();
         }

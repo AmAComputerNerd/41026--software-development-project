@@ -12,18 +12,11 @@ public class OpenRouterProfileSummaryService : IAiProfileSummaryService
 {
     public const string HttpClientName = "AiGateway";
 
-    private const string Model = "nvidia/nemotron-3-ultra-550b-a55b:free";
-    private const string DefaultBaseUrl = "http://ai-mode:8080";
-
     private readonly HttpClient _httpClient;
-    private readonly IConfiguration _configuration;
 
-    public OpenRouterProfileSummaryService(
-        IHttpClientFactory httpClientFactory,
-        IConfiguration configuration)
+    public OpenRouterProfileSummaryService(IHttpClientFactory httpClientFactory)
     {
         _httpClient = httpClientFactory.CreateClient(HttpClientName);
-        _configuration = configuration;
     }
 
     public async Task<string> GenerateSummaryAsync(
@@ -32,15 +25,11 @@ public class OpenRouterProfileSummaryService : IAiProfileSummaryService
         TeacherRecord? teacher,
         CancellationToken cancellationToken = default)
     {
-        var baseUrl = _configuration["AiGateway:BaseUrl"] ?? DefaultBaseUrl;
-        var endpoint = $"{baseUrl.TrimEnd('/')}/v1/chat/completions";
-
         var prompt = BuildPrompt(user, student, teacher);
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "v1/chat/completions");
         request.Content = JsonContent.Create(new ChatCompletionRequest
         {
-            Model = Model,
             Messages = new List<ChatMessage>
             {
                 new() { Role = "user", Content = prompt }
@@ -191,9 +180,6 @@ public class OpenRouterProfileSummaryService : IAiProfileSummaryService
 
     private sealed class ChatCompletionRequest
     {
-        [JsonPropertyName("model")]
-        public required string Model { get; init; }
-
         [JsonPropertyName("messages")]
         public required List<ChatMessage> Messages { get; init; }
     }

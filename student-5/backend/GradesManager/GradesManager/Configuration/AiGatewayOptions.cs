@@ -3,6 +3,6 @@
     public sealed class AiGatewayOptions
     {
         public const string SectionName = "AiGateway";
-        public string BaseUrl { get; init; } = "http://ai-mode:8080";
+        public string BaseUrl { get; init; } = string.Empty;
     }
 }

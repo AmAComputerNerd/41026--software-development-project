@@ -20,8 +20,10 @@ builder.Services
         tags: ["live"])
     .AddCheck(
         "openrouter-configuration",
-        () => string.IsNullOrWhiteSpace(builder.Configuration["OpenRouter:ApiKey"])
-            ? HealthCheckResult.Unhealthy("The OpenRouter API key is not configured.")
+        () => string.IsNullOrWhiteSpace(builder.Configuration["OpenRouter:ApiKey"]) ||
+              string.IsNullOrWhiteSpace(builder.Configuration["OpenRouter:Model"])
+            ? HealthCheckResult.Unhealthy(
+                "The OpenRouter API key and model must both be configured.")
             : HealthCheckResult.Healthy("OpenRouter is configured."),
         tags: ["ready"]);
 builder.Services.AddCors(options =>
