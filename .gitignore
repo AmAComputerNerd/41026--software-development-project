@@ -454,3 +454,5 @@ playwright-report/
 !tools/agentic_loop/logs/
 !tools/agentic_loop/logs/**
 !tools/agentic_loop/logs/**/*.log
+/student-5
+/tools/agentic_loop/logs/student-1
