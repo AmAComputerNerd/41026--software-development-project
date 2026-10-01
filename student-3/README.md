@@ -14,6 +14,16 @@ validated and saved as one operation. Task descriptions can also be drafted
 from a title and the selected course or parent assessment, then edited before
 saving.
 
+The **AI ASSIST** button below the page navigation opens a centered dialog.
+Its **MCP** mode checks upcoming deadlines; **RAG**
+answers documentation questions with source citations and confidence labels.
+Both modes call the shared local services through the tracker backend.
+MCP displays the returned tool name and structured JSON alongside readable
+results; **OPEN TASK** opens the existing task editor. RAG provides sample
+questions and retrieves this feature's sources, including
+[Deadline Tracker Help](docs/deadline-help.md), plus explicitly shared sources.
+Restart `python tools/run_ai_services.py` after changing corpus documentation.
+
 ```mermaid
 flowchart TD
     Shell["shared-shell (:8080)"]
