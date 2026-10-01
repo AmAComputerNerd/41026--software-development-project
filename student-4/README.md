@@ -138,5 +138,19 @@ unavailable unless the `ai-mode` gateway is also configured.
 In testing, the email service sends mail to MailHog; read it in the web inbox
 at `http://localhost:8025` (SMTP listens on port 1025).
 
-When deployed in Release 1, SMTP details can be edited and set in the .env
-file.
+SMTP details can be edited and set in the .env file. Please see below:
+
+The authentication service sends email through Gmail SMTP at `smtp.gmail.com`
+on port `587` using STARTTLS. Set these environment variables before starting
+the service:
+
+```text
+Email__FromAddress=your-account@gmail.com
+Email__Smtp__Username=your-account@gmail.com
+Email__Smtp__Password=your-google-app-password
+```
+
+Use a Google App Password generated for an account with 2-Step Verification
+enabled; your regular Google password will not work. Keep the app password in
+your environment or secret store, not in source control. The From address must
+be the authenticated Gmail address or an alias configured in Gmail.

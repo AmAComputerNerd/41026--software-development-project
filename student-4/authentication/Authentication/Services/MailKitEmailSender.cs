@@ -54,12 +54,17 @@ public sealed partial class MailKitEmailSender(
                 client.CheckCertificateRevocation = false;
             }
 
+            // Determine SSL mode: port 465 = implicit TLS (SslOnConnect), 587 = explicit TLS (StartTls)
+            var sslMode = smtp.UseSsl
+                ? (smtp.Port == 465
+                    ? MailKit.Security.SecureSocketOptions.SslOnConnect
+                    : MailKit.Security.SecureSocketOptions.StartTls)
+                : MailKit.Security.SecureSocketOptions.None;
+
             await client.ConnectAsync(
                 smtp.Host,
                 smtp.Port,
-                smtp.UseSsl
-                    ? MailKit.Security.SecureSocketOptions.StartTls
-                    : MailKit.Security.SecureSocketOptions.None,
+                sslMode,
                 cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(smtp.Username))

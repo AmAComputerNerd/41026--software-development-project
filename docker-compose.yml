@@ -220,17 +220,12 @@ services:
             dockerfile: authentication/Authentication/Dockerfile
         ports:
             - "5114:8080"
+        env_file:
+            - path: .env
         environment:
             ASPNETCORE_ENVIRONMENT: Development
             DatabaseService__BaseUrl: http://student-4-database:8080
             NotificationService__BaseUrl: http://student-1-backend:8080
-            Email__Smtp__Host: mailhog
-            Email__Smtp__Port: "1025"
-            Email__Smtp__UseSsl: "false"
-            Email__FromAddress: no-reply@student4.local
-            Email__FromName: Student 4 Account Service
-            Email__PasswordReset__BaseUrl: http://localhost:8080/account/reset-password
-            Email__PasswordReset__TokenLifetimeMinutes: "60"
         networks:
             - default
             - student-4-data

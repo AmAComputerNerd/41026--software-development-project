@@ -40,8 +40,14 @@ On the login page select the forgot-password option and enter the account
 email address. The authentication service responds with "If that email is
 registered, a reset link has been sent." This generic message does not
 prove that the account exists or that email delivery succeeded.
+
 In local development reset messages go to MailHog at
 `http://localhost:8025`. Check that inbox for the reset link.
+
+If set, password reset messages are sent through the configured Gmail SMTP account.
+If you do not receive a reset link, ask the project maintainer to verify the
+Gmail SMTP environment variables and check the authentication service logs.
+
 If delivery fails, ask the project maintainer to check the authentication
 service and SMTP configuration instead of repeatedly changing your profile.
 
