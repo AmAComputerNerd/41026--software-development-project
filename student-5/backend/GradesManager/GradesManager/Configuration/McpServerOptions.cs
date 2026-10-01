@@ -4,7 +4,7 @@
     {
         public const string SectionName = "McpServer";
 
-        public bool Enabled { get; init; }
+        public bool? Enabled { get; init; }
 
         public string BaseUrl { get; init; } = string.Empty;
     }
