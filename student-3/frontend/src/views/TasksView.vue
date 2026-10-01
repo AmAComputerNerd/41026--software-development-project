@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TaskDialog from '@/components/TaskDialog.vue'
 import TaskRow from '@/components/TaskRow.vue'
@@ -63,9 +63,18 @@ const roots = computed(() => {
     })
 })
 
-onMounted(async () => {
+onMounted(loadAndOpenRequestedTask)
+
+watch(
+  () => route.query.edit ?? route.query.taskId,
+  (taskQuery) => {
+    if (taskQuery) void loadAndOpenRequestedTask()
+  },
+)
+
+async function loadAndOpenRequestedTask() {
   try {
-    await load()
+    await load(Boolean(route.query.edit ?? route.query.taskId))
   } catch {
     return
   }
@@ -75,13 +84,18 @@ onMounted(async () => {
   if (!taskId) return
 
   const task = tasks.value.find((item) => item.id === taskId)
-  if (task) openEdit(task)
+  if (task) {
+    actionError.value = ''
+    openEdit(task)
+  } else {
+    actionError.value = 'This task is no longer available in the task list.'
+  }
 
   const query = { ...route.query }
   delete query.edit
   delete query.taskId
   await router.replace({ query })
-})
+}
 
 function openCreate(parent: TaskItem | null = null) {
   selectedTask.value = null
