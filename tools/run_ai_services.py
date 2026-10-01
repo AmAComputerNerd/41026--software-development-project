@@ -32,6 +32,7 @@ CORPUS_SOURCES = (
     Path("AGENTS.md"),
     Path("docs/architecture/data-flows.md"),
     Path("student-3/README.md"),
+    Path("student-3/docs/deadline-help.md"),
     Path("student-1/README.md"),
     Path("docs/knowledge-base/course_policies.md"),
 )
@@ -271,6 +272,10 @@ def main() -> int:
             for name, (process, readiness_url) in readiness_urls.items():
                 wait_until_ready(name, process, readiness_url)
 
+            report_dependency(
+                "Student 1 backend",
+                f"http://127.0.0.1:{args.student_1_port}/health/ready",
+            )
             report_dependency(
                 "Student 3 backend",
                 f"http://127.0.0.1:{args.student_3_port}/health/ready",
