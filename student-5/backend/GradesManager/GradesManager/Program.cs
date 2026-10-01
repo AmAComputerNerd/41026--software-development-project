@@ -93,6 +93,21 @@ builder.Services
         options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(120);
         options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(190);
     });
+builder.Services.AddSingleton<IMcpGradesClient, McpGradesClient>();
+builder.Services
+    .AddHttpClient<IRagClient, RagClient>((services, client) =>
+        ConfigureClient(
+            client,
+            services.GetRequiredService<IOptions<RagServerOptions>>().Value.BaseUrl))
+    .AddStandardResilienceHandler(options =>
+    {
+        options.Retry.MaxRetryAttempts = 1;
+        options.Retry.Delay = TimeSpan.FromMilliseconds(500);
+        options.Retry.DisableForUnsafeHttpMethods();
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(95);
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(200);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(100);
+    });
 
 var app = builder.Build();
 
