@@ -7,6 +7,16 @@ An automated multi-agent architecture, code quality, and compliance review pipel
 ## 1. Core Capabilities
 
 - **Plan → Act → Observe → Adapt Lifecycle**:
+
+```mermaid
+flowchart LR
+    Plan["1. PLAN<br>Ingest AGENTS.md, docs,<br>and feature context"]
+    Act["2. ACT<br>Static scan, live probes,<br>schema introspection"]
+    Observe["3. OBSERVE<br>Collate telemetry &<br>evidence without hallucination"]
+    Adapt["4. ADAPT<br>Multi-Agent Peer Review<br>(Implementer + Reviewer)"]
+
+    Plan --> Act --> Observe --> Adapt
+```
   - **Plan**: Ingests authoritative codebase documentation (`AGENTS.md`, `docs/`, microservice READMEs) and student feature context to establish evaluation criteria.
   - **Act**: Executes live endpoint probes, .NET Minimal API endpoint scanning, SQLite `PRAGMA` schema introspection, and Docker Compose configuration analysis.
   - **Observe**: Structures runtime and static evidence without hallucination.

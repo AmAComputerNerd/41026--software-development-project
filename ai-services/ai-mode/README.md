@@ -4,6 +4,26 @@ Shared non-containerised OpenRouter proxy. Use this once your feature needs AI-m
 need for your own OpenRouter key or account, gateway already holds shared
 one.
 
+```mermaid
+flowchart LR
+    subgraph Backends["Containerised Backends"]
+        S1["student-1-backend"]
+        S2["student-2-backend"]
+        S3["student-3-backend"]
+        S4["student-4-backend"]
+        S5["student-5-backend"]
+    end
+
+    subgraph HostServices["Host AI Services"]
+        RAG["rag-server (:5003)"]
+        AIM["ai-mode (:5001)<br>(Holds OPENROUTER_API_KEY)"]
+    end
+
+    Backends -- "host.docker.internal:5001<br>/v1/chat/completions" --> AIM
+    RAG -- "127.0.0.1:5001" --> AIM
+    AIM -- "HTTPS (Bearer Token)" --> OpenRouter["OpenRouter API<br>(nemotron-3.5-lightning:free)"]
+```
+
 ## Calling it
 
 Start the shared AI services from the repository root:

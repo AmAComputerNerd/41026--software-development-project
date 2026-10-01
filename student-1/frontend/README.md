@@ -2,6 +2,31 @@
 
 Vue 3 SPA for managing notifications, delivery preferences, AI digests, and interactive cross-service actions.
 
+```mermaid
+flowchart TD
+    Shell["shared-shell (Nginx :8080)"] --> Router["Vue Router (/notifications/)"]
+
+    subgraph Views["Vue 3 Views & Components"]
+        NV["NotificationsView.vue"]
+        PV["PreferencesView.vue"]
+        Chat["DigestChatPanel.vue (AI Chat)"]
+        Toast["NotificationToast.vue (SSE Toasts)"]
+    end
+
+    subgraph Dialogs["Interactive Action Modals"]
+        D1["BreakdownDialog.vue -> student-3"]
+        D2["GradeImpactDialog.vue -> student-5"]
+    end
+
+    subgraph DesignSystem["Design System"]
+        UIKit["@better-canvas/ui-kit<br>(Tokens, Navbar, ThemeToggle)"]
+    end
+
+    Router --> NV & PV
+    NV --> Chat & Toast & D1 & D2
+    Views -. uses .-> UIKit
+```
+
 ---
 
 ## 1. Capabilities

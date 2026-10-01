@@ -8,6 +8,44 @@
 
 ## 1. Overview & Capabilities
 
+```mermaid
+flowchart TD
+    Shell["shared-shell (Nginx :8080)"]
+
+    subgraph Student1Slice["Student 1 Bounded Context"]
+        Frontend["student-1-frontend (Vue 3)<br>/notifications/"]
+        Backend["student-1-backend (:5101)<br>NotificationService"]
+        Broker["NotificationStreamBroker<br>(In-Memory SSE Broker)"]
+        Database[("student-1-database (:5432)<br>PostgreSQL 16: notifications_db")]
+        
+        Frontend -- "GET /notifications/stream" --> Broker
+        Frontend -- "REST API & /digest/chat" --> Backend
+        Backend --> Database
+        Backend --> Broker
+    end
+
+    subgraph Callers["Push Notification Producers"]
+        S2["student-2-backend<br>(Automations)"]
+        S3["student-3-backend<br>(Due-Soon Tasks)"]
+        S4["student-4-backend & auth<br>(Account Events)"]
+        S5["student-5-backend<br>(Grades & Feedback)"]
+    end
+
+    subgraph AIServices["Shared AI Infrastructure"]
+        AIM["ai-mode (:5001)<br>OpenRouter Gateway"]
+        MCP["mcp-server (:5002)<br>Shared MCP Tools"]
+        RAG["rag-server (:5003)<br>Curated Course RAG"]
+    end
+
+    Shell -- "Proxy /notifications/" --> Frontend
+    Shell -- "Proxy /api/notifications/" --> Backend
+
+    S2 & S3 & S4 & S5 -- "POST /notifications/push" --> Backend
+    Backend -. "POST /v1/chat/completions" .-> AIM
+    Backend -. "POST /api/answers" .-> RAG
+    MCP -- "broadcast tool" --> Backend
+```
+
 The Notification service manages incoming academic notifications across student features, delivery channel preferences, and an intelligent AI Chat Assistant grounded in course documentation:
 
 - **Notifications & SSE Stream**:

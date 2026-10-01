@@ -1,0 +1,7 @@
+[student-1/mcp][PLAN] Loading authoritative codebase documentation and feature context
+[student-1/mcp][PLAN] Loaded context from '/Users/bryanrplee/Documents/Projects/41026--software-development-project/tools/agentic_loop/prompts/owners/student-1/context_prompt.txt' and docs: AGENTS.md, ai-services/mcp-server/README.md, docs/architecture/overview.md, student-1/README.md
+[student-1/mcp][ACT] Executing live probes, schema queries, and static inspection
+[student-1/mcp][ACT] Inspection failed
+
+RUNNING: student-1/mcp
+ACT/OBSERVE FAILED: Student 1 MCP contract evidence is incomplete: ai-services/mcp-server/McpServer/Tools/NotificationTools.cs: urgency is not null; student-1/backend/Api/Endpoints/McpRagIntegrationEndpoints.cs: /api/notifications/mcp/broadcast

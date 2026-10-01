@@ -2,6 +2,30 @@
 
 The canonical Neobrutalism design system, shared CSS primitives, design tokens, and reusable Vue 3 components for the Better Canvas platform.
 
+```mermaid
+flowchart TD
+    subgraph UIKit["@better-canvas/ui-kit (shared/ui-kit)"]
+        Tokens["Design Tokens<br>(--nb-color-*, --nb-shadow, --nb-font-*)"]
+        Primitives["CSS Primitives<br>(.nb-card, .nb-button, .nb-badge)"]
+        Components["Shared Vue 3 Components<br>(Navbar, ThemeToggle, ChannelToggle)"]
+        Composables["Composables & State<br>(useTheme, SERVICES Registry)"]
+    end
+
+    subgraph Consumers["Consuming Frontend Microservices"]
+        F0["shared-frontend (Dashboard Shell)"]
+        F1["student-1-frontend (Notifications)"]
+        F2["student-2-frontend (Automations)"]
+        F3["student-3-frontend (Deadlines)"]
+        F4["student-4-frontend (Account)"]
+        F5["student-5-frontend (Grades)"]
+    end
+
+    Tokens --> Primitives --> Components
+    Components --> Consumers
+    Composables --> Consumers
+    Tokens --> Consumers
+```
+
 ---
 
 ## 1. Installation & Setup

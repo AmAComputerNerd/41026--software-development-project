@@ -7,6 +7,9 @@
 *.db
 *.db-*
 
+# Dotnet local artifacts
+.dotnet/
+
 # JetBrains files
 .idea/
 
