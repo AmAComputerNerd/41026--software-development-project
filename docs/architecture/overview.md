@@ -15,90 +15,145 @@ Compose services. Containerised feature backends reach them through
 `host.docker.internal`; the services are launched together by
 `python tools/run_ai_services.py`.
 
-```
-                                  [ Browser / Client ]
-                                           │
-                                  (HTTP: Port 8080)
-                                           ▼
-                    ┌─────────────────────────────────────────────┐
-                    │          shared-shell (Nginx)               │
-                    │  - /             -> Dashboard (Vue 3)       │
-                    │  - /notifications-> student-1-frontend      │
-                    │  - /automations  -> student-2-frontend      │
-                    │  - /deadlines    -> student-3-frontend      │
-                    │  - /account      -> student-4-frontend      │
-                    │  - /grades       -> student-5-frontend      │
-                    │  - /api/*        -> Proxied to backends     │
-                    └───────┬───────────────────────────────┬─────┘
-                            │ (internal HTTP network)       │
-            ┌───────────────┴──────────────┬────────────────┴──────────────┐
-            ▼                              ▼                               ▼
-┌───────────────────────┐      ┌───────────────────────┐      ┌───────────────────────┐
-│   student-1-backend   │      │   student-3-backend   │      │   student-5-backend   │
-│  (Notifications +     │◄─────┤ (Deadlines, Tasks,    │      │  (Grades & Progress)  │
-│   SSE + AI Digest)    │ push │  Sync, AI Subtasks)   │      └───────────┬───────────┘
-└───────────┬───────────┘      └───────────┬───────────┘                  │
-            │                              │                              │
-            │ PostgreSQL                   │ HTTP (private net)           │ HTTP (private net)
-            ▼                              ▼                              ▼
-┌───────────────────────┐      ┌───────────────────────┐      ┌───────────────────────┐
-│   student-1-database  │      │   student-3-database  │      │   student-5-database  │
-│   (PostgreSQL 16)     │      │  [EF Core: app.db]    │      │  [EF Core: grades.db] │
-└───────────────────────┘      └───────────┬───────────┘      └───────────────────────┘
-                                           │
-                                           │ HTTP
-                                           ▼
-┌───────────────────────┐      ┌───────────────────────┐
-│  ai-mode host (5001)  │      │  shared-backend(8080) │
-│  (OpenRouter Gateway) │      │  (Canvas LMS Gateway) │
-└───────────┬───────────┘      └───────────┬───────────┘
-            │ HTTPS                        │ HTTPS
-            ▼                              ▼
-     [ OpenRouter API ]             [ Canvas LMS API ]
+```mermaid
+flowchart TD
+    Client["Browser / Client"] -- "HTTP: Port 8080" --> Shell["shared-shell (Nginx)"]
+
+    subgraph ShellRoutes["Reverse Proxy Surface"]
+        direction TB
+        R0["/ -> Dashboard (Vue 3)"]
+        R1["/notifications/ -> student-1-frontend"]
+        R2["/automations/ -> student-2-frontend"]
+        R3["/deadlines/ -> student-3-frontend"]
+        R4["/account/ -> student-4-frontend"]
+        R5["/grades/ -> student-5-frontend"]
+        RAPIs["/api/* -> Proxied to feature backends"]
+    end
+
+    subgraph Backends["Containerised Feature Backends"]
+        S1["student-1-backend<br>(Notifications, SSE, AI Digest)"]
+        S3["student-3-backend<br>(Deadlines, Tasks, Sync, AI Subtasks)"]
+        S5["student-5-backend<br>(Grades & Progress)"]
+    end
+
+    subgraph Persistence["Isolated Database Layer (Rule 1)"]
+        DB1[("student-1-database<br>PostgreSQL 16")]
+        DB3[("student-3-database<br>EF Core SQLite (app.db)")]
+        DB5[("student-5-database<br>EF Core SQLite (grades.db)")]
+    end
+
+    subgraph HostAIServices["Local Host AI Services"]
+        AIM["ai-mode (:5001)<br>OpenRouter Gateway"]
+    end
+
+    subgraph SharedGateway["Shared Gateway"]
+        SB["shared-backend (:8080)<br>Canvas LMS Gateway"]
+    end
+
+    subgraph External["External Cloud APIs"]
+        OpenRouter["OpenRouter API"]
+        Canvas["Canvas LMS API"]
+    end
+
+    Shell --> ShellRoutes
+    Shell -- "HTTP" --> S1 & S3 & S5
+
+    S1 --> DB1
+    S3 -- "HTTP (private net)" --> DB3
+    S5 -- "HTTP (private net)" --> DB5
+
+    S3 -- "push reminders" --> S1
+    S3 -- "HTTP" --> SB
+    S1 -.-> AIM
+    S3 -.-> AIM
+    S5 -.-> AIM
+
+    AIM -- "HTTPS" --> OpenRouter
+    SB -- "HTTPS" --> Canvas
 ```
 
 ---
 
 ## 2. Core Service Topology
 
-```
-[ Browser / Client ] ──HTTP :8080──→ shared-shell (Nginx)
-                                      │
-                                      ├── /notifications, /api/notifications
-                                      │     → student-1-backend
-                                      │       → student-1-database (PostgreSQL)
-                                      │       → shared-backend and ai-mode
-                                      │
-                                      ├── /automations, /api/automations
-                                      │     → student-2-backend
-                                      │       → owned SQLite database
-                                      │       → shared-backend and ai-mode
-                                      │
-                                      ├── /deadlines, /api/deadlines
-                                      │     → student-3-backend
-                                      │       → student-3-database
-                                      │       → shared-backend and ai-mode
-                                      │       → student-1-backend (notification push)
-                                      │       → host MCP and RAG services
-                                      │
-                                      ├── /account, /api/auth|users|students|teachers
-                                      │     → student-4-backend / authentication
-                                      │       → student-4-database
-                                      │       → ai-mode (profile summaries)
-                                      │       → MailHog (password-reset email)
-                                      │
-                                      └── /grades, /api/grades
-                                            → student-5-backend
-                                              → student-5-database and ai-mode
+```mermaid
+flowchart TD
+    Client["Browser / Client"] -- "HTTP :8080" --> Shell["shared-shell (Nginx)"]
 
-shared-backend ──HTTPS──→ [ Canvas LMS API ]
-ai-mode ────────HTTPS──→ [ OpenRouter API ]
+    subgraph S1Slice["student-1 (Notifications)"]
+        F1["/notifications/ (frontend)"]
+        B1["student-1-backend (:5101)"]
+        DB1[("student-1-database (PostgreSQL)")]
+        F1 -.-> Shell
+        B1 --> DB1
+    end
 
-student-3-backend (Docker)
-  ├──HTTP via host.docker.internal:5002──→ MCP (host)
-  │                                        └──HTTP localhost:5103──→ Student 3 bounded API
-  └──HTTP via host.docker.internal:5003──→ RAG (host)
-                                           └──HTTP localhost:5001──→ ai-mode (Docker)
+    subgraph S2Slice["student-2 (Automations)"]
+        F2["/automations/ (frontend)"]
+        B2["student-2-backend (:5102)"]
+        DB2[("owned SQLite db")]
+        F2 -.-> Shell
+        B2 --> DB2
+    end
+
+    subgraph S3Slice["student-3 (Deadlines & Tasks)"]
+        F3["/deadlines/ (frontend)"]
+        B3["student-3-backend (:5103)"]
+        DB3[("student-3-database (SQLite)")]
+        F3 -.-> Shell
+        B3 --> DB3
+    end
+
+    subgraph S4Slice["student-4 (Account & Auth)"]
+        F4["/account/ (frontend)"]
+        B4["student-4-backend (:5104)"]
+        A4["student-4-authentication (:5114)"]
+        DB4[("student-4-database (SQLite)")]
+        MH["MailHog (:1025/:8025)"]
+        F4 -.-> Shell
+        B4 --> DB4
+        A4 --> DB4
+        A4 -- "password-reset email" --> MH
+    end
+
+    subgraph S5Slice["student-5 (Grades & Progress)"]
+        F5["/grades/ (frontend)"]
+        B5["student-5-backend (:5105)"]
+        DB5[("student-5-database (SQLite)")]
+        F5 -.-> Shell
+        B5 --> DB5
+    end
+
+    subgraph SharedAndAI["Shared & AI Gateways"]
+        SB["shared-backend (:5110)"]
+        AIM["ai-mode (host :5001)"]
+        MCP["MCP Server (host :5002)"]
+        RAG["RAG Server (host :5003)"]
+        CanvasAPI["Canvas LMS API"]
+        OpenRouterAPI["OpenRouter API"]
+    end
+
+    Shell -- "/notifications/, /api/notifications" --> B1
+    Shell -- "/automations/, /api/automations" --> B2
+    Shell -- "/deadlines/, /api/deadlines" --> B3
+    Shell -- "/api/users, /api/students, /api/teachers" --> B4
+    Shell -- "/account/, /api/auth" --> A4
+    Shell -- "/grades/, /api/grades" --> B5
+
+    B1 -.-> SB & AIM
+    B2 -.-> SB & AIM
+    B3 -.-> SB & AIM
+    B3 -- "push reminders" --> B1
+    B4 -.-> AIM
+    B5 -.-> AIM
+
+    B3 -- "host.docker.internal:5002" --> MCP
+    MCP -- "localhost:5103" --> B3
+    B3 -- "host.docker.internal:5003" --> RAG
+    RAG -- "localhost:5001" --> AIM
+
+    SB -- "HTTPS" --> CanvasAPI
+    AIM -- "HTTPS" --> OpenRouterAPI
 ```
 
 ### Infrastructure & Shared Services

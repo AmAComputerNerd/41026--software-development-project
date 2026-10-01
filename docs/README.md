@@ -2,6 +2,32 @@
 
 Welcome to the documentation suite for the **Better Canvas** microservices web platform (41026 Software Development Project).
 
+```mermaid
+flowchart TD
+    Root["Documentation Library (docs/)"]
+
+    subgraph Architecture["1. Architecture Specifications"]
+        A1["Overview (overview.md)"]
+        A2["Services (services.md)"]
+        A3["Data Flows (data-flows.md)"]
+    end
+
+    subgraph Playbooks["2. Implementation Playbooks"]
+        P1["New Frontend"]
+        P2["New Backend"]
+        P3["Split Database Service"]
+        P4["Agentic Loop Guide"]
+    end
+
+    subgraph Development["3. Development Runbooks"]
+        D1["Getting Started"]
+        D2["Testing & CI"]
+        D3["Database & Migrations"]
+    end
+
+    Root --> Architecture & Playbooks & Development
+```
+
 ---
 
 ## Documentation Index
@@ -34,4 +60,4 @@ Welcome to the documentation suite for the **Better Canvas** microservices web p
 - [**`student-2/README.md`**](../student-2/README.md) — Automations microservice.
 - [**`student-3/README.md`**](../student-3/README.md) — Deadlines & Task Tracker microservice.
 - [**`student-4/README.md`**](../student-4/README.md) — Account & Authentication microservice.
-- [**`student-5/backend/README.md`**](../student-5/backend/README.md) & [**`student-5/frontend/README.md`**](../student-5/frontend/README.md) — Grades & Progress microservice.
+- [**`student-5/README.md`**](../student-5/README.md), [**`student-5/backend/README.md`**](../student-5/backend/README.md) & [**`student-5/frontend/README.md`**](../student-5/frontend/README.md) — Grades & Progress microservice.

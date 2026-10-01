@@ -245,46 +245,57 @@ npm run test:e2e --workspace=student-1-frontend
 
 ## 7. Cross-Service Interaction Patterns
 
-```
-                                  [ Browser / Client ]
-                                           │
-                                  (HTTP: Port 8080)
-                                           ▼
-                    ┌─────────────────────────────────────────────┐
-                    │          shared-shell (Nginx)               │
-                    │  - /             -> Dashboard (Vue 3)       │
-                    │  - /notifications-> student-1-frontend      │
-                    │  - /automations  -> student-2-frontend      │
-                    │  - /deadlines    -> student-3-frontend      │
-                    │  - /account      -> student-4-frontend      │
-                    │  - /grades       -> student-5-frontend      │
-                    │  - /api/*        -> Proxied to backends     │
-                    └───────┬───────────────────────────────┬─────┘
-                            │ (internal HTTP network)       │
-            ┌───────────────┴──────────────┬────────────────┴──────────────┐
-            ▼                              ▼                               ▼
-┌───────────────────────┐      ┌───────────────────────┐      ┌───────────────────────┐
-│   student-1-backend   │      │   student-3-backend   │      │   student-5-backend   │
-│  (Notifications +     │◄─────┤ (Deadlines, Tasks,    │      │  (Grades & Progress)  │
-│   SSE + AI Digest)    │ push │  Sync, AI Subtasks)   │      └───────────┬───────────┘
-└───────────┬───────────┘      └───────────┬───────────┘                  │
-            │                              │                              │
-            │ PostgreSQL                   │ HTTP (private net)           │ HTTP (private net)
-            ▼                              ▼                              ▼
-┌───────────────────────┐      ┌───────────────────────┐      ┌───────────────────────┐
-│   student-1-database  │      │   student-3-database  │      │   student-5-database  │
-│   (PostgreSQL 16)     │      │  [EF Core: app.db]    │      │  [EF Core: grades.db] │
-└───────────────────────┘      └───────────┬───────────┘      └───────────────────────┘
-                                           │
-                                           │ HTTP
-                                           ▼
-┌───────────────────────┐      ┌───────────────────────┐
-│  ai-mode host (5001)  │      │  shared-backend(8080) │
-│  (OpenRouter Gateway) │      │  (Canvas LMS Gateway) │
-└───────────┬───────────┘      └───────────┬───────────┘
-            │ HTTPS                        │ HTTPS
-            ▼                              ▼
-     [ OpenRouter API ]             [ Canvas LMS API ]
+```mermaid
+flowchart TD
+    Client["Browser / Client"] -- "HTTP: Port 8080" --> Shell["shared-shell (Nginx Reverse Proxy)"]
+
+    subgraph ShellRoutes["Nginx Route Mapping"]
+        R0["/ -> Dashboard (Vue 3)"]
+        R1["/notifications/ -> student-1-frontend"]
+        R2["/automations/ -> student-2-frontend"]
+        R3["/deadlines/ -> student-3-frontend"]
+        R4["/account/ -> student-4-frontend"]
+        R5["/grades/ -> student-5-frontend"]
+        RAPIs["/api/* -> Proxied to Backends"]
+    end
+
+    subgraph Services["Feature Backends"]
+        S1["student-1-backend<br>(Notifications, SSE, AI Digest)"]
+        S3["student-3-backend<br>(Deadlines, Tasks, Sync, AI Subtasks)"]
+        S5["student-5-backend<br>(Grades & Progress)"]
+    end
+
+    subgraph Databases["Isolated Databases (Rule 1)"]
+        DB1[("student-1-database<br>(PostgreSQL 16)")]
+        DB3[("student-3-database<br>(EF Core SQLite)")]
+        DB5[("student-5-database<br>(EF Core SQLite)")]
+    end
+
+    subgraph Gateways["Shared Gateways"]
+        AIM["ai-mode host (:5001)<br>(OpenRouter Gateway)"]
+        SB["shared-backend (:8080)<br>(Canvas LMS Gateway)"]
+    end
+
+    subgraph ExternalAPIs["External APIs"]
+        OpenRouter["OpenRouter API"]
+        Canvas["Canvas LMS API"]
+    end
+
+    Shell --> ShellRoutes
+    Shell -- "HTTP" --> S1 & S3 & S5
+
+    S1 --> DB1
+    S3 --> DB3
+    S5 --> DB5
+
+    S3 -- "push reminders" --> S1
+    S3 -- "HTTP" --> SB
+    S1 -.-> AIM
+    S3 -.-> AIM
+    S5 -.-> AIM
+
+    AIM -- "HTTPS" --> OpenRouter
+    SB -- "HTTPS" --> Canvas
 ```
 
 ### Key Interactive Flows
