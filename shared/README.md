@@ -1,5 +1,38 @@
 # Shared services
 
+```mermaid
+flowchart TD
+    subgraph Browser["Browser"]
+        Client["User / Client"]
+    end
+
+    subgraph SharedFrontend["shared/frontend (Port 8080)"]
+        Nginx["Nginx Reverse Proxy"]
+        ShellUI["Dashboard Shell (Vue 3)"]
+        Nginx -- "/" --> ShellUI
+    end
+
+    subgraph SharedBackend["shared/backend (Port 5110)"]
+        Gateway["Canvas LMS Gateway<br>(ASP.NET Core .NET 10)"]
+        Cache["In-Memory Cache<br>(3-min TTL)"]
+        Sanitizer["HTML Sanitizer"]
+        Audit[("shared-db<br>SQLite Audit Log")]
+        
+        Gateway --> Cache
+        Gateway --> Sanitizer
+        Gateway --> Audit
+    end
+
+    subgraph DesignSystem["shared/ui-kit"]
+        Tokens["@better-canvas/ui-kit<br>Neobrutalism Tokens & Primitives"]
+    end
+
+    Client -- "HTTP :8080" --> Nginx
+    Nginx -- "/api/canvas/*" --> Gateway
+    Gateway -- "HTTPS" --> CanvasAPI["Canvas LMS API"]
+    ShellUI -. uses .-> Tokens
+```
+
 ## Shared backend
 
 The shared backend owns third-party API integrations. Other microservices call

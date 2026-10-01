@@ -13,6 +13,37 @@ Future releases will focus on improving the AI summary by giving it
 context from other services and expanding on user roles and
 permissions.
 
+```mermaid
+flowchart TD
+    Shell["shared-shell (:8080)"]
+
+    subgraph Student4Slice["student-4 Account & Auth Slice"]
+        FE["student-4-frontend (Vue 3)<br>/account/"]
+        BE["student-4-backend (:5104)<br>Profiles & AI Summaries"]
+        Auth["student-4-authentication (:5114)<br>Auth & Password Resets"]
+        DB["student-4-database (:5204)<br>Internal Persistence Service"]
+        Storage[("SQLite DB File<br>(student-4-db)")]
+        
+        FE -- "/api/users, students, teachers" --> BE
+        FE -- "/api/auth" --> Auth
+        BE -- "HTTP (student-4-data)" --> DB
+        Auth -- "HTTP (student-4-data)" --> DB
+        DB --> Storage
+    end
+
+    subgraph ExternalServices["External & Shared Services"]
+        MailHog["MailHog (:1025 SMTP / :8025 Web)<br>Developer Mailbox"]
+        AIM["ai-mode (:5001)<br>Profile Summary LLM"]
+    end
+
+    Shell -- "Proxy /account/" --> FE
+    Shell -- "Proxy /api/users, /api/students, /api/teachers" --> BE
+    Shell -- "Proxy /api/auth/" --> Auth
+
+    Auth -- "SMTP password reset" --> MailHog
+    BE -. "Profile summary generation" .-> AIM
+```
+
 ## Standalone development
 
 It is suggested to run all services together with Docker from the repository

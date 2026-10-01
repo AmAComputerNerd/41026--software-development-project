@@ -1,6 +1,22 @@
 # student-1 backend
+ 
+ ASP.NET Core API (notifications, preferences, AI digest).
 
-ASP.NET Core API (notifications, preferences, AI digest).
+```mermaid
+flowchart LR
+    subgraph S1Backend["student-1-backend (:5101)"]
+        Endpoints["Minimal API Endpoints<br>(Notifications, Preferences, Stream, Digest)"]
+        Broker["NotificationStreamBroker"]
+        EF["EF Core Context"]
+    end
+
+    Client["Frontend / Clients"] -- "HTTP & SSE" --> Endpoints
+    Endpoints --> Broker
+    Endpoints --> EF
+    EF --> PG[("PostgreSQL 16<br>(student-1-database:5432)")]
+    Endpoints -. "chat completions" .-> AIM["ai-mode (:5001)"]
+    Endpoints -. "course queries" .-> RAG["rag-server (:5003)"]
+```
 
 ## Setup
 

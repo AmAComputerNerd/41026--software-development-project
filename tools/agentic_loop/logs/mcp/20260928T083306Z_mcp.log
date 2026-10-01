@@ -1,0 +1,7 @@
+[mcp][PLAN] Loading authoritative codebase documentation and feature context
+[mcp][PLAN] Loaded context from '/Users/bryanrplee/Documents/Projects/41026--software-development-project/tools/agentic_loop/prompts/owners/shared/context_prompt.txt' and docs: AGENTS.md, ai-services/mcp-server/README.md, docs/architecture/overview.md
+[mcp][ACT] Executing live probes, schema queries, and static inspection
+[mcp][ACT] Inspection failed
+
+RUNNING: mcp
+ACT/OBSERVE FAILED: Static contract: deadlines_list_upcoming uses structured content, validates days 1-90 and limit 1-50, calls only the bounded Student 3 HTTP projection, and is invoked by the official MCP client over Streamable HTTP. Live validation failed: Student 3 backend is not reachable at http://localhost:5103.
