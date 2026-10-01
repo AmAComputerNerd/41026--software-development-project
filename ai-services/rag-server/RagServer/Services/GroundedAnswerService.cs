@@ -12,9 +12,14 @@ public sealed class GroundedAnswerService(HttpClient httpClient, ProjectCorpus c
 
     public async Task<RagAnswerResponse> AnswerAsync(
         string question,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string scope = "all")
     {
-        var retrieved = corpus.Retrieve(question);
+        var sourcePrefix = scope.Equals("student-4", StringComparison.OrdinalIgnoreCase)
+            ? "student-4/"
+            : null;
+        var consideredChunks = corpus.CountChunks(sourcePrefix);
+        var retrieved = corpus.Retrieve(question, sourcePrefix);
         if (retrieved.Count == 0)
         {
             return new RagAnswerResponse(
@@ -22,7 +27,7 @@ public sealed class GroundedAnswerService(HttpClient httpClient, ProjectCorpus c
                 "Insufficient project context was found to answer this question.",
                 "insufficient",
                 [],
-                new RagRetrievalSummary(0, corpus.ChunkCount));
+                new RagRetrievalSummary(0, consideredChunks));
         }
 
         var context = string.Join(
@@ -84,7 +89,7 @@ public sealed class GroundedAnswerService(HttpClient httpClient, ProjectCorpus c
                 answer,
                 "insufficient",
                 [],
-                new RagRetrievalSummary(retrieved.Count, corpus.ChunkCount));
+                new RagRetrievalSummary(retrieved.Count, consideredChunks));
         }
 
         var confidence = CalculateConfidence(retrieved);
@@ -102,7 +107,7 @@ public sealed class GroundedAnswerService(HttpClient httpClient, ProjectCorpus c
             answer,
             confidence,
             citations,
-            new RagRetrievalSummary(retrieved.Count, corpus.ChunkCount));
+            new RagRetrievalSummary(retrieved.Count, consideredChunks));
     }
 
     private static string CalculateConfidence(IReadOnlyList<RetrievedChunk> retrieved)

@@ -1,11 +1,12 @@
 ﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { generateProfileSummary } from '@/api/users'
 
 const { currentUser, currentStudent, currentTeacher, isStudent, isTeacher, loading, error, fetchUser, updateProfile, updateStudentProfile, updateTeacherProfile, changeUserPassword, deleteUserAccount } = useAuth()
 const router = useRouter()
+const route = useRoute()
 
 const isEditing = ref(false)
 const formData = ref({
@@ -61,6 +62,9 @@ onMounted(async () => {
   try {
     await fetchUser(userId)
     populateForm()
+    if (route.query.edit === '1') {
+      startEditing()
+    }
   } catch (err) {
     console.error('Failed to load profile:', err)
     if (!currentUser.value) {
@@ -638,4 +642,3 @@ function formatDate(dateStr: string) {
     </div>
   </div>
 </template>
-

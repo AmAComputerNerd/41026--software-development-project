@@ -39,7 +39,11 @@ public sealed partial class ProjectCorpus
 
     public int ChunkCount => _chunks.Count;
 
-    public IReadOnlyList<RetrievedChunk> Retrieve(string question)
+    public int CountChunks(string? sourcePrefix) =>
+        _chunks.Count(chunk => sourcePrefix is null ||
+            chunk.SourceId.StartsWith(sourcePrefix, StringComparison.Ordinal));
+
+    public IReadOnlyList<RetrievedChunk> Retrieve(string question, string? sourcePrefix = null)
     {
         var queryTerms = Tokenize(question).Distinct().ToArray();
         if (queryTerms.Length == 0)
@@ -49,6 +53,8 @@ public sealed partial class ProjectCorpus
 
         var totalQueryWeight = queryTerms.Sum(InverseDocumentFrequency);
         var matches = _chunks
+            .Where(chunk => sourcePrefix is null ||
+                chunk.SourceId.StartsWith(sourcePrefix, StringComparison.Ordinal))
             .Select(chunk =>
             {
                 var matchedWeight = queryTerms

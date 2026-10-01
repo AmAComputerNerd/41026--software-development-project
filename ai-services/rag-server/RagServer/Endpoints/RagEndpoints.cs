@@ -41,7 +41,7 @@ public static class RagEndpoints
 
         try
         {
-            return Results.Ok(await answerService.AnswerAsync(question, cancellationToken));
+            return Results.Ok(await answerService.AnswerAsync(question, cancellationToken, scope));
         }
         catch (RagGenerationException)
         {
