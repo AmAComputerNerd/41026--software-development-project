@@ -17,7 +17,6 @@
     public sealed record GradeWeightingItem(
         Guid AssignmentId,
         string Name,
-        DateTime DueDate,
         double? Weight,
         int? MaxMark);
 }
