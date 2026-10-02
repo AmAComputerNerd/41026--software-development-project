@@ -74,7 +74,7 @@ namespace GradesManager.Endpoints
             var now = DateTime.UtcNow;
             var assignments = await database.GetAssignmentsAsync(cancellationToken);
             var highestWeightAssignments = assignments
-                .Where(a => a.Weight >= weight && a.Completed != true)
+                !.Where(a => a.Weight >= weight && a.Completed != true)
                 .OrderByDescending(a => a.Weight)
                 .Take(limit)
                 .Select(a => new WeightingDto(
