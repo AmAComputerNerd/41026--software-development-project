@@ -441,7 +441,7 @@ async function handleForgotPassword() {
               class="nb-btn"
               :disabled="forgotLoading || !forgotEmail"
             >
-              {{ forgotLoading ? 'SENDINGâ€¦' : 'SEND RESET LINK' }}
+              {{ forgotLoading ? 'SENDING...' : 'SEND RESET LINK' }}
             </button>
           </div>
         </form>

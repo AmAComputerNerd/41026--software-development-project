@@ -34,6 +34,53 @@ builder.Services
         "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL.")
     .ValidateOnStart();
 builder.Services
+    .AddOptions<McpServerOptions>()
+    .Bind(builder.Configuration.GetSection(McpServerOptions.SectionName))
+    .Validate(options => options.Enabled.HasValue, "McpServer:Enabled must be configured.")
+    .Validate(
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
+        "McpServer:BaseUrl must be an absolute HTTP or HTTPS URL when MCP is enabled.")
+    .ValidateOnStart();
+builder.Services.AddScoped<McpReadinessClient>();
+builder.Services.AddScoped<AccountReadinessService>();
+
+builder.Services
+    .AddOptions<RagServerOptions>()
+    .Bind(builder.Configuration.GetSection(RagServerOptions.SectionName))
+    .Validate(options => options.Enabled.HasValue, "RagServer:Enabled must be configured.")
+    .Validate(
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
+        "RagServer:BaseUrl must be an absolute HTTP or HTTPS URL when RAG is enabled.")
+    .ValidateOnStart();
+builder.Services.AddHttpClient<RagClient>((services, client) =>
+{
+    var options = services.GetRequiredService<IOptions<RagServerOptions>>().Value;
+    if (options.Enabled is true)
+    {
+        ConfigureClient(client, options.BaseUrl);
+    }
+    client.Timeout = TimeSpan.FromSeconds(100);
+});
+
+builder.Services
+    .AddOptions<SharedServiceOptions>()
+    .Bind(builder.Configuration.GetSection(SharedServiceOptions.SectionName))
+    .Validate(
+        options => IsAbsoluteHttpUrl(options.BaseUrl),
+        "SharedService:BaseUrl must be an absolute HTTP or HTTPS URL.")
+    .ValidateOnStart();
+builder.Services.AddHttpClient(AccountReadinessService.CanvasClientName, (services, client) =>
+{
+    ConfigureClient(client, services.GetRequiredService<IOptions<SharedServiceOptions>>().Value.BaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+builder.Services.AddHttpClient(AccountReadinessService.NotificationsClientName, (services, client) =>
+{
+    ConfigureClient(client, services.GetRequiredService<IOptions<NotificationServiceOptions>>().Value.BaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+
+builder.Services
     .AddOptions<NotificationServiceOptions>()
     .Bind(builder.Configuration.GetSection(NotificationServiceOptions.SectionName))
     .Validate(
@@ -130,6 +177,8 @@ app.MapUserEndpoints();
 app.MapStudentEndpoints();
 app.MapTeacherEndpoints();
 app.MapProfileSummaryEndpoints();
+app.MapMcpIntegrationEndpoints();
+app.MapRagIntegrationEndpoints();
 
 app.UseApiExceptionHandling();
 app.UseHttpsRedirection();
