@@ -8,37 +8,74 @@ management, and grades/progress tracking.
 
 ## Architectural overview
 
-```
-[ Browser / Client ] ──HTTP :8080──→ shared-shell (Nginx)
-                                      │
-                                      ├── /notifications, /api/notifications
-                                      │     → student-1-backend
-                                      │       → student-1-database (PostgreSQL)
-                                      │       → shared-backend and ai-mode
-                                      │
-                                      ├── /automations, /api/automations
-                                      │     → student-2-backend
-                                      │       → owned SQLite database
-                                      │       → shared-backend and ai-mode
-                                      │
-                                      ├── /deadlines, /api/deadlines
-                                      │     → student-3-backend
-                                      │       → student-3-database
-                                      │       → shared-backend and ai-mode
-                                      │       → student-1-backend (notification push)
-                                      │
-                                      ├── /account, /api/auth|users|students|teachers
-                                      │     → student-4-backend / authentication
-                                      │       → student-4-database
-                                      │       → ai-mode (profile summaries)
-                                      │       → MailHog (password-reset email)
-                                      │
-                                      └── /grades, /api/grades
-                                            → student-5-backend
-                                              → student-5-database and ai-mode
+```mermaid
+flowchart TD
+    Client["Browser / Client"] -- "HTTP :8080" --> Shell["shared-shell (Nginx Reverse Proxy)"]
 
-shared-backend ──HTTPS──→ [ Canvas LMS API ]
-ai-mode ────────HTTPS──→ [ OpenRouter API ]
+    subgraph Frontends["Frontend Microservices (Vue 3 + UI Kit)"]
+        F1["student-1-frontend (/notifications/)"]
+        F2["student-2-frontend (/automations/)"]
+        F3["student-3-frontend (/deadlines/)"]
+        F4["student-4-frontend (/account/)"]
+        F5["student-5-frontend (/grades/)"]
+    end
+
+    subgraph Backends["Vertical Slice Backends (.NET 10)"]
+        S1["student-1-backend (:5101)<br>Notifications & SSE Stream"]
+        S2["student-2-backend (:5102)<br>Automations Runner"]
+        S3["student-3-backend (:5103)<br>Deadlines & Tasks"]
+        S4B["student-4-backend (:5104)<br>Account Management"]
+        S4A["student-4-authentication (:5114)<br>Auth & Passwords"]
+        S5["student-5-backend (:5105)<br>Grades & Progress"]
+    end
+
+    subgraph Persistence["Isolated Databases (Rule 1)"]
+        DB1[("student-1-database<br>PostgreSQL 16")]
+        DB2[("student-2-db<br>SQLite")]
+        DB3[("student-3-database<br>Internal SQLite")]
+        DB4[("student-4-database<br>Internal SQLite")]
+        DB5[("student-5-database<br>Internal SQLite")]
+    end
+
+    subgraph SharedInfra["Shared Gateways & Services"]
+        SB["shared-backend (:5110)<br>Canvas Gateway"]
+        AIM["ai-mode (:5001)<br>OpenRouter Gateway"]
+        MailHog["mailhog (:1025 / :8025)<br>Mock SMTP"]
+    end
+
+    subgraph External["External APIs"]
+        CanvasAPI["Canvas LMS API"]
+        OpenRouterAPI["OpenRouter API"]
+    end
+
+    Shell --> F1 & F2 & F3 & F4 & F5
+    Shell -- "/api/notifications" --> S1
+    Shell -- "/api/automations" --> S2
+    Shell -- "/api/deadlines" --> S3
+    Shell -- "/api/users, /api/students, /api/teachers" --> S4B
+    Shell -- "/api/auth" --> S4A
+    Shell -- "/api/grades" --> S5
+
+    S1 --> DB1
+    S1 -.-> SB & AIM
+
+    S2 --> DB2
+    S2 -.-> SB & AIM
+
+    S3 --> DB3
+    S3 -.-> SB & AIM
+    S3 -- "push reminders" --> S1
+
+    S4B --> DB4
+    S4B -.-> AIM
+    S4A --> DB4
+    S4A -- "SMTP" --> MailHog
+
+    S5 --> DB5
+    S5 -.-> AIM
+
+    SB -- "HTTPS" --> CanvasAPI
+    AIM -- "HTTPS" --> OpenRouterAPI
 ```
 
 ---

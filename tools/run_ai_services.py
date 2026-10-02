@@ -31,9 +31,13 @@ SERVICE_SPECS = (
 CORPUS_SOURCES = (
     Path("AGENTS.md"),
     Path("docs/architecture/data-flows.md"),
+    Path("student-5/README.md"),
     Path("student-3/README.md"),
     Path("student-2/README.md"),
+    Path("student-3/docs/deadline-help.md"),
     Path("student-1/README.md"),
+    Path("student-4/README.md"),
+    Path("student-4/docs/account-help.md"),
     Path("docs/knowledge-base/course_policies.md"),
 )
 
@@ -89,6 +93,11 @@ def parse_args(root_environment: dict[str, str]) -> argparse.Namespace:
         default=configured_port("AI_MODE_HOST_PORT", root_environment),
     )
     parser.add_argument(
+        "--student-5-port",
+        type=int,
+        default=5105,
+    )
+    parser.add_argument(
         "--student-3-port",
         type=int,
         default=5103,
@@ -103,6 +112,7 @@ def parse_args(root_environment: dict[str, str]) -> argparse.Namespace:
         type=int,
         default=5101,
     )
+    parser.add_argument("--student-4-port", type=int, default=5104)
     return parser.parse_args()
 
 
@@ -203,15 +213,17 @@ def stop_process(name: str, process: subprocess.Popen[str]) -> None:
 def main() -> int:
     root_environment = load_root_environment()
     args = parse_args(root_environment)
-    service_ports = {
+    ports = (
         args.mcp_port,
         args.rag_port,
         args.ai_mode_port,
         args.student_1_port,
         args.student_2_port,
         args.student_3_port,
-    }
-    if len(service_ports) != 6:
+        args.student_4_port,
+        args.student_5_port,
+    )
+    if len(set(ports)) != len(ports):
         print("Configured service ports must be distinct.", file=sys.stderr)
         return 2
 
@@ -252,9 +264,11 @@ def main() -> int:
                 "mcp": {
                     **base_environment,
                     "ASPNETCORE_URLS": f"http://127.0.0.1:{args.mcp_port}",
+                    "Student5__BaseUrl": f"http://127.0.0.1:{args.student_5_port}",
                     "Student3__BaseUrl": f"http://127.0.0.1:{args.student_3_port}",
                     "Student2__BaseUrl": f"http://127.0.0.1:{args.student_2_port}",
                     "Student1__BaseUrl": f"http://127.0.0.1:{args.student_1_port}",
+                    "Student4__BaseUrl": f"http://127.0.0.1:{args.student_4_port}",
                 },
                 "rag": {
                     **base_environment,
@@ -286,6 +300,10 @@ def main() -> int:
             for name, (process, readiness_url) in readiness_urls.items():
                 wait_until_ready(name, process, readiness_url)
 
+            report_dependency(
+                "Student 1 backend",
+                f"http://127.0.0.1:{args.student_1_port}/health/ready",
+            )
             report_dependency(
                 "Student 3 backend",
                 f"http://127.0.0.1:{args.student_3_port}/health/ready",

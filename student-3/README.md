@@ -14,6 +14,49 @@ validated and saved as one operation. Task descriptions can also be drafted
 from a title and the selected course or parent assessment, then edited before
 saving.
 
+The **AI ASSIST** button below the page navigation opens a centered dialog.
+Its **MCP** mode checks upcoming deadlines; **RAG**
+answers documentation questions with source citations and confidence labels.
+Both modes call the shared local services through the tracker backend.
+MCP displays the returned tool name and structured JSON alongside readable
+results; **OPEN TASK** opens the existing task editor. RAG provides sample
+questions and retrieves this feature's sources, including
+[Deadline Tracker Help](docs/deadline-help.md), plus explicitly shared sources.
+Restart `python tools/run_ai_services.py` after changing corpus documentation.
+
+```mermaid
+flowchart TD
+    Shell["shared-shell (:8080)"]
+
+    subgraph Student3Slice["student-3 Deadlines & Tasks Slice"]
+        FE["student-3-frontend (Vue 3)<br>/deadlines/"]
+        BE["student-3-backend (:5103)<br>Public API & Orchestrator"]
+        DB["student-3-database (:5203)<br>Internal Persistence Service"]
+        Storage[("app.db<br>SQLite File")]
+        
+        FE -- "/api/deadlines" --> BE
+        BE -- "HTTP (private network: student-3-data)" --> DB
+        DB --> Storage
+    end
+
+    subgraph ExternalIntegrations["External Gateways & Services"]
+        SB["shared-backend (:5110)<br>Canvas API Gateway"]
+        AIM["ai-mode (:5001)<br>AI Breakdown Planning"]
+        S1["student-1-backend (:5101)<br>Due-Soon Push Reminders"]
+        MCP["mcp-server (:5002)<br>Upcoming Deadlines Tool"]
+        RAG["rag-server (:5003)<br>Curated Q&A Corpus"]
+    end
+
+    Shell -- "Proxy /deadlines/" --> FE
+    Shell -- "Proxy /api/deadlines/" --> BE
+
+    BE -- "Canvas Sync" --> SB
+    BE -- "AI Subtasks" --> AIM
+    BE -- "POST /notifications/push" --> S1
+    BE -. "host.docker.internal:5002" .-> MCP
+    BE -. "host.docker.internal:5003" .-> RAG
+```
+
 ## Standalone development
 
 The task and course APIs need their private database service running first:

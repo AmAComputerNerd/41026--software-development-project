@@ -25,6 +25,21 @@ builder.Services
         client.Timeout = TimeSpan.FromSeconds(10);
     });
 builder.Services
+    .AddOptions<Student5Options>()
+    .Bind(builder.Configuration.GetSection(Student5Options.SectionName))
+    .Validate(
+        options => Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps),
+        "Student5:BaseUrl must be an absolute HTTP or HTTPS URL.")
+    .ValidateOnStart();
+builder.Services
+    .AddHttpClient<IGradesClient, GradesClient>((services, client) =>
+    {
+        var options = services.GetRequiredService<IOptions<Student5Options>>().Value;
+        client.BaseAddress = new Uri($"{options.BaseUrl.TrimEnd('/')}/", UriKind.Absolute);
+        client.Timeout = TimeSpan.FromSeconds(10);
+    });
+builder.Services
     .AddOptions<Student1Options>()
     .Bind(builder.Configuration.GetSection(Student1Options.SectionName))
     .Validate(
@@ -55,11 +70,28 @@ builder.Services
         client.Timeout = TimeSpan.FromSeconds(10);
     });
 builder.Services
+    .AddOptions<Student4Options>()
+    .Bind(builder.Configuration.GetSection(Student4Options.SectionName))
+    .Validate(
+        options => Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps),
+        "Student4:BaseUrl must be an absolute HTTP or HTTPS URL.")
+    .ValidateOnStart();
+builder.Services
+    .AddHttpClient<IAccountClient, AccountClient>((services, client) =>
+    {
+        var options = services.GetRequiredService<IOptions<Student4Options>>().Value;
+        client.BaseAddress = new Uri($"{options.BaseUrl.TrimEnd('/')}/", UriKind.Absolute);
+        client.Timeout = TimeSpan.FromSeconds(10);
+    });
+builder.Services
     .AddMcpServer()
     .WithHttpTransport(options => options.SessionMode = HttpServerSessionMode.Stateless)
     .WithTools<DeadlineTools>()
     .WithTools<NotificationTools>()
-    .WithTools<AutomationTools>();
+    .WithTools<AutomationTools>()
+    .WithTools<GradesTools>()
+    .WithTools<AccountTools>();
 builder.Services
     .AddHealthChecks()
     .AddCheck(

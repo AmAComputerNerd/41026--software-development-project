@@ -12,6 +12,7 @@ const { isAuthenticated, currentUser, logout } = useAuth()
 const navLinks = [
   { to: { name: 'login' }, label: '01 LOGIN', match: 'login' },
   { to: { name: 'profile' }, label: '02 PROFILE', match: 'profile' },
+  { to: { name: 'knowledge' }, label: '03 KNOWLEDGE', match: 'knowledge' },
 ]
 
 const visibleNavLinks = computed(() =>

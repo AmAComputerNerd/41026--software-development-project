@@ -24,11 +24,11 @@ function formatErrorMessage(status: number, statusText: string, body: string): s
     if (typeof parsed.error === 'string') {
       return parsed.error
     }
-    if (typeof parsed.title === 'string') {
-      return parsed.title
-    }
     if (typeof parsed.detail === 'string') {
       return parsed.detail
+    }
+    if (typeof parsed.title === 'string') {
+      return parsed.title
     }
   } catch {
     // body not JSON

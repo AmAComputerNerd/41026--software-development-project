@@ -37,6 +37,8 @@ env:
   DOTNET_SOLUTION: student-4/backend/AccountService.sln
   API_PROJECT: student-4/backend/Api/Api.csproj
   DATABASE_PROJECT: student-4/database/Database/Database.csproj
+  McpServer__Enabled: "false"
+  RagServer__Enabled: "false"
 
 jobs:
   frontend-build:
@@ -86,6 +88,76 @@ jobs:
 
       - name: Verify code formatting
         run: dotnet format "${{ env.DOTNET_SOLUTION }}" --verify-no-changes --severity warn
+
+  account-api-contract:
+    name: Account API & disabled MCP/RAG smoke test
+    needs: build-and-analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Build services
+        run: dotnet build "${{ env.DOTNET_SOLUTION }}" --configuration Release -warnaserror
+      - name: Verify account reads and disabled MCP
+        shell: bash
+        run: |
+          set -euo pipefail
+          ASPNETCORE_URLS=http://127.0.0.1:5204 \
+          ConnectionStrings__DefaultConnection="Data Source=$RUNNER_TEMP/student-4-ci.db" \
+          dotnet run --project "${{ env.DATABASE_PROJECT }}" \
+            --configuration Release --no-build --no-launch-profile > database.log 2>&1 &
+          database_pid=$!
+          api_pid=""
+          cleanup() {
+            if [[ -n "$api_pid" ]]; then kill "$api_pid" 2>/dev/null || true; fi
+            kill "$database_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          for _ in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:5204/health/ready > /dev/null; then break; fi
+            if ! kill -0 "$database_pid" 2>/dev/null; then cat database.log; exit 1; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:5204/health/ready > /dev/null
+          ASPNETCORE_URLS=http://127.0.0.1:5104 \
+          DatabaseService__BaseUrl=http://127.0.0.1:5204 \
+          SharedService__BaseUrl=http://127.0.0.1:5110 \
+          AiGateway__BaseUrl=http://127.0.0.1:5001 \
+          NotificationService__BaseUrl=http://127.0.0.1:5101 \
+          dotnet run --project "${{ env.API_PROJECT }}" \
+            --configuration Release --no-build --no-launch-profile > api.log 2>&1 &
+          api_pid=$!
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5104/health/ready > /dev/null; then break; fi
+            if ! kill -0 "$api_pid" 2>/dev/null; then cat api.log; exit 1; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:5104/health/ready > /dev/null
+          user_id=$(curl --fail --silent http://127.0.0.1:5104/api/users/ | jq -er '.[0].id')
+          curl --fail --silent "http://127.0.0.1:5104/api/users/$user_id" |
+            jq -e --arg id "$user_id" '.id == $id' > /dev/null
+          status=$(curl --silent --output mcp.json --write-out "%{http_code}" \
+            --request POST "http://127.0.0.1:5104/api/users/$user_id/mcp-readiness")
+          test "$status" = "503"
+          jq -e '.detail == "MCP integration is disabled for this environment."' mcp.json > /dev/null
+          status=$(curl --silent --output rag.json --write-out "%{http_code}" \
+            --request POST --header "Content-Type: application/json" \
+            --data '{"question":"How do I reset my password?"}' \
+            "http://127.0.0.1:5104/api/users/help/answers")
+          test "$status" = "503"
+          jq -e '.detail == "RAG integration is disabled for this environment."' rag.json > /dev/null
+          status=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+            --request POST --header "Content-Type: application/json" --data '{"question":" "}' \
+            "http://127.0.0.1:5104/api/users/help/answers")
+          test "$status" = "400"
+          status=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+            "http://127.0.0.1:5104/internal/ai-context/accounts/$user_id/readiness")
+          test "$status" = "503"
+      - name: Show logs on failure
+        if: failure()
+        run: cat database.log api.log 2>/dev/null || true
 
   ef-core-migrations-check:
     name: EF Core migrations drift check

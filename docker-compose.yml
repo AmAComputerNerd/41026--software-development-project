@@ -192,7 +192,12 @@ services:
         environment:
             ASPNETCORE_ENVIRONMENT: Development
             DatabaseService__BaseUrl: http://student-4-database:8080
+            SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__BaseUrl: http://host.docker.internal:${AI_MODE_HOST_PORT:?Run python tools/setup_env.py}
+            McpServer__Enabled: ${MCP_ENABLED:?Run python tools/setup_env.py}
+            McpServer__BaseUrl: http://host.docker.internal:${MCP_HOST_PORT:?Run python tools/setup_env.py}/mcp
+            RagServer__Enabled: ${RAG_ENABLED:?Run python tools/setup_env.py}
+            RagServer__BaseUrl: http://host.docker.internal:${RAG_HOST_PORT:?Run python tools/setup_env.py}
             NotificationService__BaseUrl: http://student-1-backend:8080
         networks:
             - default
@@ -220,17 +225,12 @@ services:
             dockerfile: authentication/Authentication/Dockerfile
         ports:
             - "5114:8080"
+        env_file:
+            - path: .env
         environment:
             ASPNETCORE_ENVIRONMENT: Development
             DatabaseService__BaseUrl: http://student-4-database:8080
             NotificationService__BaseUrl: http://student-1-backend:8080
-            Email__Smtp__Host: mailhog
-            Email__Smtp__Port: "1025"
-            Email__Smtp__UseSsl: "false"
-            Email__FromAddress: no-reply@student4.local
-            Email__FromName: Student 4 Account Service
-            Email__PasswordReset__BaseUrl: http://localhost:8080/account/reset-password
-            Email__PasswordReset__TokenLifetimeMinutes: "60"
         networks:
             - default
             - student-4-data
@@ -276,6 +276,10 @@ services:
             DatabaseService__BaseUrl: http://student-5-database:8080
             AiGateway__BaseUrl: http://host.docker.internal:${AI_MODE_HOST_PORT:?Run python tools/setup_env.py}
             NotificationService__BaseUrl: http://student-1-backend:8080
+            McpServer__Enabled: ${MCP_ENABLED:?Run python tools/setup_env.py}
+            McpServer__BaseUrl: http://host.docker.internal:${MCP_HOST_PORT:?Run python tools/setup_env.py}/mcp
+            RagServer__Enabled: ${RAG_ENABLED:?Run python tools/setup_env.py}
+            RagServer__BaseUrl: http://host.docker.internal:${RAG_HOST_PORT:?Run python tools/setup_env.py}
         networks:
             - default
             - student-5-data

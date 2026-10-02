@@ -1,0 +1,5 @@
+[mcp][PLAN] Loading authoritative codebase documentation and feature context
+[mcp][PLAN] Loaded context from '/Users/bryanrplee/Documents/Projects/41026--software-development-project/tools/agentic_loop/prompts/owners/shared/context_prompt.txt' and docs: AGENTS.md, ai-services/mcp-server/README.md, docs/architecture/overview.md
+[mcp][ACT] Executing live probes, schema queries, and static inspection
+[mcp][OBSERVE] Structured 64 words of observation evidence
+[mcp][ADAPT-PROPOSE] Running implementation model grounded in documentation

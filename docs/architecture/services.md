@@ -2,6 +2,33 @@
 
 > Detailed specification of each microservice, its stack, endpoint surface, port mappings, and operational ownership.
 
+```mermaid
+flowchart TD
+    subgraph SharedGatewayGroup["Shared Infrastructure & Gateways"]
+        Shell["shared-shell (:8080)<br>Vue 3 + Nginx"]
+        SB["shared-backend (:5110)<br>Canvas LMS Gateway"]
+        AIM["ai-mode (:5001)<br>OpenRouter LLM Gateway"]
+        MCP["mcp-server (:5002)<br>Shared MCP Tools"]
+        RAG["rag-server (:5003)<br>Curated Documentation RAG"]
+        MailHog["mailhog (:1025/:8025)<br>Mock SMTP"]
+    end
+
+    subgraph StudentSlices["Feature Microservices"]
+        S1["student-1 (:5101)<br>Notifications & SSE"]
+        S2["student-2 (:5102)<br>Automations"]
+        S3["student-3 (:5103)<br>Deadlines & Tasks"]
+        S4["student-4 (:5104/:5114)<br>Account & Auth"]
+        S5["student-5 (:5105)<br>Grades & Progress"]
+    end
+
+    Shell --> S1 & S2 & S3 & S4 & S5
+    S1 & S2 & S3 -. Canvas API .-> SB
+    S1 & S2 & S3 & S4 & S5 -. AI Completions .-> AIM
+    S3 -. MCP Tools .-> MCP
+    S1 & S3 -. RAG Answers .-> RAG
+    S4 -. Password Reset .-> MailHog
+```
+
 ---
 
 ## 1. `shared-shell` (Dashboard Shell & Gateway Proxy)
@@ -151,12 +178,19 @@ See [`student-2/README.md`](../../student-2/README.md) for the full contract.
 - Stores user, student, and teacher profile records with hashed passwords.
 - Issues password-reset emails through SMTP; development uses the `mailhog` container (SMTP `1025`, web UI `http://localhost:8025`).
 - Generates AI profile summaries through the `ai-mode` gateway.
+- Provides read-only account readiness findings through local MCP and
+  documentation-grounded Account Help through local RAG. Both are accessed
+  from the **03 KNOWLEDGE** page (`/account/knowledge`) through this backend, optional for readiness, and
+  disabled in CI.
 - Dispatches real-time push notifications to `student-1-backend` upon password changes, password resets, profile updates, and AI profile summary generation.
 - Delegates all persistence over HTTP to `student-4-database`, which exclusively owns the `student-4-db` volume on the private `student-4-data` Docker network.
 
 ### Key Endpoints
 - `GET|POST /api/users`, `GET|PUT|DELETE /api/users/{userId}` — User records.
 - `POST /api/users/{userId}/profile-summary` — AI profile summary.
+- `POST /api/users/{userId}/mcp-readiness` — MCP account readiness findings.
+- `POST /api/users/help/answers` — Account-scoped RAG answers with citations
+  and confidence; unsupported questions return insufficient context.
 - `GET|PUT /api/students/{userId}` & `GET|PUT /api/teachers/{userId}` — Role profiles.
 - `POST /api/auth/login`, `POST /api/auth/change-password`, `DELETE /api/auth/delete-account` — Account management.
 - `POST /api/auth/forgot-password` & `POST /api/auth/reset-password` — Password reset.

@@ -29,6 +29,47 @@ export interface StudentAssignment {
   finalMark: number | null
 }
 
+export interface WeightingItem {
+  assignmentId: string
+  name: string
+  weight: number | null
+  maxMark: number | null
+}
+
+export interface WeightingsResponse {
+  weight: number
+  count: number
+  generatedAtUtc: string
+  items: WeightingItem[]
+}
+
+export interface McpResponse {
+  status: string
+  tool: string
+  data: WeightingsResponse | null
+  error: { code: string; message: string } | null
+}
+
+export interface RagCitation {
+  sourceId: string
+  title: string
+  heading: string
+  score: number
+}
+
+export interface RagRetrievalSummary {
+  matchedChunks: number
+  consideredChunks: number
+}
+
+export interface RagAnswerResponse {
+  status: string
+  answer: string
+  confidence: string
+  citations: RagCitation[]
+  retrieval: RagRetrievalSummary
+}
+
 const API_BASE = (import.meta.env.VITE_GRADES_API_BASE_URL || '/api/grades').replace(/\/$/, '')
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -85,5 +126,15 @@ export const gradesApi = {
     request<{ recommendation: string }>('/api/ai/generate-recommendation', {
       method: 'POST',
       body: JSON.stringify({ assignments }),
+    }),
+  getMcpWeightings: (weight: number, limit: number) =>
+    request<McpResponse>('/api/integrations/mcp/assignment-weightings', {
+      method: 'POST',
+      body: JSON.stringify({ weight, limit }),
+    }),
+  getRagAnswer: (question: string) =>
+    request<RagAnswerResponse>('/api/integrations/rag/answers', {
+      method: 'POST',
+      body: JSON.stringify({ question }),
     }),
 }

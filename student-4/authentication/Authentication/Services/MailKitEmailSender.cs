@@ -18,6 +18,12 @@ public sealed partial class MailKitEmailSender(
         string host,
         int port);
 
+    [LoggerMessage(
+        EventId = 1,
+        Level = LogLevel.Information,
+        Message = "Email configuration loaded: Host={Host}, Port={Port}, UseSsl={UseSsl}, Username={Username}, FromAddress={FromAddress}, FromName={FromName}")]
+    public static partial void LogEmailConfiguration(ILogger logger, string host, int port, bool useSsl, string username, string fromAddress, string fromName);
+
     private readonly EmailOptions _options = options.Value;
     private readonly ILogger<MailKitEmailSender> _logger = logger;
 
@@ -54,12 +60,17 @@ public sealed partial class MailKitEmailSender(
                 client.CheckCertificateRevocation = false;
             }
 
+            // Determine SSL mode: port 465 = implicit TLS (SslOnConnect), 587 = explicit TLS (StartTls)
+            var sslMode = smtp.UseSsl
+                ? (smtp.Port == 465
+                    ? MailKit.Security.SecureSocketOptions.SslOnConnect
+                    : MailKit.Security.SecureSocketOptions.StartTls)
+                : MailKit.Security.SecureSocketOptions.None;
+
             await client.ConnectAsync(
                 smtp.Host,
                 smtp.Port,
-                smtp.UseSsl
-                    ? MailKit.Security.SecureSocketOptions.StartTls
-                    : MailKit.Security.SecureSocketOptions.None,
+                sslMode,
                 cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(smtp.Username))

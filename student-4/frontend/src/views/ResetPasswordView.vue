@@ -48,7 +48,7 @@ async function handleSubmit() {
   try {
     const result = await resetPassword(token.value, newPassword.value)
     success.value =
-      result.message ?? 'Password reset successfully. Redirecting to loginâ€¦'
+      result.message ?? 'Password reset successfully. Redirecting to login...'
 
     setTimeout(() => {
       router.push('/')
@@ -129,7 +129,7 @@ async function handleSubmit() {
             class="nb-btn"
             :disabled="loading || !isFormValid"
           >
-            {{ loading ? 'RESETTINGâ€¦' : 'RESET PASSWORD' }}
+            {{ loading ? 'RESETTING...' : 'RESET PASSWORD' }}
           </button>
         </div>
       </form>

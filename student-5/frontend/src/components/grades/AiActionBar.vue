@@ -1,27 +1,19 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useGrades } from '@/composables/useGrades'
-import RecommendationModal from './RecommendationModal.vue'
+import AiIntegrationModal from './AiIntegrationModal.vue'
 
 const { generateRecommendation } = useGrades()
 const dialogOpen = ref(false)
 const loading = ref(false)
-const recommendation = ref<string | null>(null)
-const error = ref<string | null>(null)
 
-async function openRecommendation() {
+async function openDialog() {
   dialogOpen.value = true
   loading.value = true
-  error.value = null
-  recommendation.value = null
   try {
     const response = await generateRecommendation()
-    recommendation.value = response.recommendation
-  } catch (requestError) {
-    error.value =
-      requestError instanceof Error
-        ? requestError.message
-        : 'The AI coach is unavailable right now.'
+  } catch {
+    // Error handled in modal
   } finally {
     loading.value = false
   }
@@ -38,20 +30,14 @@ function closeDialog() {
       type="button"
       class="nb-btn nb-btn--accent ai-action-bar__button"
       :disabled="loading"
-      @click="openRecommendation"
+      @click="openDialog"
     >
       <span aria-hidden="true" class="ai-action-bar__spark">✦</span>
-      {{ loading ? 'ASKING THE AI COACH...' : 'AI FOCUS RECOMMENDATION' }}
+      {{ loading ? 'OPENING AI TOOLS...' : 'AI TOOLS' }}
     </button>
   </div>
 
-  <RecommendationModal
-    :open="dialogOpen"
-    :loading="loading"
-    :recommendation="recommendation"
-    :error="error"
-    @close="closeDialog"
-  />
+  <AiIntegrationModal :open="dialogOpen" @close="closeDialog" />
 </template>
 
 <style scoped>
