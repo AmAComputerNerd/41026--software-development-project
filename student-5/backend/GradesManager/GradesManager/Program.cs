@@ -30,6 +30,26 @@ builder.Services
         options => IsAbsoluteHttpUrl(options.BaseUrl),
         "NotificationService:BaseUrl must be an absolute HTTP or HTTPS URL.")
     .ValidateOnStart();
+builder.Services
+    .AddOptions<McpServerOptions>()
+    .Bind(builder.Configuration.GetSection(McpServerOptions.SectionName))
+    .Validate(
+        options => options.Enabled.HasValue,
+        "McpServer:Enabled must be configured.")
+    .Validate(
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
+        "McpServer:BaseUrl must be an absolute HTTP or HTTPS URL when MCP is enabled.")
+    .ValidateOnStart();
+builder.Services
+    .AddOptions<RagServerOptions>()
+    .Bind(builder.Configuration.GetSection(RagServerOptions.SectionName))
+    .Validate(
+        options => options.Enabled.HasValue,
+        "RagServer:Enabled must be configured.")
+    .Validate(
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
+        "RagServer:BaseUrl must be an absolute HTTP or HTTPS URL when RAG is enabled.")
+    .ValidateOnStart();
 
 // Notification client
 builder.Services
@@ -73,6 +93,21 @@ builder.Services
         options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(120);
         options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(190);
     });
+builder.Services.AddSingleton<IMcpGradesClient, McpGradesClient>();
+builder.Services
+    .AddHttpClient<IRagClient, RagClient>((services, client) =>
+        ConfigureClient(
+            client,
+            services.GetRequiredService<IOptions<RagServerOptions>>().Value.BaseUrl))
+    .AddStandardResilienceHandler(options =>
+    {
+        options.Retry.MaxRetryAttempts = 1;
+        options.Retry.Delay = TimeSpan.FromMilliseconds(500);
+        options.Retry.DisableForUnsafeHttpMethods();
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(95);
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(200);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(100);
+    });
 
 var app = builder.Build();
 
@@ -89,6 +124,8 @@ app.MapCourseEndpoints();
 app.MapStudentEndpoints();
 app.MapAssignmentEndpoints();
 app.MapAiEndpoints();
+app.MapMcpIntegrationEndpoints();
+app.MapRagIntegrationEndpoints();
 
 app.UseHttpsRedirection();
 

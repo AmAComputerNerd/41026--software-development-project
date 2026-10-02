@@ -5,6 +5,8 @@ import {
   type Course,
   type Student,
   type StudentAssignment,
+  type McpResponse,
+  type RagAnswerResponse,
 } from '@/api/grades'
 import { CONFIGURED_STUDENT_ID } from '@/config'
 
@@ -158,6 +160,14 @@ export function useGrades() {
     return gradesApi.generateRecommendation(incomplete)
   }
 
+  async function getMcpWeightings(weight: number, limit: number) {
+    return gradesApi.getMcpWeightings(weight, limit)
+  }
+
+  async function getRagAnswer(question: string) {
+    return gradesApi.getRagAnswer(question)
+  }
+
   return {
     student,
     courses,
@@ -173,6 +183,8 @@ export function useGrades() {
     updateTemporaryMark,
     deleteTemporaryMark,
     generateRecommendation,
+    getMcpWeightings,
+    getRagAnswer,
     markFor,
     calculateCourseMark,
     courseStats,
