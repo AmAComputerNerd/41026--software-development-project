@@ -35,6 +35,7 @@ public sealed class GroundedAnswerService(HttpClient httpClient, ProjectCorpus c
                     "system",
                     "Answer using only the supplied project excerpts. " +
                     "Do not add facts that are absent from them. " +
+                    "Give only the final answer in at most 100 words and do not reveal reasoning. " +
                     "If the excerpts do not answer the question, respond exactly: " +
                     "Insufficient project context was found to answer this question."),
                 new ChatMessage(
@@ -42,7 +43,8 @@ public sealed class GroundedAnswerService(HttpClient httpClient, ProjectCorpus c
                     $"Question:\n{question}\n\nProject excerpts:\n{context}")
             ],
             0.1,
-            350);
+            500,
+            new ReasoningOptions("none", true));
 
         using var response = await httpClient.PostAsJsonAsync(
             "v1/chat/completions",
@@ -123,7 +125,12 @@ public sealed class GroundedAnswerService(HttpClient httpClient, ProjectCorpus c
     private sealed record ChatCompletionRequest(
         [property: JsonPropertyName("messages")] IReadOnlyList<ChatMessage> Messages,
         [property: JsonPropertyName("temperature")] double Temperature,
-        [property: JsonPropertyName("max_tokens")] int MaxTokens);
+        [property: JsonPropertyName("max_tokens")] int MaxTokens,
+        [property: JsonPropertyName("reasoning")] ReasoningOptions Reasoning);
+
+    private sealed record ReasoningOptions(
+        [property: JsonPropertyName("effort")] string Effort,
+        [property: JsonPropertyName("exclude")] bool Exclude);
 
     private sealed record ChatMessage(
         [property: JsonPropertyName("role")] string Role,

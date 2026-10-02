@@ -13,8 +13,8 @@ Validate only what the evidence establishes:
 - The registered tool is genuinely invoked through the MCP protocol.
 - Inputs and structured outputs match the documented contract.
 - Invalid input is rejected.
-- The tool reads through the owning Student 3 backend instead of its database.
-- The MCP server remains restricted to the Docker ai network without a host port.
+- The tool reads through the owning feature backend instead of its database.
+- The MCP server remains a shared non-containerised local service.
 
 If no issue is supported by the evidence, say exactly: "No evidence-backed improvement identified."
 

@@ -11,7 +11,8 @@ builder.Configuration["OpenRouter:Model"] =
 
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
-builder.Services.AddHttpClient();
+builder.Services.AddHttpClient(nameof(ChatEndpoints), client =>
+    client.Timeout = TimeSpan.FromSeconds(170));
 builder.Services
     .AddHealthChecks()
     .AddCheck(

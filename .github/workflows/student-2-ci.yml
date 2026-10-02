@@ -29,6 +29,9 @@ env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   BACKEND_DIR: student-2/backend/Api
+  AiGateway__Enabled: "false"
+  McpServer__Enabled: "false"
+  RagServer__Enabled: "false"
 
 jobs:
   frontend-build:
@@ -80,6 +83,31 @@ jobs:
       - name: Build (Release, warnings as errors)
         run: dotnet build --configuration Release --no-restore -warnaserror
         working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Verify AI Mode, MCP and RAG are disabled
+        shell: bash
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: |
+          ASPNETCORE_URLS=http://127.0.0.1:5122 \
+            dotnet run --configuration Release --no-build --no-launch-profile &
+          backend_pid=$!
+          trap 'kill "$backend_pid"' EXIT
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5122/health/ready > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request POST --header 'Content-Type: application/json' \
+            --data '{"days":30}' \
+            http://127.0.0.1:5122/api/integrations/mcp/automation-health)" = "503"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request POST --header 'Content-Type: application/json' \
+            --data '{"question":"How do automations work?"}' \
+            http://127.0.0.1:5122/api/integrations/rag/query)" = "503"
 
       - name: Verify code formatting
         run: dotnet format --verify-no-changes --severity warn --no-restore

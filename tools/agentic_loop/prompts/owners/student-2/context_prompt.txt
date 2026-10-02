@@ -1,0 +1,6 @@
+Feature: Automations, MCP Health Review & Grounded RAG Help
+
+Student 2 owns configurable assignment-extension, scheduled-post, and quiz-filler automations with SQLite persistence and run history. Release 1 adds frontend access through the Student 2 backend to shared non-containerised host services:
+- MCP tool `automations_review_health` reviews bounded aggregate run metrics and returns an actionable health summary without exposing automation IDs or message content.
+- RAG queries return grounded project answers with a confidence category, scored source citations, retrieval counts, and an insufficient-context response for unsupported questions.
+- AI Mode, MCP, and RAG are enabled for local Docker integration and explicitly disabled in Student 2 CI.

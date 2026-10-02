@@ -40,10 +40,26 @@ builder.Services
         client.Timeout = TimeSpan.FromSeconds(10);
     });
 builder.Services
+    .AddOptions<Student2Options>()
+    .Bind(builder.Configuration.GetSection(Student2Options.SectionName))
+    .Validate(
+        options => Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps),
+        "Student2:BaseUrl must be an absolute HTTP or HTTPS URL.")
+    .ValidateOnStart();
+builder.Services
+    .AddHttpClient<IAutomationClient, AutomationClient>((services, client) =>
+    {
+        var options = services.GetRequiredService<IOptions<Student2Options>>().Value;
+        client.BaseAddress = new Uri($"{options.BaseUrl.TrimEnd('/')}/", UriKind.Absolute);
+        client.Timeout = TimeSpan.FromSeconds(10);
+    });
+builder.Services
     .AddMcpServer()
     .WithHttpTransport(options => options.SessionMode = HttpServerSessionMode.Stateless)
     .WithTools<DeadlineTools>()
-    .WithTools<NotificationTools>();
+    .WithTools<NotificationTools>()
+    .WithTools<AutomationTools>();
 builder.Services
     .AddHealthChecks()
     .AddCheck(

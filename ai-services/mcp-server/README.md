@@ -14,6 +14,14 @@ transport.
 - Boundary: reads through Student 3's bounded HTTP API; it never accesses the
   Student 3 database service or volume directly
 
+### `automations_review_health`
+
+- Caller: `student-2-backend`
+- Input: `days` (`1`-`90`)
+- Output: human-readable health assessment plus aggregate execution metrics
+- Boundary: reads through Student 2's bounded HTTP API; it never accesses the
+  Student 2 database file or exposes automation IDs or message content
+
 Run it together with the RAG service from the repository root:
 
 ```bash
