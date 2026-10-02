@@ -5,6 +5,15 @@ ASP.NET Core (.NET 10) Minimal API microservice for course grade calculation, ma
 Persistence is owned by the separate `student-5/database` service; this project
 holds no EF Core context, connection string, or database volume.
 
+```mermaid
+flowchart LR
+    Client["Clients / Shell"] -- "HTTP :5105" --> API["GradesManager Minimal API"]
+    API -- "HTTP (student-5-data)" --> DBService["student-5-database (:5205)"]
+    DBService --> SQLite[("grades.db<br>EF Core SQLite")]
+    API -. "POST /v1/chat/completions" .-> AIM["ai-mode (:5001)"]
+    API -. "POST /notifications/push" .-> S1["student-1-backend (:5101)"]
+```
+
 ---
 
 ## 1. Setup & Run

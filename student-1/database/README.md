@@ -19,6 +19,40 @@ It satisfies the project specification for **Microservice Database Isolation** (
 ## Schema Overview & Tables
 The database maintains the following isolated tables:
 
+```mermaid
+erDiagram
+    NOTIFICATIONS {
+        int Id PK
+        string StudentId
+        string Type
+        string Title
+        string Message
+        boolean IsRead
+        timestamp CreatedAt
+        string RelatedEntityType
+        string RelatedEntityId
+    }
+    NOTIFICATION_PREFERENCES {
+        int Id PK
+        string StudentId
+        string NotificationType
+        string Channel
+        boolean IsEnabled
+    }
+    AI_DIGESTS {
+        int Id PK
+        string StudentId
+        string DigestContent
+        timestamp GeneratedAt
+    }
+    CANVAS_ASSIGNMENT_WATERMARKS {
+        int Id PK
+        int CourseId
+        int AssignmentId
+        timestamp LastSyncedAt
+    }
+```
+
 1. **`Notifications`**:
    - Stores user alerts, type (`Deadline`, `Grade`, `Automation`, `Account`, `AI`), read status, timestamps, and optional cross-service target metadata (`RelatedEntityType`, `RelatedEntityId`, `ActionPayload`).
 2. **`NotificationPreferences`**:

@@ -9,6 +9,35 @@ The backend uses ASP.NET Core, Entity Framework Core, and its own SQLite
 database. The Vue 3 and TypeScript frontend uses the shared Better Canvas UI
 kit and is available through the shared shell at `/automations/`.
 
+```mermaid
+flowchart TD
+    Shell["shared-shell (:8080)"]
+
+    subgraph Student2Slice["student-2 Automations Slice"]
+        FE["student-2-frontend (Vue 3)<br>/automations/"]
+        BE["student-2-backend (:5102)<br>Automations API"]
+        Worker["Periodic Worker<br>(Runs every 30s)"]
+        DB[("student-2-db<br>SQLite (EF Core)")]
+        
+        FE -- "/api/automations" --> BE
+        BE --> DB
+        Worker --> DB
+    end
+
+    subgraph ExternalServices["Connected Services"]
+        SB["shared-backend (:5110)<br>Canvas Conversations & Quizzes"]
+        AIM["ai-mode (:5001)<br>Quiz Answering LLM"]
+        S1["student-1-backend (:5101)<br>Push Notifications"]
+    end
+
+    Shell -- "Proxy /automations/" --> FE
+    Shell -- "Proxy /api/automations/" --> BE
+
+    Worker -- "Execute post / quiz" --> SB
+    Worker -- "Generate answers" --> AIM
+    Worker -- "Push completion alert" --> S1
+```
+
 ## Standalone development
 
 Run the backend at `http://localhost:5102`:
