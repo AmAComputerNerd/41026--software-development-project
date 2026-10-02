@@ -14,7 +14,7 @@ Validate only what the evidence establishes:
 - Generation routes through the centralized AI gateway.
 - Grounded answers include source citations and a confidence category.
 - Unrelated questions return insufficient context with no citations.
-- The browser reaches RAG only through the Student 3 backend.
+- The browser reaches RAG only through the owning feature backend.
 
 If no issue is supported by the evidence, say exactly: "No evidence-backed improvement identified."
 

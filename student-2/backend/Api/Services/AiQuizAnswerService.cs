@@ -2,11 +2,14 @@ using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Api.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Api.Services;
 
 public sealed partial class AiQuizAnswerService(
     HttpClient httpClient,
+    IOptions<AiGatewayOptions> options,
     ILogger<AiQuizAnswerService> logger) : IAiQuizAnswerService
 {
     private const int MaximumCompletionAttempts = 3;
@@ -18,6 +21,11 @@ public sealed partial class AiQuizAnswerService(
         AiQuizContext context,
         CancellationToken cancellationToken)
     {
+        if (options.Value.Enabled is not true)
+        {
+            throw new AiGatewayException("AI Mode integration is disabled.");
+        }
+
         var boundedContext = BoundContext(context);
         var modelContext = AliasOptionIds(boundedContext);
         var systemPrompt =

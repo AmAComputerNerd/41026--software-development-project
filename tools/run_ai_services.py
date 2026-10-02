@@ -33,6 +33,7 @@ CORPUS_SOURCES = (
     Path("docs/architecture/data-flows.md"),
     Path("student-5/README.md"),
     Path("student-3/README.md"),
+    Path("student-2/README.md"),
     Path("student-3/docs/deadline-help.md"),
     Path("student-1/README.md"),
     Path("student-4/README.md"),
@@ -100,6 +101,11 @@ def parse_args(root_environment: dict[str, str]) -> argparse.Namespace:
         "--student-3-port",
         type=int,
         default=5103,
+    )
+    parser.add_argument(
+        "--student-2-port",
+        type=int,
+        default=5102,
     )
     parser.add_argument(
         "--student-1-port",
@@ -212,8 +218,10 @@ def main() -> int:
         args.rag_port,
         args.ai_mode_port,
         args.student_1_port,
+        args.student_2_port,
         args.student_3_port,
         args.student_4_port,
+        args.student_5_port,
     )
     if len(set(ports)) != len(ports):
         print("Configured service ports must be distinct.", file=sys.stderr)
@@ -258,6 +266,7 @@ def main() -> int:
                     "ASPNETCORE_URLS": f"http://127.0.0.1:{args.mcp_port}",
                     "Student5__BaseUrl": f"http://127.0.0.1:{args.student_5_port}",
                     "Student3__BaseUrl": f"http://127.0.0.1:{args.student_3_port}",
+                    "Student2__BaseUrl": f"http://127.0.0.1:{args.student_2_port}",
                     "Student1__BaseUrl": f"http://127.0.0.1:{args.student_1_port}",
                     "Student4__BaseUrl": f"http://127.0.0.1:{args.student_4_port}",
                 },

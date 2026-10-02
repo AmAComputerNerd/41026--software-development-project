@@ -103,7 +103,7 @@ python tools/agentic_loop.py
 Select a target owner (`student-1` through `student-5`, `shared`),
 `docker-compose`, `MCP`, `RAG`, or `Run All`.
 
-MCP mode invokes the live Student 3 deadline tool. RAG mode submits one
-documented Deadline Tracker question and one unrelated question through the
-Student 3 backend. The RAG transcript captures source citations, confidence,
-and the required insufficient-context result under `logs/rag/`.
+MCP mode invokes the selected feature's live tool, including Student 2's
+automation-health review. RAG mode submits one grounded and one unrelated
+question through the selected feature backend. The RAG transcript captures
+source citations, confidence, and the required insufficient-context result.

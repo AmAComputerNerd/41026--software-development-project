@@ -73,6 +73,13 @@ public static partial class ChatEndpoints
         {
             upstreamResponse = await httpClient.SendAsync(upstreamRequest, cancellationToken);
         }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            LogUpstreamRequestFailure(logger, model, "OpenRouter request timed out.");
+            return Results.Problem(
+                "OpenRouter request timed out.",
+                statusCode: StatusCodes.Status504GatewayTimeout);
+        }
         catch (HttpRequestException ex)
         {
             LogUpstreamRequestFailure(logger, model, ex.Message);

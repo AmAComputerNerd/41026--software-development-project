@@ -4,6 +4,7 @@ import { RouterLink } from 'vue-router'
 import { automationDefinitions, getAutomationDefinition } from '@/automations/registry'
 import { currentStudentId } from '@/config'
 import { deleteAutomation, getAutomations, updateAutomation } from '@/api/automations'
+import IntegrationPanel from '@/components/IntegrationPanel.vue'
 import type { Automation } from '@/types/automation'
 
 const automations = ref<Automation[]>([])
@@ -88,6 +89,8 @@ async function remove(automation: Automation) {
         <strong>{{ typeCount.count }}</strong><span class="nb-mono">{{ typeCount.pluralLabel }}</span>
       </div>
     </div>
+
+    <IntegrationPanel />
 
     <div class="nb-view-controls">
       <div class="nb-chips">

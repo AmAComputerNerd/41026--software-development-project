@@ -34,7 +34,7 @@ builder.Services
     {
         var options = services.GetRequiredService<IOptions<AiGatewayOptions>>().Value;
         client.BaseAddress = new Uri($"{options.BaseUrl.TrimEnd('/')}/", UriKind.Absolute);
-        client.Timeout = TimeSpan.FromSeconds(90);
+        client.Timeout = TimeSpan.FromSeconds(180);
     });
 builder.Services
     .AddHealthChecks()

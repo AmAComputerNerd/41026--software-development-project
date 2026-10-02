@@ -14,6 +14,8 @@ STUDENT_3_ITEM_FIELDS = {"id", "title", "dueDate", "priority", "status", "course
 
 STUDENT_1_TOOL = "notifications_broadcast_alert"
 STUDENT_1_INTEGRATION_PATH = "/api/notifications/mcp/broadcast"
+STUDENT_2_TOOL = "automations_review_health"
+STUDENT_2_INTEGRATION_PATH = "/api/integrations/mcp/automation-health"
 
 
 def _resolve_base_url(repo_root: Path, owner: str | None = None) -> str | None:
@@ -24,6 +26,14 @@ def _resolve_base_url(repo_root: Path, owner: str | None = None) -> str | None:
         compose = load_compose(repo_root)
         port = get_service_host_port(compose, "student-1-backend")
         return f"http://localhost:{port or 5101}"
+
+    if owner == "student-2":
+        override = os.getenv("MCP_VALIDATION_BASE_URL_STUDENT_2") or os.getenv("API_BASE_URL_STUDENT_2")
+        if override:
+            return override.rstrip("/")
+        compose = load_compose(repo_root)
+        port = get_service_host_port(compose, "student-2-backend")
+        return f"http://localhost:{port or 5102}"
 
     override = os.getenv("MCP_VALIDATION_BASE_URL") or os.getenv("API_BASE_URL_STUDENT_3")
     if override:
@@ -253,6 +263,70 @@ def _validate_static_contract_student_3(repo_root: Path) -> tuple[bool, str]:
     )
 
 
+def _validate_static_contract_student_2(repo_root: Path) -> tuple[bool, str]:
+    tool_path = repo_root / "ai-services" / "mcp-server" / "McpServer" / "Tools" / "AutomationTools.cs"
+    integration_path = repo_root / "student-2" / "backend" / "Api" / "Endpoints" / "IntegrationEndpoints.cs"
+    client_path = repo_root / "student-2" / "backend" / "Api" / "Services" / "McpAutomationClient.cs"
+    required_paths = [tool_path, integration_path, client_path]
+    missing = [str(path.relative_to(repo_root)) for path in required_paths if not path.is_file()]
+    if missing:
+        return False, f"Missing Student 2 MCP integration artifacts: {', '.join(missing)}."
+
+    required_fragments = {
+        tool_path: [f'Name = "{STUDENT_2_TOOL}"', "UseStructuredContent = true", "CreateReport"],
+        integration_path: [STUDENT_2_INTEGRATION_PATH, "/internal/ai-context/automation-health"],
+        client_path: ["McpClient.CreateAsync", f'"{STUDENT_2_TOOL}"', "HttpTransportMode.StreamableHttp"],
+    }
+    missing_fragments = [
+        f"{path.relative_to(repo_root)}: {fragment}"
+        for path, fragments in required_fragments.items()
+        for fragment in fragments
+        if fragment not in path.read_text(encoding="utf-8")
+    ]
+    if missing_fragments:
+        return False, "Student 2 MCP contract evidence is incomplete: " + "; ".join(missing_fragments)
+
+    return True, (
+        f"Static contract: {STUDENT_2_TOOL} validates a 1-90 day window, reads only Student 2's "
+        "bounded health projection, and returns structured metrics with a human-readable assessment."
+    )
+
+
+def _validate_live_contract_student_2(base_url: str) -> tuple[bool, str]:
+    url = f"{base_url}{STUDENT_2_INTEGRATION_PATH}"
+    try:
+        response = requests.post(url, json={"days": 30}, timeout=REQUEST_TIMEOUT_SECONDS)
+        invalid_response = requests.post(url, json={"days": 0}, timeout=REQUEST_TIMEOUT_SECONDS)
+    except requests.exceptions.ConnectionError:
+        return False, f"Student 2 backend is not reachable at {base_url}."
+    except requests.exceptions.Timeout:
+        return False, "Student 2 MCP validation timed out."
+    except requests.RequestException as exc:
+        return False, f"Student 2 MCP validation failed: {type(exc).__name__}."
+
+    if response.status_code != 200:
+        return False, f"POST {STUDENT_2_INTEGRATION_PATH} returned HTTP {response.status_code}."
+    try:
+        payload = response.json()
+    except ValueError:
+        return False, "Student 2 MCP integration returned a non-JSON response."
+
+    data = payload.get("data") or {}
+    metrics = data.get("metrics") or {}
+    expected_metrics = {"enabledAutomations", "totalRuns", "successfulRuns", "failedRuns", "runningRuns"}
+    if payload.get("status") != "success" or payload.get("tool") != STUDENT_2_TOOL:
+        return False, "Student 2 MCP integration returned an unexpected status or tool."
+    if not data.get("summary") or not expected_metrics.issubset(metrics):
+        return False, "Student 2 MCP integration did not return a summary and health metrics."
+    if invalid_response.status_code != 400:
+        return False, f"Student 2 MCP boundary expected HTTP 400, received {invalid_response.status_code}."
+
+    return True, (
+        f"Live invocation returned health '{data.get('health')}' with summary '{data['summary']}' "
+        f"and {metrics.get('totalRuns')} recent run(s). Boundary probe days=0 returned HTTP 400."
+    )
+
+
 def _validate_live_contract_student_3(base_url: str) -> tuple[bool, str]:
     url = f"{base_url}{STUDENT_3_INTEGRATION_PATH}"
     try:
@@ -332,6 +406,18 @@ def collect(owner: str | None, repo_root: Path) -> tuple[bool, str]:
             return False, f"{static_evidence} Live validation failed: {live_evidence}"
 
         return True, f"STUDENT-1 MCP VALIDATION PASSED. {static_evidence} {live_evidence}"
+
+    if owner == "student-2":
+        static_ok, static_evidence = _validate_static_contract_student_2(repo_root)
+        if not static_ok:
+            return False, static_evidence
+        base_url = _resolve_base_url(repo_root, owner)
+        if not base_url:
+            return False, "No Student 2 backend URL is available."
+        live_ok, live_evidence = _validate_live_contract_student_2(base_url)
+        if not live_ok:
+            return False, f"{static_evidence} Live validation failed: {live_evidence}"
+        return True, f"STUDENT-2 MCP VALIDATION PASSED. {static_evidence} {live_evidence}"
 
     # Default to Student 3
     static_ok, static_evidence = _validate_static_contract_student_3(repo_root)
