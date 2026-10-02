@@ -74,7 +74,7 @@ builder.Services
     .WithHttpTransport(options => options.SessionMode = HttpServerSessionMode.Stateless)
     .WithTools<DeadlineTools>()
     .WithTools<NotificationTools>()
-    .WithTools<GradesTools>();
+    .WithTools<GradesTools>()
     .WithTools<AccountTools>();
 builder.Services
     .AddHealthChecks()
