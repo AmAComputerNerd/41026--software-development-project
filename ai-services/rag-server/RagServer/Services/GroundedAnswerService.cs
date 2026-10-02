@@ -12,14 +12,11 @@ public sealed class GroundedAnswerService(HttpClient httpClient, ProjectCorpus c
 
     public async Task<RagAnswerResponse> AnswerAsync(
         string question,
-        CancellationToken cancellationToken,
-        string scope = "all")
+        string scope,
+        CancellationToken cancellationToken)
     {
-        var sourcePrefix = scope.Equals("student-4", StringComparison.OrdinalIgnoreCase)
-            ? "student-4/"
-            : null;
-        var consideredChunks = corpus.CountChunks(sourcePrefix);
-        var retrieved = corpus.Retrieve(question, sourcePrefix);
+        var retrieved = corpus.Retrieve(question, scope);
+        var consideredChunks = corpus.GetChunkCount(scope);
         if (retrieved.Count == 0)
         {
             return new RagAnswerResponse(

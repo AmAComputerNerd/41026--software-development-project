@@ -234,6 +234,10 @@ Each of those database services is attached only to its internal `student-N-data
   never participate in Student 3 readiness.
 - MCP accesses Student 3 only through its bounded host-published HTTP API; RAG
   does not access feature databases.
+- RAG feature scopes retrieve only their `student-x/` sources plus explicitly
+  shared sources (`shared/`, `AGENTS.md`, the architecture data flows and course
+  policies). `shared` excludes student-specific sources; `all` retains
+  full-corpus retrieval. Student 3 also indexes its Deadline Tracker help guide.
 
 ---
 

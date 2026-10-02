@@ -30,8 +30,9 @@ const navLinks = [
       >
         {{ link.label }}
       </RouterLink>
-      <IntegrationAssistant />
     </nav>
+
+    <IntegrationAssistant />
 
     <main class="nb-main">
       <RouterView v-slot="{ Component, route: currentRoute }">

@@ -8,6 +8,13 @@ namespace RagServer.Services;
 
 public sealed partial class ProjectCorpus
 {
+    private static readonly FrozenSet<string> SharedSourceIds = new[]
+    {
+        "AGENTS.md",
+        "docs/architecture/data-flows.md",
+        "docs/knowledge-base/course_policies.md"
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+
     private static readonly FrozenSet<string> StopWords = new[]
     {
         "about", "after", "also", "and", "are", "can", "does", "for", "from",
@@ -39,11 +46,9 @@ public sealed partial class ProjectCorpus
 
     public int ChunkCount => _chunks.Count;
 
-    public int CountChunks(string? sourcePrefix) =>
-        _chunks.Count(chunk => sourcePrefix is null ||
-            chunk.SourceId.StartsWith(sourcePrefix, StringComparison.Ordinal));
+    public int GetChunkCount(string scope) => GetEligibleChunks(scope).Count();
 
-    public IReadOnlyList<RetrievedChunk> Retrieve(string question, string? sourcePrefix = null)
+    public IReadOnlyList<RetrievedChunk> Retrieve(string question, string scope = "all")
     {
         var queryTerms = Tokenize(question).Distinct().ToArray();
         if (queryTerms.Length == 0)
@@ -52,9 +57,7 @@ public sealed partial class ProjectCorpus
         }
 
         var totalQueryWeight = queryTerms.Sum(InverseDocumentFrequency);
-        var matches = _chunks
-            .Where(chunk => sourcePrefix is null ||
-                chunk.SourceId.StartsWith(sourcePrefix, StringComparison.Ordinal))
+        var matches = GetEligibleChunks(scope)
             .Select(chunk =>
             {
                 var matchedWeight = queryTerms
@@ -79,6 +82,13 @@ public sealed partial class ProjectCorpus
 
         return matches;
     }
+
+    private IEnumerable<CorpusChunk> GetEligibleChunks(string scope) =>
+        _chunks.Where(chunk =>
+            scope.Equals("all", StringComparison.OrdinalIgnoreCase) ||
+            chunk.SourceId.StartsWith($"{scope}/", StringComparison.OrdinalIgnoreCase) ||
+            chunk.SourceId.StartsWith("shared/", StringComparison.OrdinalIgnoreCase) ||
+            SharedSourceIds.Contains(chunk.SourceId));
 
     private double InverseDocumentFrequency(string term)
     {
