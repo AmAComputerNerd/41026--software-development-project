@@ -17,8 +17,7 @@ public sealed partial class MailKitEmailSender(
         string subject,
         string host,
         int port);
-    
-    
+
     [LoggerMessage(
         EventId = 1,
         Level = LogLevel.Information,

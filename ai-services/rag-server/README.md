@@ -61,6 +61,6 @@ python tools/run_ai_services.py
 ```
 
 The RAG endpoint is `http://127.0.0.1:5003/api/answers` by default. The
-launcher copies the three curated sources into an isolated temporary corpus
+launcher copies the curated sources into an isolated temporary corpus
 and configures RAG to call host AI Mode at `http://127.0.0.1:5001`.
 Restart the launcher after changing sources to rebuild the startup index.
