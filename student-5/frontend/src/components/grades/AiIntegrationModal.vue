@@ -61,7 +61,7 @@ async function handleMcpWeightings() {
   mcpError.value = null
   mcpResult.value = null
   try {
-    const response = await getMcpWeightings(mcpWeight.value, mcpLimit.value)
+    const response = await getMcpWeightings(mcpWeight.value / 100, mcpLimit.value)
     mcpResult.value = response
   } catch (err) {
     mcpError.value = err instanceof Error ? err.message : 'MCP integration failed.'
@@ -237,7 +237,7 @@ const tabs = [
                   <span>STATUS: {{ mcpResult.status.toUpperCase() }}</span>
                 </div>
                 <div v-if="mcpResult.data" class="mcp-results__data">
-                  <p class="nb-mono">WEIGHT THRESHOLD: {{ mcpResult.data.weight }}%</p>
+                  <p class="nb-mono">WEIGHT THRESHOLD: {{ (mcpResult.data.weight * 100).toFixed(0) }}%</p>
                   <p class="nb-mono">ITEMS FOUND: {{ mcpResult.data.count }}</p>
                   <table class="mcp-results__table">
                     <thead>
@@ -250,7 +250,7 @@ const tabs = [
                     <tbody>
                       <tr v-for="item in mcpResult.data.items" :key="item.assignmentId">
                         <td>{{ item.name }}</td>
-                        <td class="nb-mono">{{ item.weight ?? '—' }}</td>
+                        <td class="nb-mono">{{ item.weight != null ? (item.weight * 100).toFixed(0) : '—' }}</td>
                         <td class="nb-mono">{{ item.maxMark ?? '—' }}</td>
                       </tr>
                       <tr v-if="mcpResult.data.items.length === 0">
