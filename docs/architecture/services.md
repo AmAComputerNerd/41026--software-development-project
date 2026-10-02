@@ -178,12 +178,19 @@ See [`student-2/README.md`](../../student-2/README.md) for the full contract.
 - Stores user, student, and teacher profile records with hashed passwords.
 - Issues password-reset emails through SMTP; development uses the `mailhog` container (SMTP `1025`, web UI `http://localhost:8025`).
 - Generates AI profile summaries through the `ai-mode` gateway.
+- Provides read-only account readiness findings through local MCP and
+  documentation-grounded Account Help through local RAG. Both are accessed
+  from the **03 KNOWLEDGE** page (`/account/knowledge`) through this backend, optional for readiness, and
+  disabled in CI.
 - Dispatches real-time push notifications to `student-1-backend` upon password changes, password resets, profile updates, and AI profile summary generation.
 - Delegates all persistence over HTTP to `student-4-database`, which exclusively owns the `student-4-db` volume on the private `student-4-data` Docker network.
 
 ### Key Endpoints
 - `GET|POST /api/users`, `GET|PUT|DELETE /api/users/{userId}` — User records.
 - `POST /api/users/{userId}/profile-summary` — AI profile summary.
+- `POST /api/users/{userId}/mcp-readiness` — MCP account readiness findings.
+- `POST /api/users/help/answers` — Account-scoped RAG answers with citations
+  and confidence; unsupported questions return insufficient context.
 - `GET|PUT /api/students/{userId}` & `GET|PUT /api/teachers/{userId}` — Role profiles.
 - `POST /api/auth/login`, `POST /api/auth/change-password`, `DELETE /api/auth/delete-account` — Account management.
 - `POST /api/auth/forgot-password` & `POST /api/auth/reset-password` — Password reset.

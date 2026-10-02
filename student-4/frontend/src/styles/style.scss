@@ -240,7 +240,8 @@
   cursor: not-allowed;
 }
 
-.nb-profile-page {
+.nb-profile-page,
+.nb-knowledge-page {
   max-width: 800px;
   margin: 0 auto;
 }
@@ -309,6 +310,7 @@
 
 .nb-profile__section {
   margin-bottom: 24px;
+  padding: var(--nb-space-5);
 }
 
 .nb-profile__section-title {
@@ -324,7 +326,7 @@
 
 .nb-profile__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 20px;
 }
 

@@ -81,6 +81,12 @@ jobs:
             )) and
             (.services["student-3-backend"].environment.McpServer__Enabled == "false") and
             (.services["student-3-backend"].environment.RagServer__Enabled == "false") and
+            (.services["student-4-backend"].environment.McpServer__Enabled == "false") and
+            (.services["student-4-backend"].environment.RagServer__Enabled == "false") and
+            (.services["student-4-backend"].environment.RagServer__BaseUrl |
+              startswith("http://host.docker.internal:")) and
+            (.services["student-4-backend"].environment.McpServer__BaseUrl |
+              startswith("http://host.docker.internal:")) and
             (.services["student-3-backend"].environment.McpServer__BaseUrl |
               startswith("http://host.docker.internal:")) and
             (.services["student-3-backend"].environment.RagServer__BaseUrl |

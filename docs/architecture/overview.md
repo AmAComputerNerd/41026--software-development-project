@@ -160,7 +160,7 @@ flowchart TD
 - **`shared-shell`** (Port 8080): Vue 3 shell dashboard and Nginx reverse proxy routing web requests and API paths.
 - **`shared-backend`** (Port 5110): Exclusive Canvas LMS API client with 3-minute in-memory caching and HTML sanitization.
 - **`ai-mode`** (Host 5001): Non-containerised chat completions gateway proxying requests to OpenRouter LLMs.
-- **`mcp-server`** (Host 5002): Non-containerised MCP server exposing bounded tools; Student 3 reaches it through `host.docker.internal`.
+- **`mcp-server`** (Host 5002): Non-containerised MCP server exposing bounded tools; Students 1, 3, and 4 reach it through `host.docker.internal`.
 - **`rag-server`** (Host 5003): Non-containerised grounded-answer service using curated project documentation and AI Mode through its loopback-only port 5001.
 - **`mailhog`** (SMTP: 1025 / Web UI: 8025): Local SMTP mock service for developer email verification.
 
@@ -234,6 +234,10 @@ Each of those database services is attached only to its internal `student-N-data
   never participate in Student 3 readiness.
 - MCP accesses Student 3 only through its bounded host-published HTTP API; RAG
   does not access feature databases.
+- RAG feature scopes retrieve only their `student-x/` sources plus explicitly
+  shared sources (`shared/`, `AGENTS.md`, the architecture data flows and course
+  policies). `shared` excludes student-specific sources; `all` retains
+  full-corpus retrieval. Student 3 also indexes its Deadline Tracker help guide.
 
 ---
 
@@ -263,6 +267,24 @@ Notifications carry structured action metadata enabling cross-service operations
 - `student-4-authentication` provides login, password change, account deletion, and email password-reset workflows; both authentication and profile APIs access `student-4-database` exclusively over HTTP.
 - Development password-reset messages are delivered to MailHog, whose web inbox is exposed on port `8025`.
 - `student-4-backend` can generate a replacement profile summary through `ai-mode` using the stored user and student/teacher profile context.
+- Student 4's **03 KNOWLEDGE** page (`/account/knowledge`) calls `POST /api/users/{userId}/mcp-readiness` to
+  invoke the shared local `accounts_check_readiness` MCP tool. MCP calls back
+  through `/internal/ai-context/accounts/{userId}/readiness` on Student 4's
+  backend. It evaluates profile completeness and role setup through its
+  private database API, probes Canvas through the shared gateway's course
+  API, and checks notification readiness over HTTP. Results contain four
+  actionable findings and an overall `ready`, `needs_attention`, or
+  `unavailable` category, not duplicated profile values. The tool cannot
+  mutate accounts or return credentials. These optional checks do not gate
+  backend readiness; MCP is disabled in CI.
+- Student 4's **Account Help / RAG** panel on **03 KNOWLEDGE** routes documentation questions
+  through `POST /api/users/help/answers` to local RAG on host port `5003`.
+  The backend fixes scope to `student-4`; RAG retrieves only the account
+  README and account-help guide, then sends excerpts through local AI Mode.
+  Answers display server-derived citations and retrieval-based confidence.
+  No relevant context bypasses the model and returns insufficient context.
+  RAG never reads private account data or executes account actions, remains
+  optional for readiness, and is explicitly disabled in Student 4 CI.
 
 ---
 

@@ -6,13 +6,14 @@ retrieves relevant sections with deterministic weighted lexical search, and
 sends only those sections to `ai-mode` for grounded generation through
 OpenRouter.
 
+`POST /api/answers` accepts a question and a feature scope. Responses
 ```mermaid
 flowchart TD
     Client["Client / student-1 / student-3"] -- "POST /api/answers<br>{ question, scope }" --> RAG["rag-server (:5003)"]
 
     subgraph Indexing["Corpus & Retrieval Pipeline"]
-        Corpus[("Curated Markdown Corpus<br>(AGENTS.md, data-flows.md, student-3/README.md)")]
-        LexicalSearch["Deterministic Weighted Lexical Search"]
+        Corpus[("Curated Markdown Corpus<br>Feature help, READMEs and shared sources")]
+        LexicalSearch["Scope Filter + Weighted Lexical Search"]
         ContextCheck{"Context Match Found?"}
     end
 
@@ -26,14 +27,32 @@ flowchart TD
     OpenRouter --> Answer["Return Grounded Answer + Citations"]
 ```
 
-`POST /api/answers` accepts a question and the `student-3` scope. Responses
+`POST /api/answers` accepts a question and an optional scope: `student-1`
+through `student-5`, `shared`, or `all`. Omitting the scope defaults to
+`student-3`; an explicitly empty scope is treated as `all`. Feature scopes retrieve
+only their `student-x/` sources and explicitly shared documentation. Shared
+sources are paths under `shared/`, `AGENTS.md`,
+`docs/architecture/data-flows.md`, and
+`docs/knowledge-base/course_policies.md`. The `shared` scope excludes
+student-specific sources; `all` searches the full curated corpus. Responses
 include source citations, a deterministic confidence category, and retrieval
-counts. Questions without a relevant corpus match return
+counts. Considered chunks count only sources eligible for the selected scope.
+Questions without a relevant corpus match return
 `insufficient_context` without calling the model.
 
-The initial corpus contains `AGENTS.md`, `docs/architecture/data-flows.md`, and
-`student-3/README.md`. Adding a vector store or embedding service is deferred
+The launcher corpus contains `AGENTS.md`, `docs/architecture/data-flows.md`,
+`student-1/README.md`, `student-3/README.md`,
+`student-3/docs/deadline-help.md`, `student-4/docs/account-help.md` and
+`docs/knowledge-base/course_policies.md`. Adding a vector store or embedding service is deferred
 until corpus size or retrieval quality justifies the additional infrastructure.
+
+For `scope: "student-4"`, retrieval is restricted to the account slice's
+`student-4/` documents. Retrieval counts reflect only those eligible chunks.
+Other existing scopes retain their current shared-corpus retrieval behavior.
+Student 4's frontend accesses this route only through its own backend:
+`POST /api/users/help/answers`. Citations are built from retrieved chunks,
+not from model-supplied source names. Account records and credentials are
+not included in the documentation corpus or added to the question.
 
 Run it together with MCP from the repository root:
 
@@ -42,5 +61,6 @@ python tools/run_ai_services.py
 ```
 
 The RAG endpoint is `http://127.0.0.1:5003/api/answers` by default. The
-launcher copies the three curated sources into an isolated temporary corpus
+launcher copies the curated sources into an isolated temporary corpus
 and configures RAG to call host AI Mode at `http://127.0.0.1:5001`.
+Restart the launcher after changing sources to rebuild the startup index.
