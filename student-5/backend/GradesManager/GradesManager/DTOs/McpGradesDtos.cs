@@ -1,6 +1,6 @@
 ﻿namespace GradesManager.DTOs
 {
-    public sealed record WeightingsRequestDto(double Weight = 40, int Limit = 5);
+    public sealed record WeightingsRequestDto(double Weight = 0.4, int Limit = 5);
 
     public sealed record McpGradesToolResultDto(
         string Status,

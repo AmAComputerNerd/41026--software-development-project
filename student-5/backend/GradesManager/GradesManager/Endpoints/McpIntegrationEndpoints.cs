@@ -21,11 +21,11 @@ namespace GradesManager.Endpoints
             IMcpGradesClient mcpClient,
             CancellationToken cancellationToken)
         {
-            if (request.Weight is < 1 or > 100)
+            if (request.Weight is < 0.01 or > 1)
             {
                 return Results.ValidationProblem(new Dictionary<string, string[]>
                 {
-                    ["weight"] = ["Weight must be between 1 and 100."]
+                    ["weight"] = ["Weight must be between 0.01 and 1."]
                 });
             }
 
@@ -63,11 +63,11 @@ namespace GradesManager.Endpoints
                     title: "The MCP integration is disabled.");
             }
 
-            if (weight is < 1 or > 100 || limit is < 1 or > 10)
+            if (weight is < 0.01 or > 1 || limit is < 1 or > 10)
             {
                 return Results.BadRequest(new
                 {
-                    error = "Weight must be between 1 and 100, and limit must be between 1 and 10."
+                    error = "Weight must be between 0.01 and 1, and limit must be between 1 and 10."
                 });
             }
 

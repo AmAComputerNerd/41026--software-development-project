@@ -10,15 +10,15 @@ public sealed class GradesTools(IGradesClient gradesClient)
     [McpServerTool(Name = "grades_list_weightings", UseStructuredContent = true)]
     [Description("Lists grade weightings for a student above specified number.")]
     public async Task<GradeWeightingsToolResult> ListWeightingsAsync(
-        [Description("The weight to filter by.")] double weight = 40,
+        [Description("The weight to filter by.")] double weight = 0.4,
         [Description("The maximum number of weightings to return.")] int limit = 10,
         CancellationToken cancellationToken = default)
     {
-        if (weight is < 1 or > 100)
+        if (weight is < 0.01 or > 1)
         {
             return GradeWeightingsToolResult.Invalid(
                 "invalid_weight",
-                "weight must be between 1 and 100.");
+                "weight must be between 0.01 and 1.");
         }
 
         if (limit is < 1 or > 10)
