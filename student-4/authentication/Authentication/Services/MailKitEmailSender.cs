@@ -17,6 +17,13 @@ public sealed partial class MailKitEmailSender(
         string subject,
         string host,
         int port);
+    
+    
+    [LoggerMessage(
+        EventId = 1,
+        Level = LogLevel.Information,
+        Message = "Email configuration loaded: Host={Host}, Port={Port}, UseSsl={UseSsl}, Username={Username}, FromAddress={FromAddress}, FromName={FromName}")]
+    public static partial void LogEmailConfiguration(ILogger logger, string host, int port, bool useSsl, string username, string fromAddress, string fromName);
 
     private readonly EmailOptions _options = options.Value;
     private readonly ILogger<MailKitEmailSender> _logger = logger;

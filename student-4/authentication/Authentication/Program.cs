@@ -114,13 +114,7 @@ using (var scope = app.Services.CreateScope())
 {
     var emailOptions = scope.ServiceProvider.GetRequiredService<IOptions<EmailOptions>>().Value;
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    logger.LogInformation("Email configuration loaded: Host={Host}, Port={Port}, UseSsl={UseSsl}, Username={Username}, FromAddress={FromAddress}, FromName={FromName}",
-        emailOptions.Smtp.Host,
-        emailOptions.Smtp.Port,
-        emailOptions.Smtp.UseSsl,
-        emailOptions.Smtp.Username ?? "(none)",
-        emailOptions.FromAddress,
-        emailOptions.FromName);
+    MailKitEmailSender.LogEmailConfiguration(logger, emailOptions.Smtp.Host, emailOptions.Smtp.Port, emailOptions.Smtp.UseSsl, emailOptions.Smtp.Username ?? "(none)", emailOptions.FromAddress, emailOptions.FromName);
 }
 
 #region Pipeline
