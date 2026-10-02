@@ -12,7 +12,7 @@ namespace GradesManager.Endpoints
             this IEndpointRouteBuilder endpoints)
         {
             endpoints.MapPost("/api/integrations/mcp/assignment-weightings", GetWeightingsThroughMcp);
-            endpoints.MapGet("/internal/ai-context/upcoming-deadlines", GetWeightingsContext);
+            endpoints.MapGet("/internal/ai-context/grades-weightings", GetWeightingsContext);
             return endpoints;
         }
 
