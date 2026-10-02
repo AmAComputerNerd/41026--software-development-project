@@ -31,6 +31,7 @@ SERVICE_SPECS = (
 CORPUS_SOURCES = (
     Path("AGENTS.md"),
     Path("docs/architecture/data-flows.md"),
+    Path("student-5/README.md"),
     Path("student-3/README.md"),
     Path("student-1/README.md"),
     Path("docs/knowledge-base/course_policies.md"),
@@ -86,6 +87,11 @@ def parse_args(root_environment: dict[str, str]) -> argparse.Namespace:
         "--ai-mode-port",
         type=int,
         default=configured_port("AI_MODE_HOST_PORT", root_environment),
+    )
+    parser.add_argument(
+        "--student-5-port",
+        type=int,
+        default=5105,
     )
     parser.add_argument(
         "--student-3-port",
@@ -238,6 +244,7 @@ def main() -> int:
                 "mcp": {
                     **base_environment,
                     "ASPNETCORE_URLS": f"http://127.0.0.1:{args.mcp_port}",
+                    "Student5__BaseUrl": f"http://127.0.0.1:{args.student_5_port}",
                     "Student3__BaseUrl": f"http://127.0.0.1:{args.student_3_port}",
                     "Student1__BaseUrl": f"http://127.0.0.1:{args.student_1_port}",
                 },
