@@ -44,7 +44,7 @@ public sealed class NotificationTools(INotificationClient notificationClient)
                 "message must be between 5 and 500 characters.");
         }
 
-        var normalizedUrgency = urgency?.Trim() ?? string.Empty;
+        var normalizedUrgency = urgency is not null ? urgency.Trim() : string.Empty;
         if (!ValidUrgencies.Contains(normalizedUrgency))
         {
             return NotificationToolResult.Invalid(

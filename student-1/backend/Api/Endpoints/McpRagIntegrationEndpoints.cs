@@ -8,10 +8,8 @@ public static class McpRagIntegrationEndpoints
 {
     public static IEndpointRouteBuilder MapMcpRagIntegrationEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        var group = endpoints.MapGroup("/api/notifications");
-
-        group.MapPost("/mcp/broadcast", BroadcastMcpAlert);
-        group.MapPost("/rag/query", QueryRagKnowledge);
+        endpoints.MapPost("/api/notifications/mcp/broadcast", BroadcastMcpAlert);
+        endpoints.MapPost("/api/notifications/rag/query", QueryRagKnowledge);
 
         return endpoints;
     }
