@@ -34,8 +34,7 @@ public sealed class RagClient(HttpClient httpClient, IOptions<RagServerOptions> 
                     (answer.Confidence is not ("low" or "medium" or "high") ||
                      answer.Citations.Count == 0 ||
                      answer.Citations.Any(citation => citation is null ||
-                         string.IsNullOrWhiteSpace(citation.SourceId) ||
-                         !citation.SourceId.StartsWith("student-4/", StringComparison.Ordinal)))) ||
+                         string.IsNullOrWhiteSpace(citation.SourceId)))) ||
                 (answer.Status == "insufficient_context" &&
                     (answer.Confidence != "insufficient" || answer.Citations.Count != 0)) ||
                 answer.Status is not ("success" or "insufficient_context"))
