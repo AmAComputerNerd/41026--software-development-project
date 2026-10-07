@@ -1,32 +1,23 @@
 Feature: Deadlines and Task Tracker
 
-This service lets a student track coursework tasks against their courses so
-nothing gets missed. Core functionality:
+Help students organise coursework, see upcoming deadlines and turn assignments
+into manageable plans. This slice includes the task-tracker UI, public API and
+private persistence service.
 
-- Courses: list/read courses (Code, Name) that tasks can be linked to. Courses
-  can be seeded locally or imported from Canvas.
-- Tasks: create/read/update/delete tasks with a Title, optional
-  Description, DueDate, Priority (Low/Medium/High), Status
-  (Todo/InProgress/Completed), and optional links to a Course and/or a parent
-  Task (for subtasks/checklists).
-- Filtering: list tasks filtered by Status, Priority, Course, and an
-  "overdue" flag (DueDate in the past and Status != Completed).
-- Data integrity: deleting a Course should not delete its Tasks (just
-  unlink them); deleting a parent Task should cascade to its subtasks.
-- Canvas sync: call the shared backend over HTTP to fetch active courses and
-  their assignments, then transactionally upsert one primary Task per stable
-  Canvas assignment ID. Do not persist assessments in a separate table.
-  Missing Canvas records are retained but marked inactive, and normal list
-  endpoints hide them by default.
-- Completion convention: submitted or graded Canvas assignments set the
-  linked Task to Completed. Other Canvas submission states must not change an
-  existing Task's local Status.
-- Time convention: database and API timestamps use DateTime normalized to UTC,
-  not DateTimeOffset.
-- Service communication: SharedService:BaseUrl is supplied only by Docker
-  Compose. The task tracker may run standalone, but Canvas sync is then
-  intentionally unavailable.
+Core feature scope:
+- Create, edit and remove tasks and nested sub-tasks, with optional due dates
+  and course links, priorities and completion states.
+- Find coursework through a searchable, filterable task list, monthly calendar
+  and Canvas assignment view. Completing a parent completes its descendants.
+- Sync Canvas courses and assignments without duplicates, preserving local
+  planning edits while keeping official assignment details read-only.
+- Generate assignment sub-task plans and editable task-description drafts
+  through AI Mode.
+- Send due-soon reminders through the shared notification service.
+- Provide an optional AI assistant: MCP reads live upcoming deadlines and opens
+  tasks; RAG explains documented feature behaviour with sources and confidence,
+  not live task data. Ordinary task views remain usable without these services.
 
-Out of scope for this service: authentication/user accounts, notifications
-or reminders, direct Canvas authentication, direct access to the shared
-service's database, and any UI - this is a backend-only API for now.
+Use the accompanying README and architectural documentation for detailed
+contracts and service boundaries. Keep recommendations focused on evidenced
+gaps in this feature, not new account management or unrelated functionality.
