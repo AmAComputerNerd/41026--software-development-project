@@ -1,0 +1,7 @@
+[student-4/database][PLAN] Loading authoritative codebase documentation and feature context
+[student-4/database][PLAN] Loaded context from 'README.md (fallback - no context_prompt.txt yet)' and docs: AGENTS.md, docs/development/database-and-migrations.md, student-4/README.md
+[student-4/database][ACT] Executing live probes, schema queries, and static inspection
+[student-4/database][ACT] Inspection failed
+
+RUNNING: student-4/database
+ACT/OBSERVE FAILED: No SQLite database file (*.db / *.sqlite) found under 'student-4'. Run the backend at least once so it creates/migrates its database, then re-run this review.
