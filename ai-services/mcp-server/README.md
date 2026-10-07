@@ -28,6 +28,14 @@ flowchart LR
 - Boundary: reads through Student 3's bounded HTTP API; it never accesses the
   Student 3 database service or volume directly
 
+### `automations_review_health`
+
+- Caller: `student-2-backend`
+- Input: `days` (`1`-`90`)
+- Output: human-readable health assessment plus aggregate execution metrics
+- Boundary: reads through Student 2's bounded HTTP API; it never accesses the
+  Student 2 database file or exposes automation IDs or message content
+
 ### `accounts_check_readiness`
 
 - Caller: `student-4-backend`, from the account profile UI

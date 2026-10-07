@@ -64,11 +64,31 @@ Quiz filling additionally requires the `ai-mode` gateway. Set
 `AiGateway:BaseUrl` to its address; student-2 never receives or stores the
 OpenRouter key.
 
+MCP and RAG run locally with AI Mode through `python tools/run_ai_services.py`.
+The Automations dashboard invokes both services through the Student 2 backend;
+the browser never calls either host service directly. Docker configures the
+backend to use `host.docker.internal`, while standalone development uses ports
+`5002` and `5003` from `appsettings.json`.
+
 ## API
 
 Automation CRUD is available under `/api/automations`. Read-only run history is
 available under `/api/automation-runs`. Swagger is available in Development at
 `http://localhost:5102/swagger`.
+
+Release 1 integration endpoints are:
+
+- `POST /api/integrations/mcp/automation-health` invokes the shared
+	`automations_review_health` tool and returns an actionable text assessment
+	with recent execution metrics.
+- `POST /api/integrations/rag/query` returns a grounded answer with citations,
+	confidence, retrieval counts, or an insufficient-context status.
+- `GET /internal/ai-context/automation-health` is the bounded read-only API
+	used by the shared MCP server. It exposes aggregate execution metrics only.
+
+AI Mode, MCP, and RAG use explicit `Enabled` flags. The Student 2 GitHub Actions
+workflow sets all three to `false`; local Docker Compose enables them and reads
+the host ports from the root `.env`.
 
 Each run-history row can be expanded to show its timestamp, result, and
 type-specific stored fields. Scheduled-post details include context, delivery

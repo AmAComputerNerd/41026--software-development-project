@@ -10,6 +10,7 @@ from core.compose_utils import get_service_host_port, load_compose
 
 STUDENT_3_INTEGRATION_PATH = "/api/integrations/rag/answers"
 STUDENT_1_INTEGRATION_PATH = "/api/notifications/rag/query"
+STUDENT_2_INTEGRATION_PATH = "/api/integrations/rag/query"
 
 
 def _resolve_base_url(repo_root: Path, owner: str | None = None) -> str | None:
@@ -20,6 +21,14 @@ def _resolve_base_url(repo_root: Path, owner: str | None = None) -> str | None:
         compose = load_compose(repo_root)
         port = get_service_host_port(compose, "student-1-backend")
         return f"http://localhost:{port or 5101}"
+
+    if owner == "student-2":
+        override = os.getenv("RAG_VALIDATION_BASE_URL_STUDENT_2") or os.getenv("API_BASE_URL_STUDENT_2")
+        if override:
+            return override.rstrip("/")
+        compose = load_compose(repo_root)
+        port = get_service_host_port(compose, "student-2-backend")
+        return f"http://localhost:{port or 5102}"
 
     override = os.getenv("RAG_VALIDATION_BASE_URL") or os.getenv("API_BASE_URL_STUDENT_3")
     if override:
@@ -152,6 +161,81 @@ def _validate_static_contract_student_3(repo_root: Path) -> tuple[bool, str]:
     )
 
 
+def _validate_static_contract_student_2(repo_root: Path) -> tuple[bool, str]:
+    required_paths = [
+        repo_root / "ai-services" / "rag-server" / "RagServer" / "Services" / "ProjectCorpus.cs",
+        repo_root / "ai-services" / "rag-server" / "RagServer" / "Services" / "GroundedAnswerService.cs",
+        repo_root / "student-2" / "backend" / "Api" / "Services" / "RagClient.cs",
+        repo_root / "student-2" / "frontend" / "src" / "api" / "integrations.ts",
+    ]
+    missing = [str(path.relative_to(repo_root)) for path in required_paths if not path.is_file()]
+    if missing:
+        return False, f"Missing Student 2 RAG integration artifacts: {', '.join(missing)}."
+
+    corpus_source = required_paths[0].read_text(encoding="utf-8")
+    answer_source = required_paths[1].read_text(encoding="utf-8")
+    frontend_source = required_paths[3].read_text(encoding="utf-8")
+    required_evidence = [
+        ("retrieval threshold", "MinimumRelevanceScore", corpus_source),
+        ("insufficient context", '"insufficient_context"', answer_source),
+        ("citations", "RagCitation", answer_source),
+        ("frontend confidence", "confidence", frontend_source),
+        ("frontend citations", "citations", frontend_source),
+    ]
+    missing_evidence = [label for label, fragment, source in required_evidence if fragment not in source]
+    if missing_evidence:
+        return False, f"Student 2 RAG contract evidence is incomplete: {', '.join(missing_evidence)}."
+    return True, (
+        "Static contract: Student 2 proxies shared RAG through its backend and preserves answer status, "
+        "confidence category, scored source citations, retrieval counts, and insufficient-context output."
+    )
+
+
+def _validate_live_contract_student_2(base_url: str) -> tuple[bool, str]:
+    url = f"{base_url}{STUDENT_2_INTEGRATION_PATH}"
+    try:
+        grounded_response = requests.post(
+            url,
+            json={"question": "How does scheduled post automation prevent duplicate Canvas messages?"},
+            timeout=max(REQUEST_TIMEOUT_SECONDS, 210),
+        )
+        insufficient_response = requests.post(
+            url,
+            json={"question": "What is the volcanic composition of exoplanet QZ-991?"},
+            timeout=max(REQUEST_TIMEOUT_SECONDS, 210),
+        )
+    except requests.exceptions.ConnectionError:
+        return False, f"Student 2 backend is not reachable at {base_url}."
+    except requests.exceptions.Timeout:
+        return False, "Student 2 RAG validation timed out."
+    except requests.RequestException as exc:
+        return False, f"Student 2 RAG validation failed: {type(exc).__name__}."
+
+    if grounded_response.status_code != 200:
+        return False, f"Grounded query returned HTTP {grounded_response.status_code}."
+    if insufficient_response.status_code != 200:
+        return False, f"Insufficient-context query returned HTTP {insufficient_response.status_code}."
+    try:
+        grounded = grounded_response.json()
+        insufficient = insufficient_response.json()
+    except ValueError:
+        return False, "Student 2 RAG integration returned a non-JSON response."
+
+    citations = grounded.get("citations")
+    if grounded.get("status") != "success" or grounded.get("confidence") not in {"high", "medium", "low"}:
+        return False, "Student 2 grounded query did not return a valid confidence category."
+    if not isinstance(citations, list) or not citations or not all("sourceId" in item and "score" in item for item in citations):
+        return False, "Student 2 grounded query did not return scored source citations."
+    if insufficient.get("status") != "insufficient_context" or insufficient.get("confidence") != "insufficient" or insufficient.get("citations") != []:
+        return False, "Student 2 unrelated query did not return the required insufficient-context result."
+
+    sources = sorted({citation["sourceId"] for citation in citations})
+    return True, (
+        f"Live grounded query returned confidence '{grounded['confidence']}' with {len(citations)} scored citation(s) "
+        f"from {sources}. Unrelated query returned insufficient context with zero citations."
+    )
+
+
 def _validate_live_contract_student_3(base_url: str) -> tuple[bool, str]:
     url = f"{base_url}{STUDENT_3_INTEGRATION_PATH}"
     try:
@@ -220,6 +304,18 @@ def collect(owner: str | None, repo_root: Path) -> tuple[bool, str]:
             return False, f"{static_evidence} Live validation failed: {live_evidence}"
 
         return True, f"STUDENT-1 RAG VALIDATION PASSED. {static_evidence} {live_evidence}"
+
+    if owner == "student-2":
+        static_ok, static_evidence = _validate_static_contract_student_2(repo_root)
+        if not static_ok:
+            return False, static_evidence
+        base_url = _resolve_base_url(repo_root, owner)
+        if not base_url:
+            return False, "No Student 2 backend URL is available."
+        live_ok, live_evidence = _validate_live_contract_student_2(base_url)
+        if not live_ok:
+            return False, f"{static_evidence} Live validation failed: {live_evidence}"
+        return True, f"STUDENT-2 RAG VALIDATION PASSED. {static_evidence} {live_evidence}"
 
     # Default to Student 3
     static_ok, static_evidence = _validate_static_contract_student_3(repo_root)

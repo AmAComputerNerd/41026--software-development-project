@@ -45,15 +45,17 @@ builder.Services
 builder.Services
     .AddOptions<AiGatewayOptions>()
     .Bind(builder.Configuration.GetSection(AiGatewayOptions.SectionName))
+    .Validate(options => options.Enabled.HasValue, "AiGateway:Enabled must be configured.")
     .Validate(
-        options => Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var uri) &&
-            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps),
-        "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL.")
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
+        "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL when AI Mode is enabled.")
     .ValidateOnStart();
 builder.Services.AddHttpClient<IAiQuizAnswerService, AiQuizAnswerService>((services, client) =>
 {
     var baseUrl = services.GetRequiredService<IOptions<AiGatewayOptions>>().Value.BaseUrl;
-    client.BaseAddress = new Uri($"{baseUrl.TrimEnd('/')}/", UriKind.Absolute);
+    client.BaseAddress = string.IsNullOrWhiteSpace(baseUrl)
+        ? null
+        : new Uri($"{baseUrl.TrimEnd('/')}/", UriKind.Absolute);
     client.Timeout = TimeSpan.FromSeconds(120);
 });
 builder.Services
@@ -69,6 +71,29 @@ builder.Services.AddHttpClient<INotificationClient, NotificationClient>((service
     var baseUrl = services.GetRequiredService<IOptions<NotificationServiceOptions>>().Value.BaseUrl;
     client.BaseAddress = new Uri($"{baseUrl.TrimEnd('/')}/", UriKind.Absolute);
     client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services
+    .AddOptions<McpServerOptions>()
+    .Bind(builder.Configuration.GetSection(McpServerOptions.SectionName))
+    .Validate(options => options.Enabled.HasValue, "McpServer:Enabled must be configured.")
+    .Validate(
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
+        "McpServer:BaseUrl must be an absolute HTTP or HTTPS URL when MCP is enabled.")
+    .ValidateOnStart();
+builder.Services
+    .AddOptions<RagServerOptions>()
+    .Bind(builder.Configuration.GetSection(RagServerOptions.SectionName))
+    .Validate(options => options.Enabled.HasValue, "RagServer:Enabled must be configured.")
+    .Validate(
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
+        "RagServer:BaseUrl must be an absolute HTTP or HTTPS URL when RAG is enabled.")
+    .ValidateOnStart();
+builder.Services.AddSingleton<IMcpAutomationClient, McpAutomationClient>();
+builder.Services.AddHttpClient<IRagClient, RagClient>((services, client) =>
+{
+    var baseUrl = services.GetRequiredService<IOptions<RagServerOptions>>().Value.BaseUrl;
+    client.BaseAddress = new Uri($"{baseUrl.TrimEnd('/')}/", UriKind.Absolute);
+    client.Timeout = TimeSpan.FromSeconds(190);
 });
 var executorTypes = typeof(IAutomationExecutor).Assembly
     .GetTypes()
@@ -104,6 +129,7 @@ app.UseCors();
 app.MapAutomationEndpoints();
 app.MapAutomationRunEndpoints();
 app.MapCanvasOptionEndpoints();
+app.MapIntegrationEndpoints();
 app.MapHealthChecks(
     "/health/live",
     new HealthCheckOptions
@@ -120,3 +146,7 @@ app.MapHealthChecks(
 await app.InitialiseDatabaseAsync();
 
 app.Run();
+
+static bool IsAbsoluteHttpUrl(string value) =>
+    Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
+    (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
