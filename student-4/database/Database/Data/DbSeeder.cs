@@ -8,8 +8,9 @@ public static class DbSeeder
 {
     private static readonly Guid Course1Id = Guid.Parse("33333333-3333-3333-3333-333333333333");
 
-    private const string StudentSeedPassword = "abc123";
-    private const string TeacherSeedPassword = "123abc";
+    // Accepted demo-account credentials, not production secrets. Remove before cloud deployment.
+    private const string StudentSeedPassword = "abc123"; // pragma: allowlist secret
+    private const string TeacherSeedPassword = "123abc"; // pragma: allowlist secret
 
     public static void SeedData(AppDbContext db)
     {

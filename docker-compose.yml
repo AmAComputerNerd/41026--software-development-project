@@ -32,7 +32,7 @@ services:
         environment:
             POSTGRES_DB: notifications_db
             POSTGRES_USER: postgres
-            POSTGRES_PASSWORD: postgres
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run python tools/setup_env.py}
         volumes:
             - student-1-postgres-data:/var/lib/postgresql/data
         restart: unless-stopped
@@ -51,7 +51,7 @@ services:
             - "5101:8080"
         environment:
             ASPNETCORE_ENVIRONMENT: Development
-            ConnectionStrings__DefaultConnection: Host=student-1-database;Port=5432;Database=notifications_db;Username=postgres;Password=postgres
+            ConnectionStrings__DefaultConnection: Host=student-1-database;Port=5432;Database=notifications_db;Username=postgres;Password=${POSTGRES_PASSWORD:?Run python tools/setup_env.py}
             Cors__AllowedOrigins__0: http://localhost:3000
             Cors__AllowedOrigins__1: http://localhost:8080
             Cors__AllowedOrigins__2: http://localhost:5173

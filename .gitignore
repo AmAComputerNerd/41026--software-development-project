@@ -18,6 +18,7 @@
 
 # Lint cache
 **/.eslintcache
+.ruff_cache/
 
 # User-specific files
 *.rsuser

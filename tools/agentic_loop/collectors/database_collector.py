@@ -34,15 +34,17 @@ def _describe_database(db_path: Path) -> str:
 
     lines = []
     for table in tables:
-        columns = cursor.execute(f'PRAGMA table_info("{table}")').fetchall()
+        quoted_table = '"' + table.replace('"', '""') + '"'
+        columns = cursor.execute(f'PRAGMA table_info({quoted_table})').fetchall()
         # cid, name, type, notnull, dflt_value, pk
         column_desc = ", ".join(
             f"{col[1]} {col[2]}{' PK' if col[5] else ''}{' NOT NULL' if col[3] else ''}"
             for col in columns
         )
-        foreign_keys = cursor.execute(f'PRAGMA foreign_key_list("{table}")').fetchall()
+        foreign_keys = cursor.execute(f'PRAGMA foreign_key_list({quoted_table})').fetchall()
         fk_desc = ", ".join(f"{fk[3]} -> {fk[2]}.{fk[4]}" for fk in foreign_keys) or "none"
-        row_count = cursor.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0]
+        # Table identifiers cannot be bound as parameters; quotes are escaped above.
+        row_count = cursor.execute(f'SELECT COUNT(*) FROM {quoted_table}').fetchone()[0]  # noqa: S608
         has_pk = any(col[5] for col in columns)
 
         lines.append(

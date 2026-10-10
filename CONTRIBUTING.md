@@ -105,6 +105,103 @@ If an AI feature returns 500 with no obvious cause, check
 
 ## Verifying your change locally
 
+### Commit-time security checks
+
+Each contributor must install the local Git hook once per clone (Python 3.10+
+required). From the repository root:
+
+```bash
+python tools/setup_precommit_security.py
+```
+
+The script creates or reuses `.local/pre-commit`, installs pre-commit and
+the scanners configured in `.pre-commit-config.yaml`, installs the Git
+hook, and runs the initial scan. No virtualenv activation is required.
+Rerunning it is safe; errors or scan findings return a nonzero exit code.
+It does not commit, stage files, or automatically add exclusions.
+
+For the manual commands below, activate the environment first:
+
+```bash
+# Linux/macOS:
+source .local/pre-commit/bin/activate
+# Windows PowerShell instead:
+# .local/pre-commit/Scripts/Activate.ps1
+```
+
+Normal `git commit` commands then run Ruff's `S` security rules on staged
+Python files, detect-secrets on staged text files, and pip-audit on the
+agentic loop's declared Python requirements and their resolved dependencies.
+pip-audit runs on every commit, including commits without Python changes.
+The checks do not modify source files and failures block the commit.
+
+The first installation downloads isolated scanner environments. Dependency
+auditing requires network access to the package index and PyPI vulnerability
+service; it sends package metadata, not application source or credentials.
+Secret verification is disabled so candidate credentials are never sent to
+external services. The `.secrets.baseline` contains only reviewed false
+positives: skill-lock integrity hashes, an EF migration identifier, CI
+placeholder tokens, and the unimplemented Canvas key placeholder.
+The two existing Student 4 demo login passwords have explicit inline
+exceptions: this is a temporary development risk acceptance, not a claim
+that those credentials are safe for cloud use. Other seeder lines and
+all CI workflows remain scanned. Remove real credentials and rotate any
+that have been exposed. Ruff's documented file-specific exceptions in `ruff.toml` cover
+reviewed local process invocation, loopback health probes, and best-effort
+console encoding setup; the other security rules remain enabled.
+
+Passing a scan does not establish that the application or cloud deployment
+is secure.
+
+#### Adding reviewed exclusions
+
+No hook command changes are needed for ordinary exceptions:
+
+- **One secret-detector false positive:** put `pragma: allowlist secret`
+  in a comment on that exact line (`#` in Python/YAML, `//` in C#).
+  Add a nearby explanation; the rest of the file stays scanned.
+- **One Ruff finding:** use `# noqa: Sxxx` on the exact line with a
+  justification. File-specific rule exceptions belong in `ruff.toml`
+  under `[lint.per-file-ignores]`, not in the hook command.
+- **Generated files that cannot carry comments:** use the reviewed
+  `.secrets.baseline`. Generate a candidate locally and audit it:
+  ```bash
+  python -m pip install detect-secrets==1.5.0
+  detect-secrets scan --baseline .secrets.baseline --no-verify > .local/secrets-candidate.baseline
+  detect-secrets audit .local/secrets-candidate.baseline
+  ```
+  Remove real findings from the source first. Only replace the committed
+  baseline after every remaining entry is reviewed as a false positive,
+  and review the diff. Baseline entries match secret hashes; a different
+  token pasted into a CI workflow is not automatically exempt.
+- **Whole-file exceptions:** use an anchored `exclude` regex on the
+  relevant hook in `.pre-commit-config.yaml`, with the reason documented.
+  Reserve this for reviewed fixtures/generated data. Do not exclude
+  `.github/workflows`, all seeders, or all migrations.
+
+Do not regenerate the baseline merely to make a failed scan pass.
+
+Keep the installed environment available; reinstall the hook if it is moved
+or removed. Git hooks are local and are not activated merely by cloning.
+Existing .NET dependency checks remain separate; these hooks do not scan
+C# or TypeScript for insecure code.
+
+For assessment evidence, retain the actual commit-time output locally along
+with the commit ID, date, scanner versions, and any findings/resolutions.
+For a readable full-repository scan transcript:
+
+```bash
+# Bash: preserve the scanner exit status while saving its output.
+set -o pipefail
+pre-commit run --all-files --verbose 2>&1 | tee .local/pre-commit-security.log
+```
+
+Review/redact logs before sharing them: secret findings can contain source
+snippets. A manual scan transcript supplements, but does not replace,
+evidence that checks executed during a commit.
+
+### Running the application
+
 ```bash
 docker compose up                       # bring the stack up
 docker compose logs -f <service>        # tail a service
