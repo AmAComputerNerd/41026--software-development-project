@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { Navbar, SERVICES } from '@better-canvas/ui-kit'
 import IntegrationAssistant from '@/components/IntegrationAssistant.vue'
 import NotificationButton from '@/components/NotificationButton.vue'
+import { useTasks } from '@/composables/useTasks'
 
 const route = useRoute()
+const { aiModeError, loadAiMode } = useTasks()
+onMounted(loadAiMode)
 const navLinks = [
   { to: { name: 'tasks' }, label: '01 TASKS', match: 'tasks' },
   { to: { name: 'calendar' }, label: '02 CALENDAR', match: 'calendar' },
@@ -35,6 +39,10 @@ const navLinks = [
     <IntegrationAssistant />
 
     <main class="nb-main">
+      <div v-if="aiModeError" class="nb-alert nb-alert--error" role="alert">
+        {{ aiModeError }} AI actions remain disabled.
+        <button class="nb-text-btn" type="button" @click="loadAiMode">Retry</button>
+      </div>
       <RouterView v-slot="{ Component, route: currentRoute }">
         <Transition name="page" mode="out-in" appear>
           <component :is="Component" :key="currentRoute.name" />

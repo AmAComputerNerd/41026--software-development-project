@@ -12,6 +12,8 @@ import type {
 
 export const getTasks = () => request<TaskItem[]>('/tasks/')
 export const getCourses = () => request<Course[]>('/courses/')
+export const getAiModeCapabilities = () =>
+  request<{ aiModeEnabled: boolean }>('/integrations/capabilities', { cache: 'no-store' })
 
 export const createTask = (input: CreateTaskInput) =>
   request<TaskItem>('/tasks/', {

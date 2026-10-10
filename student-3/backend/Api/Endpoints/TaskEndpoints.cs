@@ -1,7 +1,9 @@
+using Api.Configuration;
 using Api.DTOs;
 using Api.Extensions;
 using Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Student3.Contracts;
 
 namespace Api.Endpoints;
@@ -114,12 +116,20 @@ public static class TaskEndpoints
     private static async Task<IResult> GenerateBreakdown(
         [FromRoute] Guid id,
         GenerateTaskBreakdownRequestDto request,
+        IOptions<AiGatewayOptions> options,
         IDatabaseClient database,
         IAiTaskService aiTaskService,
         INotificationClient notificationClient,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        if (options.Value.Enabled is false)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "AI Mode is disabled.");
+        }
+
         var prompt = request.Prompt?.Trim();
         if (string.IsNullOrWhiteSpace(prompt) || prompt.Length > 2000)
         {
@@ -186,10 +196,18 @@ public static class TaskEndpoints
 
     private static async Task<IResult> GenerateDescription(
         GenerateTaskDescriptionRequestDto request,
+        IOptions<AiGatewayOptions> options,
         IDatabaseClient database,
         IAiTaskService aiTaskService,
         CancellationToken cancellationToken)
     {
+        if (options.Value.Enabled is false)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "AI Mode is disabled.");
+        }
+
         var title = request.Title?.Trim();
         if (string.IsNullOrWhiteSpace(title) || title.Length > 200)
         {

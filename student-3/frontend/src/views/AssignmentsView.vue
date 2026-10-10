@@ -6,7 +6,7 @@ import { useTasks } from '@/composables/useTasks'
 import { dueLabel, formatDueDate } from '@/utils/dates'
 import type { CanvasSyncResult, TaskItem } from '@/types/task'
 
-const { tasks, courses, loading, error, load, sync } = useTasks()
+const { tasks, courses, loading, error, load, sync, aiModeEnabled } = useTasks()
 const selectedAssignment = ref<TaskItem | null>(null)
 const selectedCourseId = ref<string | 'All'>('All')
 const breakdownOpen = ref(false)
@@ -52,6 +52,11 @@ function progressFor(assignment: TaskItem) {
 onMounted(() => load().catch(() => undefined))
 
 function openBreakdown(assignment: TaskItem) {
+  if (!aiModeEnabled.value) {
+    actionError.value = 'AI Mode is unavailable.'
+    return
+  }
+
   selectedAssignment.value = assignment
   breakdownOpen.value = true
 }
@@ -148,7 +153,13 @@ async function syncAssignments() {
           </div>
         </div>
         <div class="nb-assignment__actions">
-          <button class="nb-btn nb-btn--accent" type="button" @click="openBreakdown(assignment)">
+          <button
+            class="nb-btn nb-btn--accent nb-ai-breakdown-btn"
+            type="button"
+            :disabled="!aiModeEnabled"
+            :title="!aiModeEnabled ? 'AI Mode is unavailable' : undefined"
+            @click="openBreakdown(assignment)"
+          >
             AI breakdown
           </button>
           <button class="nb-btn nb-btn--outline" type="button" @click="openSubtask(assignment)">

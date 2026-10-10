@@ -14,9 +14,26 @@ const tasks = ref<TaskItem[]>([])
 const courses = ref<Course[]>([])
 const loading = ref(false)
 const error = ref('')
+const aiModeEnabled = ref(false)
+const aiModeError = ref('')
 let loaded = false
 
 export function useTasks() {
+  async function loadAiMode() {
+    aiModeEnabled.value = false
+    aiModeError.value = ''
+    try {
+      const capabilities = await taskApi.getAiModeCapabilities()
+      if (typeof capabilities.aiModeEnabled !== 'boolean') {
+        throw new Error('The Deadline Tracker API returned invalid AI Mode capabilities.')
+      }
+      aiModeEnabled.value = capabilities.aiModeEnabled
+    } catch (reason) {
+      aiModeError.value =
+        reason instanceof Error ? reason.message : 'Unable to load AI Mode availability.'
+    }
+  }
+
   const upcoming = computed(() =>
     tasks.value
       .filter((task) => task.status !== 'Completed' && task.dueDate)
@@ -126,6 +143,9 @@ export function useTasks() {
     upcoming,
     loading,
     error,
+    aiModeEnabled,
+    aiModeError,
+    loadAiMode,
     load,
     add,
     update,

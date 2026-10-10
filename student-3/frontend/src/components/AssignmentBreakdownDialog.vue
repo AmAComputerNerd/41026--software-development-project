@@ -41,13 +41,15 @@ const templates: Template[] = [
   },
 ]
 
-const { generateBreakdown } = useTasks()
+const { generateBreakdown, aiModeEnabled } = useTasks()
 const selectedTemplateName = ref(templates[0]!.name)
 const prompt = ref('')
 const priority = ref<TaskPriority>('Medium')
 const saving = ref(false)
 const error = ref('')
-const canGenerate = computed(() => Boolean(props.assignment && prompt.value.trim()))
+const canGenerate = computed(() =>
+  Boolean(aiModeEnabled.value && props.assignment && prompt.value.trim()),
+)
 
 watch(
   () => props.modelValue,
@@ -72,6 +74,11 @@ function close() {
 }
 
 async function createPlan() {
+  if (!aiModeEnabled.value) {
+    error.value = 'AI Mode is unavailable.'
+    return
+  }
+
   if (!props.assignment || !prompt.value.trim()) {
     error.value = 'Describe the plan you want the AI to create.'
     return
@@ -143,6 +150,7 @@ async function createPlan() {
           class="nb-btn nb-btn--accent"
           type="submit"
           :disabled="saving || !canGenerate"
+          :title="!aiModeEnabled ? 'AI Mode is unavailable' : undefined"
         >
           {{ saving ? 'AI is creating tasks...' : 'Generate sub-tasks' }}
         </button>

@@ -14,6 +14,15 @@ validated and saved as one operation. Task descriptions can also be drafted
 from a title and the selected course or parent assessment, then edited before
 saving.
 
+AI description generation and assignment breakdown are enabled by default.
+Set `AI_MODE_ENABLED=false` in the root `.env` and recreate
+`student-3-backend` with `docker compose up -d student-3-backend` to disable
+them. For standalone execution, set `AiGateway__Enabled=false`.
+The frontend reads `aiModeEnabled` from `GET /api/integrations/capabilities`
+and disables/grays out both AI controls when unavailable. Direct calls to the
+generation endpoints return HTTP 503 when disabled; manual task editing,
+CRUD, MCP, and RAG are unaffected. Reload the frontend after changing the flag.
+
 The **AI ASSIST** button below the page navigation opens a centered dialog.
 Its **MCP** mode checks upcoming deadlines; **RAG**
 answers documentation questions with source citations and confidence labels.
