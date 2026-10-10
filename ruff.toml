@@ -1,0 +1,12 @@
+[lint]
+select = ["S"]
+
+[lint.per-file-ignores]
+# Best-effort console encoding setup, not a suppressed security failure.
+".agents/skills/caveman-compress/scripts/cli.py" = ["S110"]
+# Encoding fallback and fixed Claude CLI invocation with shell=False.
+".agents/skills/caveman-compress/scripts/compress.py" = ["S110", "S603"]
+# Re-executes the repository's existing virtualenv interpreter with argv.
+"tools/agentic_loop.py" = ["S606"]
+# stdout is piped; dotnet argv is fixed; health URLs are constructed loopback URLs.
+"tools/run_ai_services.py" = ["S101", "S603", "S310"]

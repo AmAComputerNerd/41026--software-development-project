@@ -60,6 +60,7 @@ jobs:
           AI_MODE_ENABLED=false
           AI_MODE_HOST_PORT=5001
           EOF
+          python -c 'import secrets; print("POSTGRES_PASSWORD=" + secrets.token_hex(32))' >> .env
 
       - name: Validate Compose configuration
         run: docker compose config --quiet
@@ -176,6 +177,7 @@ jobs:
           AI_MODE_ENABLED=false
           AI_MODE_HOST_PORT=5001
           EOF
+          python -c 'import secrets; print("POSTGRES_PASSWORD=" + secrets.token_hex(32))' >> .env
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -211,6 +213,7 @@ jobs:
           AI_MODE_ENABLED=false
           AI_MODE_HOST_PORT=5001
           EOF
+          python -c 'import secrets; print("POSTGRES_PASSWORD=" + secrets.token_hex(32))' >> .env
 
       - name: Start Student 3 core services
         run: |

@@ -1,0 +1,32 @@
+minimum_pre_commit_version: "4.6.2"
+default_install_hook_types: [pre-commit]
+default_stages: [pre-commit]
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-security
+        name: Ruff security rules
+        entry: ruff check --config ruff.toml
+        language: python
+        additional_dependencies: [ruff==0.17.0]
+        types: [python]
+
+      - id: detect-secrets
+        name: Detect secrets
+        entry: detect-secrets-hook
+        language: python
+        additional_dependencies: [detect-secrets==1.5.0]
+        args:
+          - --baseline
+          - .secrets.baseline
+          - --no-verify
+        exclude: ^\.secrets\.baseline$
+
+      - id: pip-audit
+        name: Audit Python dependencies
+        entry: pip-audit --requirement tools/agentic_loop/requirements.txt
+        language: python
+        additional_dependencies: [pip-audit==2.10.1]
+        pass_filenames: false
+        always_run: true

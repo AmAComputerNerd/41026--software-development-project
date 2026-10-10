@@ -22,13 +22,18 @@ Ensure you have the following installed locally:
    ```bash
    python tools/setup_env.py
    ```
-2. Enter the requested OpenRouter API key, Canvas base URL, and Canvas API
-   token. Secret inputs are hidden. Other values are copied from
+2. Enter the requested OpenRouter API key, Canvas base URL, Canvas API
+   token, and PostgreSQL password. Press Enter at the PostgreSQL prompt to
+   generate a random password for a new database. Secret inputs are hidden.
+   Passwords must use letters, digits, underscores, or hyphens so they can
+   be safely embedded in the backend connection string. Other values are copied from
    `.env.example`.
 
 The command refuses to modify an existing `.env`. Run
 `python tools/setup_env.py --force` only when you intentionally want to
 replace it.
+When replacing the file, Enter at the PostgreSQL prompt preserves its
+existing `POSTGRES_PASSWORD` value.
 
 > [!TIP]
 > If you do not have a Canvas API token during development, backend and frontend services will still run, but Canvas sync endpoints (`/api/canvas-sync`) will return error responses.

@@ -5,6 +5,7 @@ from getpass import getpass
 import os
 from pathlib import Path
 import re
+import secrets
 import sys
 import tempfile
 from urllib.parse import urlparse
@@ -18,6 +19,7 @@ PROMPTED_KEYS = {
     "OPENROUTER_API_KEY",
     "CANVAS_BASE_URL",
     "CANVAS_API_TOKEN",
+    "POSTGRES_PASSWORD",
 }
 
 
@@ -58,10 +60,30 @@ def prompt_values(defaults: dict[str, str]) -> dict[str, str]:
         raise ValueError("Canvas base URL must be an absolute HTTP or HTTPS URL.")
 
     canvas_token = getpass("Canvas API token (input hidden; may be left blank): ").strip()
+    existing_password = ""
+    if OUTPUT_PATH.exists():
+        for line in OUTPUT_PATH.read_text(encoding="utf-8").splitlines():
+            match = ASSIGNMENT_PATTERN.match(line)
+            if match and match.group("key") == "POSTGRES_PASSWORD":
+                existing_password = match.group("value").strip().strip("\"'")
+                break
+    # Prompt label only; this contains no credential.
+    password_hint = "keep existing" if existing_password else "generate"  # pragma: allowlist secret
+    postgres_password = (
+        getpass(f"PostgreSQL password (input hidden; Enter to {password_hint}): ").strip()
+        or existing_password
+        or secrets.token_hex(32)
+    )
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", postgres_password):
+        raise ValueError(
+            "PostgreSQL password must contain only letters, digits, underscores, or hyphens "
+            "so it can be used safely in the database connection string."
+        )
     return {
         "OPENROUTER_API_KEY": openrouter_key,
         "CANVAS_BASE_URL": canvas_base_url.rstrip("/"),
         "CANVAS_API_TOKEN": canvas_token,
+        "POSTGRES_PASSWORD": postgres_password,
     }
 
 
