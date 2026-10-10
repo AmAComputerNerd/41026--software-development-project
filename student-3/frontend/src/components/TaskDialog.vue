@@ -17,7 +17,7 @@ const emit = defineEmits<{
   saved: [task: TaskItem]
 }>()
 
-const { courses, add, update, generateDescription } = useTasks()
+const { courses, add, update, generateDescription, aiModeEnabled } = useTasks()
 const saving = ref(false)
 const generatingDescription = ref(false)
 const titleInput = ref<HTMLInputElement | null>(null)
@@ -107,6 +107,11 @@ async function submit() {
 }
 
 async function generateDescriptionDraft() {
+  if (!aiModeEnabled.value) {
+    error.value = 'AI Mode is unavailable.'
+    return
+  }
+
   if (!form.title.trim()) {
     error.value = 'Add a task title before generating a description.'
     return
@@ -168,7 +173,8 @@ async function generateDescriptionDraft() {
           <button
             class="nb-text-btn"
             type="button"
-            :disabled="generatingDescription || !form.title.trim()"
+            :disabled="!aiModeEnabled || generatingDescription || !form.title.trim()"
+            :title="!aiModeEnabled ? 'AI Mode is unavailable' : undefined"
             @click="generateDescriptionDraft"
           >
             {{ generatingDescription ? 'Generating...' : 'Generate description with AI' }}

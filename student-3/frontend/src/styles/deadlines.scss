@@ -276,8 +276,20 @@
     transform 130ms ease;
 }
 
-.nb-text-btn:hover {
+.nb-text-btn:hover:not(:disabled) {
   transform: translateY(-1px);
+}
+
+.nb-text-btn:disabled {
+  color: var(--nb-color-muted);
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.nb-ai-breakdown-btn:disabled {
+  background: var(--nb-color-bg);
+  color: var(--nb-color-muted);
+  cursor: not-allowed;
 }
 
 .nb-text-btn--danger,

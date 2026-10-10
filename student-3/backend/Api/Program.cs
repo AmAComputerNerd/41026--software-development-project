@@ -31,8 +31,11 @@ builder.Services
     .AddOptions<AiGatewayOptions>()
     .Bind(builder.Configuration.GetSection(AiGatewayOptions.SectionName))
     .Validate(
-        options => IsAbsoluteHttpUrl(options.BaseUrl),
-        "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL.")
+        options => options.Enabled.HasValue,
+        "AiGateway:Enabled must be configured.")
+    .Validate(
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
+        "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL when AI Mode is enabled.")
     .ValidateOnStart();
 builder.Services
     .AddOptions<NotificationServiceOptions>()
@@ -89,9 +92,13 @@ builder.Services
     });
 builder.Services
     .AddHttpClient<IAiTaskService, AiTaskService>((services, client) =>
-        ConfigureClient(
-            client,
-            services.GetRequiredService<IOptions<AiGatewayOptions>>().Value.BaseUrl))
+    {
+        var options = services.GetRequiredService<IOptions<AiGatewayOptions>>().Value;
+        if (options.Enabled is true)
+        {
+            ConfigureClient(client, options.BaseUrl);
+        }
+    })
     .AddStandardResilienceHandler(options =>
     {
         options.Retry.MaxRetryAttempts = 2;
@@ -179,6 +186,7 @@ app.UseHttpsRedirection();
 app.MapCourseEndpoints();
 app.MapTaskEndpoints();
 app.MapCanvasSyncEndpoints();
+app.MapAiModeIntegrationEndpoints();
 app.MapMcpIntegrationEndpoints();
 app.MapRagIntegrationEndpoints();
 app.MapHealthChecks(
