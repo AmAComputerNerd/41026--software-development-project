@@ -111,14 +111,22 @@ Each contributor must install the local Git hook once per clone (Python 3.10+
 required). From the repository root:
 
 ```bash
-python -m venv .local/pre-commit
+python tools/setup_precommit_security.py
+```
+
+The script creates or reuses `.local/pre-commit`, installs pre-commit and
+the scanners configured in `.pre-commit-config.yaml`, installs the Git
+hook, and runs the initial scan. No virtualenv activation is required.
+Rerunning it is safe; errors or scan findings return a nonzero exit code.
+It does not commit, stage files, or automatically add exclusions.
+
+For the manual commands below, activate the environment first:
+
+```bash
 # Linux/macOS:
 source .local/pre-commit/bin/activate
 # Windows PowerShell instead:
 # .local/pre-commit/Scripts/Activate.ps1
-python -m pip install pre-commit==4.6.2 detect-secrets==1.5.0
-pre-commit install --install-hooks
-pre-commit run --all-files
 ```
 
 Normal `git commit` commands then run Ruff's `S` security rules on staged
@@ -158,6 +166,7 @@ No hook command changes are needed for ordinary exceptions:
 - **Generated files that cannot carry comments:** use the reviewed
   `.secrets.baseline`. Generate a candidate locally and audit it:
   ```bash
+  python -m pip install detect-secrets==1.5.0
   detect-secrets scan --baseline .secrets.baseline --no-verify > .local/secrets-candidate.baseline
   detect-secrets audit .local/secrets-candidate.baseline
   ```
