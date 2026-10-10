@@ -136,6 +136,7 @@ jobs:
           ASPNETCORE_ENVIRONMENT=Production \
           DatabaseService__BaseUrl=http://127.0.0.1:5203 \
           SharedService__BaseUrl=http://127.0.0.1:5110 \
+          AiGateway__Enabled=false \
           AiGateway__BaseUrl=http://127.0.0.1:5200 \
           NotificationService__BaseUrl=http://127.0.0.1:5101 \
           McpServer__Enabled=false \

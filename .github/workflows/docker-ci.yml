@@ -57,6 +57,7 @@ jobs:
           MCP_HOST_PORT=5002
           RAG_ENABLED=false
           RAG_HOST_PORT=5003
+          AI_MODE_ENABLED=false
           AI_MODE_HOST_PORT=5001
           EOF
 
@@ -172,6 +173,7 @@ jobs:
           MCP_HOST_PORT=5002
           RAG_ENABLED=false
           RAG_HOST_PORT=5003
+          AI_MODE_ENABLED=false
           AI_MODE_HOST_PORT=5001
           EOF
 
@@ -206,6 +208,7 @@ jobs:
           MCP_HOST_PORT=5002
           RAG_ENABLED=false
           RAG_HOST_PORT=5003
+          AI_MODE_ENABLED=false
           AI_MODE_HOST_PORT=5001
           EOF
 
