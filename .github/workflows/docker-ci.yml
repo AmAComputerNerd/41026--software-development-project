@@ -285,7 +285,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker compose start --wait student-3-database
           MCP_ENABLED=true docker compose up --detach --wait student-3-backend
           docker compose exec -T student-3-backend curl --fail --silent --show-error \
             --header 'Content-Type: application/json' \
