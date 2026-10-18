@@ -12,10 +12,6 @@ on:
       - "package-lock.json"
       - ".env.example"
       - "tools/setup_env.py"
-      - "AGENTS.md"
-      - "docs/architecture/data-flows.md"
-      - "docs/knowledge-base/course_policies.md"
-      - "docs/features/**"
       - ".github/workflows/docker-ci.yml"
   pull_request:
     paths:
@@ -27,10 +23,6 @@ on:
       - "package-lock.json"
       - ".env.example"
       - "tools/setup_env.py"
-      - "AGENTS.md"
-      - "docs/architecture/data-flows.md"
-      - "docs/knowledge-base/course_policies.md"
-      - "docs/features/**"
       - ".github/workflows/docker-ci.yml"
 
 concurrency:
