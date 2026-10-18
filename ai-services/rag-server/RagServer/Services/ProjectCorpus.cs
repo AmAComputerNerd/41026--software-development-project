@@ -87,6 +87,7 @@ public sealed partial class ProjectCorpus
         _chunks.Where(chunk =>
             scope.Equals("all", StringComparison.OrdinalIgnoreCase) ||
             chunk.SourceId.StartsWith($"{scope}/", StringComparison.OrdinalIgnoreCase) ||
+            chunk.SourceId.StartsWith($"docs/features/{scope}/", StringComparison.OrdinalIgnoreCase) ||
             chunk.SourceId.StartsWith("shared/", StringComparison.OrdinalIgnoreCase) ||
             SharedSourceIds.Contains(chunk.SourceId));
 

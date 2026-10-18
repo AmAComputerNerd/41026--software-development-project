@@ -48,6 +48,15 @@ flowchart TD
 - [**Testing & CI Guide**](development/testing-and-ci.md) — How to run unit tests, type-checks, linters, format verification, and understand GitHub Actions CI workflows.
 - [**Database & Migrations Guide**](development/database-and-migrations.md) — Multi-database architecture (PostgreSQL and dedicated internal SQLite database services), migrations lifecycle, and seeding.
 
+### 4. Feature Guides & References
+
+Standalone feature documentation lives under `docs/features/student-N/`.
+Service READMEs remain beside the code.
+
+- [**Notifications Design Reference**](features/student-1/notifications-design-reference.md) — Notification UI layout, components, and state.
+- [**Deadline Tracker Help**](features/student-3/deadline-help.md) — Tasks, calendars, Canvas assignments, and AI assistants.
+- [**Account Help**](features/student-4/account-help.md) — Profiles, passwords, account readiness, and grounded help.
+
 ---
 
 ## Team & Slice Quick Links

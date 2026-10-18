@@ -7,9 +7,9 @@ flowchart TD
     subgraph SharedGatewayGroup["Shared Infrastructure & Gateways"]
         Shell["shared-shell (:8080)<br>Vue 3 + Nginx"]
         SB["shared-backend (:5110)<br>Canvas LMS Gateway"]
-        AIM["ai-mode (:5001)<br>OpenRouter LLM Gateway"]
-        MCP["mcp-server (:5002)<br>Shared MCP Tools"]
-        RAG["rag-server (:5003)<br>Curated Documentation RAG"]
+        AIM["ai-mode (:8080, internal)<br>OpenRouter LLM Gateway"]
+        MCP["mcp-server (:8080, internal)<br>Shared MCP Tools"]
+        RAG["rag-server (:8080, internal)<br>Curated Documentation RAG"]
         MailHog["mailhog (:1025/:8025)<br>Mock SMTP"]
     end
 
@@ -72,7 +72,7 @@ flowchart TD
 
 - **Path**: `ai-services/ai-mode/`
 - **Stack**: ASP.NET Core (.NET 10) Minimal API
-- **Port (Host)**: `5001` (non-containerised; Docker callers use `host.docker.internal`)
+- **Port**: Internal `8080` only (`http://ai-mode:8080` on `ai-services`); no host port
 - **Owner**: Shared Infrastructure
 
 ### Responsibilities
