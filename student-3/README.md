@@ -31,7 +31,7 @@ MCP displays the returned tool name and structured JSON alongside readable
 results; **OPEN TASK** opens the existing task editor. RAG provides sample
 questions and retrieves this feature's sources, including
 [Deadline Tracker Help](docs/deadline-help.md), plus explicitly shared sources.
-Restart `python tools/run_ai_services.py` after changing corpus documentation.
+Run `docker compose up --build -d rag-server` after changing corpus documentation.
 
 ```mermaid
 flowchart TD
@@ -50,10 +50,10 @@ flowchart TD
 
     subgraph ExternalIntegrations["External Gateways & Services"]
         SB["shared-backend (:5110)<br>Canvas API Gateway"]
-        AIM["ai-mode (:5001)<br>AI Breakdown Planning"]
+        AIM["ai-mode (:8080, internal)<br>AI Breakdown Planning"]
         S1["student-1-backend (:5101)<br>Due-Soon Push Reminders"]
-        MCP["mcp-server (:5002)<br>Upcoming Deadlines Tool"]
-        RAG["rag-server (:5003)<br>Curated Q&A Corpus"]
+        MCP["mcp-server (:8080, internal)<br>Upcoming Deadlines Tool"]
+        RAG["rag-server (:8080, internal)<br>Curated Q&A Corpus"]
     end
 
     Shell -- "Proxy /deadlines/" --> FE
@@ -62,8 +62,8 @@ flowchart TD
     BE -- "Canvas Sync" --> SB
     BE -- "AI Subtasks" --> AIM
     BE -- "POST /notifications/push" --> S1
-    BE -. "host.docker.internal:5002" .-> MCP
-    BE -. "host.docker.internal:5003" .-> RAG
+    BE -. "mcp-server:8080/mcp" .-> MCP
+    BE -. "rag-server:8080" .-> RAG
 ```
 
 ## Standalone development

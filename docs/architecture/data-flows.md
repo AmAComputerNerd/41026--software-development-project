@@ -95,7 +95,7 @@ sequenceDiagram
     participant S1F as student-1-frontend
     participant S1B as student-1-backend
     participant DB as student-1-database (PostgreSQL)
-    participant AIM as ai-mode Gateway (:5001)
+    participant AIM as ai-mode Gateway (:8080, internal)
     participant OpenRouter as OpenRouter API
 
     User->>S1F: Asks question ("What assignments are due this Friday?")
@@ -173,7 +173,7 @@ sequenceDiagram
     participant S1 as student-1-frontend
     participant S3 as student-3-backend (:5103)
     participant S3DB as student-3-database
-    participant AIM as ai-mode (:5001)
+    participant AIM as ai-mode (:8080, internal)
     participant S5 as student-5-backend (:5105)
     participant S5DB as student-5-database
 
@@ -209,4 +209,3 @@ sequenceDiagram
 2. `student-1-frontend` opens `GradeImpactDialog.vue`.
 3. Modal retrieves assignment mark weightings and submits simulated scores to `PUT /api/grades/api/assignment/marks/` on `student-5-backend` (which persists via `student-5-database`).
 4. Student visualizes live GPA / course percentage impact.
-

@@ -97,11 +97,11 @@ unrelated subjects may therefore have insufficient context.
 
 ## Unavailable AI services
 
-MCP and RAG are local host services reached through the feature backend.
+MCP and RAG are Docker services reached through the feature backend.
 They are optional: ordinary task, calendar and assignment views do not
 depend on them. If an AI feature is disabled or a required service is
 unavailable, the assistant displays an error rather than a grounded answer.
 
-From the repository root, `python tools/run_ai_services.py` starts local
-AI Mode, MCP and RAG together using the configured environment. Restart the
-launcher after updating corpus documentation because RAG indexes it at startup.
+From the repository root, `docker compose up --build` starts the application,
+including AI Mode, MCP and RAG. After updating corpus documentation, run
+`docker compose up --build -d rag-server` to refresh its startup index.

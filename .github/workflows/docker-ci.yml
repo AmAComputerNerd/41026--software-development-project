@@ -11,8 +11,11 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".env.example"
-      - "tools/run_ai_services.py"
       - "tools/setup_env.py"
+      - "AGENTS.md"
+      - "docs/architecture/data-flows.md"
+      - "docs/knowledge-base/course_policies.md"
+      - "docs/features/**"
       - ".github/workflows/docker-ci.yml"
   pull_request:
     paths:
@@ -23,8 +26,11 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".env.example"
-      - "tools/run_ai_services.py"
       - "tools/setup_env.py"
+      - "AGENTS.md"
+      - "docs/architecture/data-flows.md"
+      - "docs/knowledge-base/course_policies.md"
+      - "docs/features/**"
       - ".github/workflows/docker-ci.yml"
 
 concurrency:
@@ -50,22 +56,20 @@ jobs:
       - name: Create Compose environment
         run: |
           cat << 'EOF' > .env
-          OPENROUTER_API_KEY=ci-placeholder
+          OPENROUTER_API_KEY="ci-placeholder"
+          OPENROUTER_MODEL=ci-placeholder
           CANVAS_BASE_URL=https://canvas.example.invalid
-          CANVAS_API_TOKEN=ci-placeholder
+          CANVAS_API_TOKEN="ci-placeholder"
           MCP_ENABLED=false
-          MCP_HOST_PORT=5002
           RAG_ENABLED=false
-          RAG_HOST_PORT=5003
           AI_MODE_ENABLED=false
-          AI_MODE_HOST_PORT=5001
           EOF
           python -c 'import secrets; print("POSTGRES_PASSWORD=" + secrets.token_hex(32))' >> .env
 
       - name: Validate Compose configuration
         run: docker compose config --quiet
 
-      - name: Verify host-service boundary
+      - name: Verify AI service boundaries
         shell: bash
         run: |
           set -euo pipefail
@@ -73,29 +77,40 @@ jobs:
           config=$(docker compose config --format json)
           jq --exit-status '
             . as $config |
-            (.services | has("ai-mode") | not) and
-            (.services | has("mcp-server") | not) and
-            (.services | has("rag-server") | not) and
+            (["ai-mode", "mcp-server", "rag-server"] | all(
+              . as $service |
+              ($config.services[$service].build != null) and
+              ($config.services[$service].healthcheck != null) and
+              ($config.services[$service] | has("ports") | not) and
+              ($config.services[$service].networks | keys == ["ai-services"])
+            )) and
+            ([.services | to_entries[] |
+              select(.value.environment | has("OPENROUTER_API_KEY")) | .key] == ["ai-mode"]) and
+            ([.services | to_entries[] |
+              select(.value.networks | has("ai-services")) | .key] | sort ==
+              ["ai-mode", "mcp-server", "rag-server", "student-1-backend",
+                "student-2-backend", "student-3-backend", "student-4-backend",
+                "student-5-backend"]) and
             ([1, 2, 3, 4, 5] | all(
               . as $student |
-              $config.services["student-\($student)-backend"].environment.AiGateway__BaseUrl |
-              startswith("http://host.docker.internal:")
+              $config.services["student-\($student)-backend"] as $backend |
+              ($backend.environment.AiGateway__BaseUrl == "http://ai-mode:8080") and
+              ($backend.environment.McpServer__BaseUrl == "http://mcp-server:8080/mcp") and
+              ($backend.environment.RagServer__BaseUrl == "http://rag-server:8080") and
+              ($backend.networks | has("ai-services")) and
+              ($backend | has("extra_hosts") | not) and
+              ($config.services["mcp-server"].environment["Student\($student)__BaseUrl"] ==
+                "http://student-\($student)-backend:8080")
             )) and
             (.services["student-3-backend"].environment.McpServer__Enabled == "false") and
             (.services["student-3-backend"].environment.RagServer__Enabled == "false") and
             (.services["student-4-backend"].environment.McpServer__Enabled == "false") and
             (.services["student-4-backend"].environment.RagServer__Enabled == "false") and
-            (.services["student-4-backend"].environment.RagServer__BaseUrl |
-              startswith("http://host.docker.internal:")) and
-            (.services["student-4-backend"].environment.McpServer__BaseUrl |
-              startswith("http://host.docker.internal:")) and
-            (.services["student-3-backend"].environment.McpServer__BaseUrl |
-              startswith("http://host.docker.internal:")) and
-            (.services["student-3-backend"].environment.RagServer__BaseUrl |
-              startswith("http://host.docker.internal:"))
+            (.services["rag-server"].environment.AiGateway__BaseUrl == "http://ai-mode:8080") and
+            (.services["rag-server"].environment.Rag__CorpusPath == "/app/Corpus")
           ' <<< "$config" > /dev/null
 
-          python -m py_compile tools/run_ai_services.py
+          python -m py_compile tools/setup_env.py
 
       - name: Verify Student 3 database isolation
         shell: bash
@@ -128,28 +143,6 @@ jobs:
           echo "services=$services" >> "$GITHUB_OUTPUT"
           jq --raw-output '.[]' <<< "$services"
 
-  host-ai-services:
-    name: Build non-containerised AI services
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-
-      - name: Build host services
-        run: |
-          dotnet build ai-services/ai-mode/Api/Api.csproj --configuration Release -warnaserror
-          dotnet build ai-services/mcp-server/McpServer/McpServer.csproj --configuration Release -warnaserror
-          dotnet build ai-services/rag-server/RagServer/RagServer.csproj --configuration Release -warnaserror
-
-      - name: Validate launcher
-        run: python -m py_compile tools/setup_env.py tools/run_ai_services.py
-
   build-images:
     name: Build image (${{ matrix.service }})
     needs: compose-contract
@@ -167,15 +160,13 @@ jobs:
       - name: Create Compose environment
         run: |
           cat << 'EOF' > .env
-          OPENROUTER_API_KEY=ci-placeholder
+          OPENROUTER_API_KEY="ci-placeholder"
+          OPENROUTER_MODEL=ci-placeholder
           CANVAS_BASE_URL=https://canvas.example.invalid
-          CANVAS_API_TOKEN=ci-placeholder
+          CANVAS_API_TOKEN="ci-placeholder"
           MCP_ENABLED=false
-          MCP_HOST_PORT=5002
           RAG_ENABLED=false
-          RAG_HOST_PORT=5003
           AI_MODE_ENABLED=false
-          AI_MODE_HOST_PORT=5001
           EOF
           python -c 'import secrets; print("POSTGRES_PASSWORD=" + secrets.token_hex(32))' >> .env
 
@@ -203,15 +194,13 @@ jobs:
       - name: Create Compose environment
         run: |
           cat << 'EOF' > .env
-          OPENROUTER_API_KEY=ci-placeholder
+          OPENROUTER_API_KEY="ci-placeholder"
+          OPENROUTER_MODEL=ci-placeholder
           CANVAS_BASE_URL=https://canvas.example.invalid
-          CANVAS_API_TOKEN=ci-placeholder
+          CANVAS_API_TOKEN="ci-placeholder"
           MCP_ENABLED=false
-          MCP_HOST_PORT=5002
           RAG_ENABLED=false
-          RAG_HOST_PORT=5003
           AI_MODE_ENABLED=false
-          AI_MODE_HOST_PORT=5001
           EOF
           python -c 'import secrets; print("POSTGRES_PASSWORD=" + secrets.token_hex(32))' >> .env
 
@@ -270,9 +259,43 @@ jobs:
 
           exit 1
 
+      - name: Start containerised AI services
+        run: docker compose up --build --detach --wait ai-mode mcp-server rag-server
+
+      - name: Verify AI container readiness and packaged corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          for service in ai-mode mcp-server rag-server; do
+            docker compose exec -T "$service" \
+              curl --fail --silent --show-error http://localhost:8080/health/ready
+          done
+          docker compose exec -T student-3-backend \
+            curl --fail --silent --show-error http://rag-server:8080/ |
+            jq --exit-status '.sources == 10 and .chunks > 0'
+          docker compose exec -T student-3-backend curl --fail --silent --show-error \
+            --header 'Content-Type: application/json' \
+            --data '{"question":"zzzzzzzzzzzzzzzzzzzzzzzz","scope":"student-3"}' \
+            http://rag-server:8080/api/answers |
+            jq --exit-status '.status == "insufficient_context"'
+          docker compose exec -T rag-server \
+            curl --fail --silent --show-error http://ai-mode:8080/health/ready
+
+      - name: Verify MCP callback over the Compose network
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose start --wait student-3-database
+          MCP_ENABLED=true docker compose up --detach --wait student-3-backend
+          docker compose exec -T student-3-backend curl --fail --silent --show-error \
+            --header 'Content-Type: application/json' \
+            --data '{"days":7,"limit":1}' \
+            http://localhost:8080/api/integrations/mcp/upcoming-deadlines |
+            jq --exit-status '.status == "success" and .tool == "deadlines_list_upcoming"'
+
       - name: Show smoke-test logs on failure
         if: failure()
-        run: docker compose logs student-3-database student-3-backend
+        run: docker compose logs student-3-database student-3-backend ai-mode mcp-server rag-server
 
       - name: Stop smoke-test services
         if: always()
@@ -283,7 +306,6 @@ jobs:
     if: ${{ !cancelled() }}
     needs:
       - compose-contract
-      - host-ai-services
       - build-images
       - student-3-integration
     runs-on: ubuntu-latest
@@ -291,11 +313,9 @@ jobs:
       - name: Require successful Docker checks
         env:
           COMPOSE_RESULT: ${{ needs.compose-contract.result }}
-          HOST_AI_RESULT: ${{ needs.host-ai-services.result }}
           BUILD_RESULT: ${{ needs.build-images.result }}
           INTEGRATION_RESULT: ${{ needs.student-3-integration.result }}
         run: |
           test "$COMPOSE_RESULT" = "success"
-          test "$HOST_AI_RESULT" = "success"
           test "$BUILD_RESULT" = "success"
           test "$INTEGRATION_RESULT" = "success"

@@ -14,8 +14,8 @@ flowchart LR
     Endpoints --> Broker
     Endpoints --> EF
     EF --> PG[("PostgreSQL 16<br>(student-1-database:5432)")]
-    Endpoints -. "chat completions" .-> AIM["ai-mode (:5001)"]
-    Endpoints -. "course queries" .-> RAG["rag-server (:5003)"]
+    Endpoints -. "chat completions" .-> AIM["ai-mode (:8080, internal)"]
+    Endpoints -. "course queries" .-> RAG["rag-server (:8080, internal)"]
 ```
 
 ## Setup
