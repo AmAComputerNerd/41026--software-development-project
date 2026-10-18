@@ -30,7 +30,7 @@ Both modes call the shared local services through the tracker backend.
 MCP displays the returned tool name and structured JSON alongside readable
 results; **OPEN TASK** opens the existing task editor. RAG provides sample
 questions and retrieves this feature's sources, including
-[Deadline Tracker Help](docs/deadline-help.md), plus explicitly shared sources.
+[Deadline Tracker Help](../docs/features/student-3/deadline-help.md), plus explicitly shared sources.
 Run `docker compose up --build -d rag-server` after changing corpus documentation.
 
 ```mermaid

@@ -74,8 +74,9 @@ Account Help UI -> POST /api/users/help/answers { question }
 ```
 
 The RAG image includes this README and
-[`docs/account-help.md`](docs/account-help.md) in the curated corpus.
-Student 4 scope searches only sources under `student-4/`, so unrelated
+the [Account Help guide](../docs/features/student-4/account-help.md) in the curated corpus.
+Student 4 scope searches its README and `docs/features/student-4/` guides
+plus explicitly shared sources, so unrelated
 feature documentation cannot become an account-help citation. Existing
 Student 1/3 retrieval behavior is unchanged. Responses show `low`, `medium`,
 or `high` retrieval-based confidence, source titles/headings/paths, and the

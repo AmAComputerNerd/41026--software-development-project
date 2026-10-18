@@ -36,7 +36,8 @@ or unknown scopes return `400`; gateway or generation failures return `502`,
 and generation timeouts return `504`.
 
 Feature scopes retrieve
-only their `student-x/` sources and explicitly shared documentation. Shared
+only their `student-N/` README sources, guides under
+`docs/features/student-N/`, and explicitly shared documentation. Shared
 sources are paths under `shared/`, `AGENTS.md`,
 `docs/architecture/data-flows.md`, and
 `docs/knowledge-base/course_policies.md`. The `shared` scope excludes
@@ -73,8 +74,8 @@ shared sources, and `all` searches the entire corpus.
 |---|---|---|
 | `student-1` | `student-1/README.md` | Notifications, delivery preferences, digests, and notification assistants |
 | `student-2` | `student-2/README.md` | Automations, Canvas integration, quiz filling, and run history |
-| `student-3` | `student-3/README.md`, `student-3/docs/deadline-help.md` | Deadlines, task tracking, Canvas sync, and deadline assistants |
-| `student-4` | `student-4/README.md`, `student-4/docs/account-help.md` | Accounts, profiles, roles, passwords, and readiness checks |
+| `student-3` | `student-3/README.md`, `docs/features/student-3/deadline-help.md` | Deadlines, task tracking, Canvas sync, and deadline assistants |
+| `student-4` | `student-4/README.md`, `docs/features/student-4/account-help.md` | Accounts, profiles, roles, passwords, and readiness checks |
 | `student-5` | `student-5/README.md` | Grades, progress tracking, and what-if calculations |
 | `shared` | `AGENTS.md`, `docs/architecture/data-flows.md`, `docs/knowledge-base/course_policies.md` | Architecture, cross-service flows, and documented course policies |
 

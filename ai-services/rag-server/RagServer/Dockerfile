@@ -18,9 +18,9 @@ COPY docs/knowledge-base/course_policies.md Corpus/docs/knowledge-base/
 COPY student-1/README.md Corpus/student-1/
 COPY student-2/README.md Corpus/student-2/
 COPY student-3/README.md Corpus/student-3/
-COPY student-3/docs/deadline-help.md Corpus/student-3/docs/
+COPY docs/features/student-3/deadline-help.md Corpus/docs/features/student-3/
 COPY student-4/README.md Corpus/student-4/
-COPY student-4/docs/account-help.md Corpus/student-4/docs/
+COPY docs/features/student-4/account-help.md Corpus/docs/features/student-4/
 COPY student-5/README.md Corpus/student-5/
 USER $APP_UID
 ENTRYPOINT ["dotnet", "RagServer.dll"]

@@ -236,7 +236,8 @@ Each of those database services is attached only to its internal `student-N-data
 - MCP accesses all five public backends through their bounded HTTP APIs on
   `ai-services`; RAG
   does not access feature databases.
-- RAG feature scopes retrieve only their `student-x/` sources plus explicitly
+- RAG feature scopes retrieve only their `student-N/` README sources and
+  `docs/features/student-N/` guides plus explicitly
   shared sources (`shared/`, `AGENTS.md`, the architecture data flows and course
   policies). `shared` excludes student-specific sources; `all` retains
   full-corpus retrieval. Student 3 also indexes its Deadline Tracker help guide.
