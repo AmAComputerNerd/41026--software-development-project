@@ -15,6 +15,7 @@ on:
       - ".github/workflows/student-4.yml"
   pull_request:
     paths:
+      - "student-4/authentication/**"
       - "student-4/backend/**"
       - "student-4/contracts/**"
       - "student-4/database/**"

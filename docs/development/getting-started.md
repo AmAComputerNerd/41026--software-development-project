@@ -11,7 +11,7 @@ Ensure you have the following installed locally:
 - **Docker Desktop** (or equivalent container runtime supporting Docker Compose v2)
 - **Node.js 22 LTS** (for standalone frontend development and npm workspace tooling)
 - **.NET 10 SDK** (for standalone ASP.NET Core backend development)
-- **Python 3.11+** (for the local MCP/RAG launcher and agentic loop)
+- **Python 3.11+** (for environment setup and the agentic loop)
 - **Git**
 
 ---
@@ -43,8 +43,7 @@ existing `POSTGRES_PASSWORD` value.
 
 ## 3. Option A: Running with Docker Compose (Recommended)
 
-Docker Compose builds and networks the containerised feature services. MCP and
-RAG intentionally run as host processes and are started separately.
+Docker Compose builds and networks all services.
 
 ```bash
 # Build and start all services
@@ -52,9 +51,6 @@ docker compose up --build
 
 # Run in background (detached mode)
 docker compose up -d
-
-# In another terminal, start local AI Mode, MCP, and RAG
-python tools/run_ai_services.py
 
 # View logs from all services or a specific service
 docker compose logs -f
@@ -147,20 +143,19 @@ dotnet run --project student-5/backend/GradesManager/GradesManager/GradesManager
 > [!IMPORTANT]
 > When running a backend outside Docker:
 > - Set environment variable `ASPNETCORE_ENVIRONMENT=Development`.
-> - If connecting to `shared-backend` or `ai-mode`, you must provide their URLs via `appsettings.Development.json` or environment variables (e.g. `AiGateway__BaseUrl=http://127.0.0.1:5001`).
+> - If connecting to `shared-backend`, provide its URL via `appsettings.Development.json` or environment variables (e.g. `SharedService__BaseUrl=http://127.0.0.1:5110`). AI Mode, MCP and RAG are network-only services; run calling backends in Compose to exercise AI features.
 > - The standalone default for `student-3-database` is `http://localhost:5203` (matching `DatabaseService:BaseUrl` in `student-3/backend/Api/appsettings.json`), `student-4-database` is `http://localhost:5204`, and `student-5-database` is `http://localhost:5205`.
 
-### Local Release 1 services
+### AI services
 
-`tools/run_ai_services.py` is the lifecycle entrypoint for the
-non-containerised AI Mode, MCP, and RAG .NET services. By default it uses:
+AI services have no published host ports. Compose supplies their internal
+URLs to backends on the `ai-services` network. Inspect readiness with
+`docker compose exec ai-mode curl --fail http://localhost:8080/health/ready`
+(substitute `mcp-server` or `rag-server` as needed). Rebuild the RAG image
+after documentation changes with `docker compose up --build -d rag-server`.
 
-| Service | Host URL | Docker caller URL |
-|---|---|---|
-| AI Mode | `http://127.0.0.1:5001` | `http://host.docker.internal:5001` |
-| MCP | `http://127.0.0.1:5002/mcp` | `http://host.docker.internal:5002/mcp` |
-| RAG | `http://127.0.0.1:5003` | `http://host.docker.internal:5003` |
-
-The ports can be changed with `MCP_HOST_PORT`, `RAG_HOST_PORT`, and
-`AI_MODE_HOST_PORT` in the root `.env`. Restart the affected backend
-containers and the launcher after changing them.
+Before migrating an existing checkout, stop the old host launcher with
+Ctrl+C, then run `docker compose up --build -d`. No database migration or
+volume deletion is needed. To roll back, stop the three AI containers,
+check out the previous revision and restart its host launcher and backends;
+leave database volumes intact.

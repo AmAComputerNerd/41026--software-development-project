@@ -10,7 +10,7 @@ flowchart LR
     Client["Clients / Shell"] -- "HTTP :5105" --> API["GradesManager Minimal API"]
     API -- "HTTP (student-5-data)" --> DBService["student-5-database (:5205)"]
     DBService --> SQLite[("grades.db<br>EF Core SQLite")]
-    API -. "POST /v1/chat/completions" .-> AIM["ai-mode (:5001)"]
+    API -. "POST /v1/chat/completions" .-> AIM["ai-mode (:8080, internal)"]
     API -. "POST /notifications/push" .-> S1["student-1-backend (:5101)"]
 ```
 

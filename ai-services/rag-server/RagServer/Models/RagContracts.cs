@@ -1,6 +1,6 @@
 namespace RagServer.Models;
 
-public sealed record RagAnswerRequest(string Question, string Scope = "student-3");
+public sealed record RagAnswerRequest(string Question, string Scope = "all");
 
 public sealed record RagAnswerResponse(
     string Status,

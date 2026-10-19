@@ -28,10 +28,9 @@ Knowledge page -> POST /api/users/{userId}/mcp-readiness
               -> student-1-backend /health/ready (notification readiness)
 ```
 
-Run `python tools/run_ai_services.py` alongside Docker Compose. The launcher
-configures MCP's Student 4 URL as `http://127.0.0.1:5104` (override with
-`--student-4-port`). Docker's account backend uses
-`http://host.docker.internal:${MCP_HOST_PORT}/mcp`.
+Docker Compose starts MCP and configures its Student 4 callback URL as
+`http://student-4-backend:8080`. The account backend uses
+`http://mcp-server:8080/mcp` on the dedicated `ai-services` network.
 
 `MCP_ENABLED` in the generated `.env` controls the integration. It is
 optional for account readiness, explicitly disabled in Student 4 CI, and
@@ -74,25 +73,26 @@ Account Help UI -> POST /api/users/help/answers { question }
                 -> answer + server-derived citations + confidence
 ```
 
-The launcher includes this README and
-[`docs/account-help.md`](docs/account-help.md) in the curated corpus.
-Student 4 scope searches only sources under `student-4/`, so unrelated
+The RAG image includes this README and
+the [Account Help guide](../docs/features/student-4/account-help.md) in the curated corpus.
+Student 4 scope searches its README and `docs/features/student-4/` guides
+plus explicitly shared sources, so unrelated
 feature documentation cannot become an account-help citation. Existing
 Student 1/3 retrieval behavior is unchanged. Responses show `low`, `medium`,
 or `high` retrieval-based confidence, source titles/headings/paths, and the
 number of matched excerpts. No relevant chunks returns `insufficient_context`
 without calling the model; the model can also decline an unsupported question.
 
-`RAG_ENABLED` and `RAG_HOST_PORT` come from the generated `.env`. Docker
-routes the backend to `http://host.docker.internal:${RAG_HOST_PORT}`.
+`RAG_ENABLED` comes from the generated `.env`. Compose
+routes the backend to `http://rag-server:8080` without publishing a host port.
 Standalone backends must set `RagServer__Enabled` explicitly and, when
 enabled, `RagServer__BaseUrl`. Disabled RAG returns `503`; service/model
 failures return a friendly `502`. Questions must contain 3-500 trimmed
 characters. CI explicitly disables both MCP and RAG, and backend readiness
 continues to depend only on its database.
 
-Restart `python tools/run_ai_services.py` after editing corpus files because
-documents are indexed at startup.
+Run `docker compose up --build -d rag-server` after editing corpus files
+because documents are packaged into the image and indexed at startup.
 
 Future releases will focus on improving the AI summary by giving it
 context from other services and expanding on user roles and
@@ -118,7 +118,7 @@ flowchart TD
 
     subgraph ExternalServices["External & Shared Services"]
         MailHog["MailHog (:1025 SMTP / :8025 Web)<br>Developer Mailbox"]
-        AIM["ai-mode (:5001)<br>Profile Summary LLM"]
+        AIM["ai-mode (:8080, internal)<br>Profile Summary LLM"]
     end
 
     Shell -- "Proxy /account/" --> FE

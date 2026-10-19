@@ -1,6 +1,6 @@
 # ai-mode gateway
 
-Shared non-containerised OpenRouter proxy. Use this once your feature needs AI-mode — no
+Shared OpenRouter proxy. Use this once your feature needs AI-mode — no
 need for your own OpenRouter key or account, gateway already holds shared
 one.
 
@@ -14,13 +14,13 @@ flowchart LR
         S5["student-5-backend"]
     end
 
-    subgraph HostServices["Host AI Services"]
-        RAG["rag-server (:5003)"]
-        AIM["ai-mode (:5001)<br>(Holds OPENROUTER_API_KEY)"]
+    subgraph AIServices["AI Services"]
+        RAG["rag-server (:8080, internal)"]
+        AIM["ai-mode (:8080, internal)<br>(Holds OPENROUTER_API_KEY)"]
     end
 
-    Backends -- "host.docker.internal:5001<br>/v1/chat/completions" --> AIM
-    RAG -- "127.0.0.1:5001" --> AIM
+    Backends -- "ai-mode:8080<br>/v1/chat/completions" --> AIM
+    RAG -- "ai-mode:8080" --> AIM
     AIM -- "HTTPS (Bearer Token)" --> OpenRouter["OpenRouter API<br>(nemotron-3.5-lightning:free)"]
 ```
 
@@ -29,13 +29,13 @@ flowchart LR
 Start the shared AI services from the repository root:
 
 ```bash
-python tools/run_ai_services.py
+docker compose up --build -d ai-mode mcp-server rag-server
 ```
 
 From inside a backend container:
 
 ```http
-POST http://host.docker.internal:5001/v1/chat/completions
+POST http://ai-mode:8080/v1/chat/completions
 ```
 
 Same request shape as OpenAI's chat completions API:
@@ -61,6 +61,6 @@ explicitly.
 
 ## Health
 
-AI Mode is not a Docker Compose service. Its `/health/live` endpoint reports
+AI Mode runs in Docker Compose. Its `/health/live` endpoint reports
 process liveness and `/health/ready` verifies that the OpenRouter key and
 model loaded from the root `.env` are configured.

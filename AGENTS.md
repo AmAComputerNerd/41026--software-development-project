@@ -14,8 +14,9 @@ This repository is an **LLM-enhanced microservices web platform** built on top o
 1. **Vertical Slice Microservices**: Each student owns a bounded context (`student-1` through `student-5`) containing its own backend, frontend, and dedicated persistence mechanism.
 2. **Shared Gateway Services**:
    - `shared-backend`: Exclusive owner of Canvas LMS API communications, authentication, caching, and HTML sanitization.
-   - `ai-mode`: Non-containerised exclusive holder of the OpenRouter LLM API key, serving as a unified chat-completions gateway for all backends.
-   - `ai-mode`, `mcp-server`, `rag-server`, and `multi-agent-server`: Shared local .NET services launched through `tools/run_ai_services.py`; Docker backends reach them through `host.docker.internal`.
+   - `ai-mode`: Exclusive holder of the OpenRouter LLM API key, serving as a unified chat-completions gateway for all backends.
+   - `ai-mode`, `mcp-server`, and `rag-server`: Compose services on the dedicated `ai-services` network with no published host ports (`http://ai-mode:8080`, `http://mcp-server:8080`, `http://rag-server:8080`); only calling feature backends join this network.
+   - `multi-agent-server`: Non-containerised local Release 2 Multi-Agent Coordinator (`:5004`, `http://host.docker.internal:5004`).
    - `shared-shell`: Vue 3 dashboard shell and Nginx reverse proxy mapping all frontend routes and backend `/api/*` routes under a single origin (`http://localhost:8080`).
    - `shared/ui-kit`: `@better-canvas/ui-kit` npm workspace package delivering canonical Neobrutalism design system tokens, CSS primitives, fonts, and shared Vue components.
    - `mailhog`: Local SMTP mock service (`1025` SMTP / `8025` Web UI) for transactional email testing (such as password resets).
@@ -44,8 +45,8 @@ Any AI agent modifying or extending this codebase **must strictly follow these 5
 
 ### Rule 3: Centralized AI Gateway (`ai-mode`)
 - Microservices **must not** call OpenRouter or external LLM providers directly.
-- All AI features call the local `ai-mode` gateway. Docker backends use `http://host.docker.internal:5001/v1/chat/completions`.
-- Only the non-containerised `ai-mode` process receives `OPENROUTER_API_KEY`, loaded by `tools/run_ai_services.py` from the root `.env`.
+- All AI features call the `ai-mode` gateway at `http://ai-mode:8080/v1/chat/completions`.
+- Only the `ai-mode` container receives `OPENROUTER_API_KEY`, injected by Compose from the root `.env`.
 
 ### Rule 4: Neobrutalism Design System (`@better-canvas/ui-kit`)
 - Frontends are built with **Vue 3 `<script setup lang="ts">` and plain SCSS**.
@@ -78,9 +79,9 @@ Whenever any log, architecture detail, endpoint, test report, or major codebase 
 |---|---|---|---|---|---|
 | **`shared-shell`** | `shared/frontend` | Vue 3 + Nginx | `8080` | `http://shared-shell:80` | Dashboard shell (`/`), Nginx reverse proxy for all frontends & APIs |
 | **`shared-backend`** | `shared/backend` | ASP.NET Core (.NET 10) + SQLite | `5110` | `http://shared-backend:8080` | Canvas API gateway (`/api/canvas/*`), in-memory caching (3-min TTL), audit log |
-| **`ai-mode`** | `ai-services/ai-mode` | ASP.NET Core (.NET 10), non-containerised | `5001` | `http://host.docker.internal:5001` | OpenRouter LLM gateway (`/v1/chat/completions`), health checks (`/health/live`, `/health/ready`) |
-| **`mcp-server`** | `ai-services/mcp-server` | ASP.NET Core (.NET 10), non-containerised | `5002` | `http://host.docker.internal:5002` | Shared MCP tools (`/mcp`), health checks (`/health/live`, `/health/ready`) |
-| **`rag-server`** | `ai-services/rag-server` | ASP.NET Core (.NET 10), non-containerised | `5003` | `http://host.docker.internal:5003` | Grounded project-documentation answers (`/api/answers`) |
+| **`ai-mode`** | `ai-services/ai-mode` | ASP.NET Core (.NET 10) | None (`5001` standalone) | `http://ai-mode:8080` | OpenRouter LLM gateway (`/v1/chat/completions`), health checks (`/health/live`, `/health/ready`) |
+| **`mcp-server`** | `ai-services/mcp-server` | ASP.NET Core (.NET 10) | None (`5002` standalone) | `http://mcp-server:8080` | Shared MCP tools (`/mcp`), health checks (`/health/live`, `/health/ready`) |
+| **`rag-server`** | `ai-services/rag-server` | ASP.NET Core (.NET 10) | None (`5003` standalone) | `http://rag-server:8080` | Grounded project-documentation answers (`/api/answers`) |
 | **`multi-agent-server`** | `ai-services/multi-agent-server` | ASP.NET Core (.NET 10), non-containerised | `5004` | `http://host.docker.internal:5004` | Shared Multi-Agent Coordinator (`Planner → Worker → Reviewer → Human Review`, `/api/workflows/*`) |
 | **`student-1-backend`** | `student-1/backend` | ASP.NET Core (.NET 10) + EF Core PostgreSQL | `5101` | `http://student-1-backend:8080` | Notifications, delivery preferences, AI digests & chat, Multi-Agent integration, SSE stream, Canvas sync (`/notifications/*`, `/digest/*`, `/preferences/*`, `/api/notifications/multi-agent/*`, `/api/canvas-sync`) |
 | **`student-1-database`** | `student-1/database` | PostgreSQL 16 (Alpine) | `5432` | `student-1-database:5432` | Dedicated PostgreSQL database (`notifications_db`), seeded by `init.sql` |
@@ -114,9 +115,9 @@ Whenever any log, architecture detail, endpoint, test report, or major codebase 
 ├── .env.example                       # Environment variables template
 │
 ├── ai-services/
-│   ├── ai-mode/                       # Non-containerised OpenRouter LLM proxy gateway (:5001)
-│   ├── mcp-server/                    # Non-containerised shared MCP server (:5002)
-│   ├── rag-server/                    # Non-containerised shared RAG server (:5003)
+│   ├── ai-mode/                       # OpenRouter LLM proxy gateway (:8080 internal / :5001 host)
+│   ├── mcp-server/                    # Shared MCP server (:8080 internal / :5002 host)
+│   ├── rag-server/                    # Shared RAG server (:8080 internal / :5003 host)
 │   └── multi-agent-server/            # Non-containerised shared Multi-Agent coordinator (:5004)
 │
 ├── infra/
@@ -178,9 +179,6 @@ The root `.env` (copied from `.env.example`) and Docker Compose environment entr
 |---|---|---|
 | `OPENROUTER_API_KEY` | `ai-mode` | API key for OpenRouter LLM models |
 | `OPENROUTER_MODEL` | `ai-mode` | Required gateway-wide model copied from `.env.example`; requests may override it |
-| `AI_MODE_HOST_PORT` | AI service launcher and Docker backends | Host AI Mode port (default `5001`) |
-| `MCP_HOST_PORT` | MCP launcher and `student-3-backend` | Host MCP port (default `5002`) |
-| `RAG_HOST_PORT` | RAG launcher and `student-3-backend` | Host RAG port (default `5003`) |
 | `MULTI_AGENT_HOST_PORT` | Multi-Agent launcher and feature backends | Host Multi-Agent port (default `5004`) |
 | `MULTI_AGENT_ENABLED` | Feature backends | Toggle Multi-Agent workflow integration (`false` in baseline Compose/cloud; `true` locally with AI services) |
 | `CANVAS_BASE_URL` | `shared-backend` | Base URL of institution Canvas instance (`https://your-institution.instructure.com`) |
@@ -188,7 +186,9 @@ The root `.env` (copied from `.env.example`) and Docker Compose environment entr
 | `ASPNETCORE_ENVIRONMENT` | All .NET backends | Set to `Development` |
 | `ConnectionStrings__DefaultConnection` | `student-1-backend` | PostgreSQL connection string (`Host=student-1-database;Port=5432;Database=notifications_db;Username=postgres;Password=postgres`) |
 | `SharedService__BaseUrl` | `student-1`, `student-2`, `student-3` | Internal URL for Canvas gateway (`http://shared-backend:8080`) |
-| `AiGateway__BaseUrl` | `student-1` through `student-5` where AI is enabled | AI gateway URL (`http://host.docker.internal:5001` in Docker) |
+| `AiGateway__BaseUrl` | `student-1` through `student-5`, RAG | AI gateway URL (`http://ai-mode:8080`) |
+| `McpServer__BaseUrl` | `student-1` through `student-5` | MCP URL (`http://mcp-server:8080/mcp`) |
+| `RagServer__BaseUrl` | `student-1` through `student-5` | RAG URL (`http://rag-server:8080`) |
 | `MultiAgentServer__BaseUrl` | `student-1` through `student-5` where Multi-Agent is enabled | Multi-Agent server URL (`http://host.docker.internal:5004` in Docker) |
 | `DatabaseService__BaseUrl` | `student-3`, `student-4` (API and authentication), `student-5` | Internal URL for private persistence API |
 | `NotificationService__BaseUrl` | `student-2`, `student-3`, `student-4` (API and authentication), `student-5` | Internal URL for notifications (`http://student-1-backend:8080`) |
@@ -204,9 +204,6 @@ The root `.env` (copied from `.env.example`) and Docker Compose environment entr
 ```bash
 # Start all services with rebuild
 docker compose up --build
-
-# In another terminal, start the non-containerised AI services
-python tools/run_ai_services.py
 
 # Start specific services
 docker compose up -d shared-shell shared-backend student-1-database student-1-backend student-1-frontend
@@ -294,7 +291,7 @@ flowchart TD
     end
 
     subgraph Gateways["Shared Gateways"]
-        AIM["ai-mode host (:5001)<br>(OpenRouter Gateway)"]
+        AIM["ai-mode (:8080, internal)<br>(OpenRouter Gateway)"]
         SB["shared-backend (:8080)<br>(Canvas LMS Gateway)"]
     end
 

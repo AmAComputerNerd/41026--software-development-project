@@ -95,10 +95,10 @@ over HTTP rather than hitting Canvas directly.
 ## AI features
 
 Don't call OpenRouter from a new backend. Call the shared `ai-mode`
-gateway instead (`http://host.docker.internal:5001/v1/chat/completions`
+gateway instead (`http://ai-mode:8080/v1/chat/completions`
 from Docker). The gateway holds the only `OPENROUTER_API_KEY` any service
-needs. The root `.env` is the source of truth; `tools/run_ai_services.py`
-injects it into the non-containerised AI Mode process.
+needs. The root `.env` is the source of truth; Compose injects the key
+and model only into the AI Mode container.
 
 If an AI feature returns 500 with no obvious cause, check
 `OPENROUTER_API_KEY` first.

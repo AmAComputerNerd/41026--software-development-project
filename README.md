@@ -39,7 +39,7 @@ flowchart TD
 
     subgraph SharedInfra["Shared Gateways & Services"]
         SB["shared-backend (:5110)<br>Canvas Gateway"]
-        AIM["ai-mode (:5001)<br>OpenRouter Gateway"]
+        AIM["ai-mode (:8080, internal)<br>OpenRouter Gateway"]
         MailHog["mailhog (:1025 / :8025)<br>Mock SMTP"]
     end
 
@@ -87,9 +87,9 @@ flowchart TD
 | **`shared/backend`** | Shared | ASP.NET Core (.NET 10) + SQLite | Canvas LMS API gateway, in-memory caching (3-min TTL), HTML sanitization, audit log |
 | **`shared/frontend`** | Shared | Vue 3 + TypeScript + Nginx | Shared dashboard shell, Nginx reverse proxy at `http://localhost:8080` |
 | **`shared/ui-kit`** | Shared | SCSS + Vue 3 components | `@better-canvas/ui-kit` design system library |
-| **`ai-services/ai-mode`** | Shared | Local ASP.NET Core (.NET 10) | Non-containerised OpenRouter LLM gateway (`/v1/chat/completions`) |
-| **`ai-services/mcp-server`** | Shared | Local ASP.NET Core (.NET 10) | Non-containerised MCP tools accessed by Docker backends through `host.docker.internal` |
-| **`ai-services/rag-server`** | Shared | Local ASP.NET Core (.NET 10) | Non-containerised grounded project-documentation retrieval and generation |
+| **`ai-services/ai-mode`** | Shared | ASP.NET Core (.NET 10) | OpenRouter LLM gateway (`/v1/chat/completions`) |
+| **`ai-services/mcp-server`** | Shared | ASP.NET Core (.NET 10) | Shared MCP tools accessed through `http://mcp-server:8080/mcp` |
+| **`ai-services/rag-server`** | Shared | ASP.NET Core (.NET 10) | Grounded project-documentation retrieval and generation |
 | **`student-1`** | Bryan Lee | ASP.NET Core + PostgreSQL 16 + Vue 3 | Notifications, delivery preferences, SSE stream, AI digests & chat assistant |
 | **`student-2`** | Isaac Thomas | ASP.NET Core + SQLite + Vue 3 | Automations, scheduled Canvas posts, AI quiz filling, execution runner |
 | **`student-3`** | Jonathon Thomson | ASP.NET Core + SQLite + Vue 3 | Deadlines & task tracking, Canvas sync, AI subtasks, push notifications |
@@ -107,11 +107,8 @@ The easiest way to run the entire system is via Docker Compose:
 # 1. Generate .env and enter your OpenRouter/Canvas credentials
 python tools/setup_env.py
 
-# 2. Build and launch the containerised application
+# 2. Build and launch the application
 docker compose up --build
-
-# 3. In another terminal, launch all local AI services
-python tools/run_ai_services.py
 ```
 
 The setup command copies every non-secret default from `.env.example` and
@@ -128,9 +125,9 @@ Access services via the shared shell at [http://localhost:8080](http://localhost
 ```
 .
 ├── ai-services/
-│   ├── ai-mode/         # Non-containerised OpenRouter LLM proxy gateway
-│   ├── mcp-server/      # Non-containerised MCP server
-│   └── rag-server/      # Non-containerised grounded RAG server
+│   ├── ai-mode/         # OpenRouter LLM proxy gateway
+│   ├── mcp-server/      # MCP server
+│   └── rag-server/      # Grounded RAG server
 ├── shared/
 │   ├── backend/         # Canvas LMS gateway + audit database
 │   ├── frontend/        # Vue 3 dashboard shell + Nginx proxy
@@ -196,22 +193,11 @@ The shared Canvas and task-tracker databases persist timestamps as
 
 ## Running a single service outside Docker
 
-AI Mode, MCP, RAG, and Multi-Agent Server intentionally run outside Docker. After starting
-Compose, launch all four host services from the repository root:
-
-```bash
-python tools/run_ai_services.py
-```
-
-The launcher loads OpenRouter configuration from the root `.env`, prepares
-the curated RAG corpus, starts all four .NET projects (`:5001`–`:5004`), waits for their
-readiness endpoints, and stops all processes together.
-
 Each backend is a standalone ASP.NET project (`Api/` for most slices,
 `backend/GradesManager/GradesManager/` for student 5). The easiest way
 to iterate is still `docker compose up`, but a backend will run with
 `dotnet run` from its own project directory provided you supply the env
-vars it needs (notably `OPENROUTER_API_KEY` for AI features,
+vars it needs (notably `AiGateway__BaseUrl` for AI features,
 `SharedService__BaseUrl` for any service that calls into the Canvas
 gateway, and `DatabaseService__BaseUrl` for students 3, 4, and 5). See
 `docs/architecture/overview.md` for the per-service env-var reference.
