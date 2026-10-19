@@ -116,13 +116,13 @@ resource sharedShell 'Microsoft.App/containerApps@2023-05-01' = {
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
       ]
       ingress: {
@@ -190,7 +190,7 @@ resource sharedBackend 'Microsoft.App/containerApps@2023-05-01' = {
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: {
@@ -199,8 +199,8 @@ resource sharedBackend 'Microsoft.App/containerApps@2023-05-01' = {
       }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
         {
           name: 'canvas-api-token'
@@ -245,7 +245,7 @@ resource student1Database 'Microsoft.App/containerApps@2023-05-01' = {
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: {
@@ -255,11 +255,11 @@ resource student1Database 'Microsoft.App/containerApps@2023-05-01' = {
       }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
         {
-          name: 'postgres-password'
+          name: 'postgres-password' // pragma: allowlist secret
           value: actualPostgresPassword
         }
       ]
@@ -298,7 +298,7 @@ resource student1Backend 'Microsoft.App/containerApps@2023-05-01' = {
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: {
@@ -307,8 +307,8 @@ resource student1Backend 'Microsoft.App/containerApps@2023-05-01' = {
       }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
         {
           name: 'db-connection'
@@ -365,14 +365,14 @@ resource student2Backend 'Microsoft.App/containerApps@2023-05-01' = {
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: { external: false, targetPort: 8080 }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
       ]
     }
@@ -411,14 +411,14 @@ resource student3Database 'Microsoft.App/containerApps@2023-05-01' = {
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: { external: false, targetPort: 8080 }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
       ]
     }
@@ -444,14 +444,14 @@ resource student3Backend 'Microsoft.App/containerApps@2023-05-01' = {
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: { external: false, targetPort: 8080 }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
       ]
     }
@@ -491,14 +491,14 @@ resource student4Database 'Microsoft.App/containerApps@2023-05-01' = {
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: { external: false, targetPort: 8080 }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
       ]
     }
@@ -524,14 +524,14 @@ resource student4Backend 'Microsoft.App/containerApps@2023-05-01' = {
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: { external: false, targetPort: 8080 }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
       ]
     }
@@ -570,14 +570,14 @@ resource student5Database 'Microsoft.App/containerApps@2023-05-01' = {
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: { external: false, targetPort: 8080 }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
       ]
     }
@@ -603,14 +603,14 @@ resource student5Backend 'Microsoft.App/containerApps@2023-05-01' = {
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: { external: false, targetPort: 8080 }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
       ]
     }
@@ -655,14 +655,14 @@ resource aiModeApp 'Microsoft.App/containerApps@2023-05-01' = if (enableBonusAi)
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: { external: false, targetPort: 5001 }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
         {
           name: 'openrouter-api-key'
@@ -698,14 +698,14 @@ resource mcpServerApp 'Microsoft.App/containerApps@2023-05-01' = if (enableBonus
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: { external: false, targetPort: 5002 }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
       ]
     }
@@ -735,14 +735,14 @@ resource ragServerApp 'Microsoft.App/containerApps@2023-05-01' = if (enableBonus
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: { external: false, targetPort: 5003 }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
       ]
     }
@@ -773,14 +773,14 @@ resource multiAgentServerApp 'Microsoft.App/containerApps@2023-05-01' = if (enab
         {
           server: acr.properties.loginServer
           username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
         }
       ]
       ingress: { external: false, targetPort: 5004 }
       secrets: [
         {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
         }
       ]
     }
