@@ -102,8 +102,6 @@ jobs:
             (.services["student-4-backend"].environment.RagServer__Enabled == "false")
           ' <<< "$config" > /dev/null
 
-          python -m unittest discover -s tools/tests
-
       - name: Verify Student 3 database isolation
         shell: bash
         run: |

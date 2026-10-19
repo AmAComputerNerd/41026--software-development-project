@@ -24,11 +24,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         modelBuilder.Entity<BreakdownApplication>()
             .HasKey(application => application.WorkflowId);
-        
+
         modelBuilder.Entity<BreakdownApplication>()
             .Property(application => application.WorkflowId)
             .ValueGeneratedNever();
-        
+
         modelBuilder.Entity<Course>()
             .HasKey(c => c.Id);
 
