@@ -112,6 +112,19 @@ resource sharedShell 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
+      secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
+      ]
       ingress: {
         external: true
         targetPort: 80
@@ -173,11 +186,22 @@ resource sharedBackend 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: {
         external: false
         targetPort: 8080
       }
       secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
         {
           name: 'canvas-api-token'
           value: empty(canvasApiToken) ? 'placeholder-token' : canvasApiToken
@@ -217,12 +241,23 @@ resource student1Database 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: {
         external: false
         targetPort: 5432
         transport: 'tcp'
       }
       secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
         {
           name: 'postgres-password'
           value: actualPostgresPassword
@@ -259,11 +294,22 @@ resource student1Backend 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: {
         external: false
         targetPort: 8080
       }
       secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
         {
           name: 'db-connection'
           value: 'Host=student-1-database;Port=5432;Database=notifications_db;Username=postgres;Password=${actualPostgresPassword}'
@@ -315,7 +361,20 @@ resource student2Backend 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: { external: false, targetPort: 8080 }
+      secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
+      ]
     }
     template: {
       containers: [
@@ -348,7 +407,20 @@ resource student3Database 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: { external: false, targetPort: 8080 }
+      secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
+      ]
     }
     template: {
       containers: [
@@ -368,7 +440,20 @@ resource student3Backend 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: { external: false, targetPort: 8080 }
+      secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
+      ]
     }
     template: {
       containers: [
@@ -402,7 +487,20 @@ resource student4Database 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: { external: false, targetPort: 8080 }
+      secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
+      ]
     }
     template: {
       containers: [
@@ -422,7 +520,20 @@ resource student4Backend 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: { external: false, targetPort: 8080 }
+      secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
+      ]
     }
     template: {
       containers: [
@@ -455,7 +566,20 @@ resource student5Database 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: { external: false, targetPort: 8080 }
+      secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
+      ]
     }
     template: {
       containers: [
@@ -475,7 +599,20 @@ resource student5Backend 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: { external: false, targetPort: 8080 }
+      secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
+      ]
     }
     template: {
       containers: [
@@ -514,8 +651,19 @@ resource aiModeApp 'Microsoft.App/containerApps@2023-05-01' = if (enableBonusAi)
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: { external: false, targetPort: 5001 }
       secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
         {
           name: 'openrouter-api-key'
           value: empty(openRouterApiKey) ? 'unconfigured' : openRouterApiKey
@@ -529,6 +677,7 @@ resource aiModeApp 'Microsoft.App/containerApps@2023-05-01' = if (enableBonusAi)
           image: '${acr.properties.loginServer}/ai-mode:${imageTag}'
           resources: { cpu: json('0.25'), memory: '0.5Gi' }
           env: [
+            { name: 'ASPNETCORE_HTTP_PORTS', value: '5001' }
             { name: 'OPENROUTER_API_KEY', secretRef: 'openrouter-api-key' } // pragma: allowlist secret
             { name: 'OPENROUTER_MODEL', value: 'openrouter/free' }
           ]
@@ -545,7 +694,20 @@ resource mcpServerApp 'Microsoft.App/containerApps@2023-05-01' = if (enableBonus
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: { external: false, targetPort: 5002 }
+      secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
+      ]
     }
     template: {
       containers: [
@@ -553,6 +715,9 @@ resource mcpServerApp 'Microsoft.App/containerApps@2023-05-01' = if (enableBonus
           name: 'mcp-server'
           image: '${acr.properties.loginServer}/mcp-server:${imageTag}'
           resources: { cpu: json('0.25'), memory: '0.5Gi' }
+          env: [
+            { name: 'ASPNETCORE_HTTP_PORTS', value: '5002' }
+          ]
         }
       ]
     }
@@ -566,7 +731,20 @@ resource ragServerApp 'Microsoft.App/containerApps@2023-05-01' = if (enableBonus
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: { external: false, targetPort: 5003 }
+      secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
+      ]
     }
     template: {
       containers: [
@@ -575,6 +753,7 @@ resource ragServerApp 'Microsoft.App/containerApps@2023-05-01' = if (enableBonus
           image: '${acr.properties.loginServer}/rag-server:${imageTag}'
           resources: { cpu: json('0.25'), memory: '0.5Gi' }
           env: [
+            { name: 'ASPNETCORE_HTTP_PORTS', value: '5003' }
             { name: 'AiGateway__BaseUrl', value: 'http://ai-mode:5001' }
           ]
         }
@@ -590,7 +769,20 @@ resource multiAgentServerApp 'Microsoft.App/containerApps@2023-05-01' = if (enab
   properties: {
     managedEnvironmentId: managedEnv.id
     configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
       ingress: { external: false, targetPort: 5004 }
+      secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
+        }
+      ]
     }
     template: {
       containers: [
@@ -599,6 +791,7 @@ resource multiAgentServerApp 'Microsoft.App/containerApps@2023-05-01' = if (enab
           image: '${acr.properties.loginServer}/multi-agent-server:${imageTag}'
           resources: { cpu: json('0.25'), memory: '0.5Gi' }
           env: [
+            { name: 'ASPNETCORE_HTTP_PORTS', value: '5004' }
             { name: 'MultiAgent__AiModeBaseUrl', value: 'http://ai-mode:5001' }
             { name: 'MultiAgent__McpEndpointUrl', value: 'http://mcp-server:5002/mcp' }
             { name: 'MultiAgent__RagBaseUrl', value: 'http://rag-server:5003' }
