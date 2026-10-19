@@ -77,7 +77,7 @@ jobs:
         env:
           POSTGRES_DB: notifications_db
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: postgres # pragma: allowlist secret
         ports:
           - 5432:5432
         options: >-
@@ -98,7 +98,7 @@ jobs:
         env:
           ASPNETCORE_ENVIRONMENT: Production
           ASPNETCORE_URLS: http://127.0.0.1:5101
-          ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=notifications_db;Username=postgres;Password=postgres
+          ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=notifications_db;Username=postgres;Password=postgres # pragma: allowlist secret
           AI_MODE_ENABLED: 'false'
           MCP_ENABLED: 'false'
           RAG_ENABLED: 'false'

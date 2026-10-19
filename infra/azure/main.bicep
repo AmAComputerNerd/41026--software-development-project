@@ -195,7 +195,7 @@ resource sharedBackend 'Microsoft.App/containerApps@2023-05-01' = {
           env: [
             { name: 'ASPNETCORE_ENVIRONMENT', value: 'Production' }
             { name: 'CANVAS_BASE_URL', value: canvasBaseUrl }
-            { name: 'CANVAS_API_TOKEN', secretRef: 'canvas-api-token' }
+            { name: 'CANVAS_API_TOKEN', secretRef: 'canvas-api-token' } // pragma: allowlist secret
           ]
         }
       ]
@@ -240,7 +240,7 @@ resource student1Database 'Microsoft.App/containerApps@2023-05-01' = {
           env: [
             { name: 'POSTGRES_DB', value: 'notifications_db' }
             { name: 'POSTGRES_USER', value: 'postgres' }
-            { name: 'POSTGRES_PASSWORD', secretRef: 'postgres-password' }
+            { name: 'POSTGRES_PASSWORD', secretRef: 'postgres-password' } // pragma: allowlist secret
           ]
         }
       ]
@@ -280,7 +280,7 @@ resource student1Backend 'Microsoft.App/containerApps@2023-05-01' = {
           }
           env: [
             { name: 'ASPNETCORE_ENVIRONMENT', value: 'Production' }
-            { name: 'ConnectionStrings__DefaultConnection', secretRef: 'db-connection' }
+            { name: 'ConnectionStrings__DefaultConnection', secretRef: 'db-connection' } // pragma: allowlist secret
             { name: 'SharedService__BaseUrl', value: 'http://shared-backend:8080' }
             { name: 'AI_MODE_ENABLED', value: aiEnabledString }
             { name: 'MCP_ENABLED', value: aiEnabledString }
@@ -528,7 +528,7 @@ resource aiModeApp 'Microsoft.App/containerApps@2023-05-01' = if (enableBonusAi)
           image: '${acr.properties.loginServer}/ai-mode:${imageTag}'
           resources: { cpu: json('0.25'), memory: '0.5Gi' }
           env: [
-            { name: 'OPENROUTER_API_KEY', secretRef: 'openrouter-api-key' }
+            { name: 'OPENROUTER_API_KEY', secretRef: 'openrouter-api-key' } // pragma: allowlist secret
             { name: 'OPENROUTER_MODEL', value: 'openrouter/free' }
           ]
         }
