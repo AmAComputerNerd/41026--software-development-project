@@ -74,10 +74,16 @@ components (Navbar, etc.) instead of writing your own. Add an nginx
 proxy block in `shared/frontend/nginx.conf`, add your service to the root
 `docker-compose.yml`, and ensure its tile in `shared/ui-kit/src/services.ts` is live.
 
-## 5. Git Conventions
+## 5. Git Conventions & Mandatory Post-Commit / Major-Change Safeguards
 
 - Branch off `main` per feature, don't stack feature branches on other
   open feature branches.
 - Commit after each logical step, not one giant commit at the end, push
   as you go.
 - Open a PR into `main` when done, don't push directly to main.
+- **Mandatory Post-Commit & Major-Change Safeguards** (see [`AGENTS.md`](AGENTS.md) Rule 6 & Section 9):
+  1. **Keep Logs & Report Updated**: Ensure all `tools/agentic_loop/logs/` transcripts, test/deployment logs, and the [Release 2 Technical Report & Logs Google Doc](https://docs.google.com/document/d/19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ/edit?usp=sharing) stay synchronised.
+  2. **Verify Zero Cross-Microservice Conflicts**: After every commit, verify there is no conflicting material between microservices (`student-1` through `student-5` and shared services) in the Google Doc and repo docs.
+  3. **Verify All Links Are Accessible**: Double-check that every link in `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/`, and the Google Doc resolves (`python3 .agents/skills/proofread/scripts/verify_doc_and_links.py`).
+  4. **Always Prompt the User**: At the end of every major change and/or commit, present the **Post-Change & Post-Commit Safeguard Checklist** and ask if the user would like to run the [`proofread`](.agents/skills/proofread/SKILL.md) skill or sync updates to the Google Doc.
+
