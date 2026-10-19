@@ -55,6 +55,8 @@ jobs:
           MCP_ENABLED=false
           RAG_ENABLED=false
           AI_MODE_ENABLED=false
+          MULTI_AGENT_ENABLED=false
+          MULTI_AGENT_HOST_PORT=5004
           EOF
           python -c 'import secrets; print("POSTGRES_PASSWORD=" + secrets.token_hex(32))' >> .env
 
@@ -69,6 +71,7 @@ jobs:
           config=$(docker compose config --format json)
           jq --exit-status '
             . as $config |
+            (.services | has("multi-agent-server") | not) and
             (["ai-mode", "mcp-server", "rag-server"] | all(
               . as $service |
               ($config.services[$service].build != null) and
@@ -94,6 +97,9 @@ jobs:
               ($config.services["mcp-server"].environment["Student\($student)__BaseUrl"] ==
                 "http://student-\($student)-backend:8080")
             )) and
+            (.services["student-1-backend"].environment.MultiAgentServer__Enabled == "false") and
+            (.services["student-1-backend"].environment.MultiAgentServer__BaseUrl |
+              startswith("http://host.docker.internal:")) and
             (.services["student-3-backend"].environment.McpServer__Enabled == "false") and
             (.services["student-3-backend"].environment.RagServer__Enabled == "false") and
             (.services["student-4-backend"].environment.McpServer__Enabled == "false") and

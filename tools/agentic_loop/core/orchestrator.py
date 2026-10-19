@@ -2,12 +2,33 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from collectors import backend_collector, compose_collector, database_collector, frontend_collector, mcp_collector, rag_collector
+from collectors import (
+    backend_collector,
+    cloud_deployment_collector,
+    compose_collector,
+    database_collector,
+    frontend_collector,
+    mcp_collector,
+    multi_agent_collector,
+    rag_collector,
+    testing_collector,
+)
 from config.review_config import PROMPT_ROOT, get_owner_context
 from core.ai_runner import AIRunner
 from core.doc_loader import load_documentation
 from core.prompt_registry import PromptRegistry
-from pipelines import backend_pipeline, compose_pipeline, database_pipeline, frontend_pipeline, mcp_pipeline, rag_pipeline, review_pipeline
+from pipelines import (
+    backend_pipeline,
+    cloud_deployment_pipeline,
+    compose_pipeline,
+    database_pipeline,
+    frontend_pipeline,
+    mcp_pipeline,
+    multi_agent_pipeline,
+    rag_pipeline,
+    review_pipeline,
+    testing_pipeline,
+)
 
 COLLECTORS = {
     "frontend": frontend_collector.collect,
@@ -16,6 +37,9 @@ COLLECTORS = {
     "compose": compose_collector.collect,
     "mcp": mcp_collector.collect,
     "rag": rag_collector.collect,
+    "multi-agent": multi_agent_collector.collect,
+    "testing": testing_collector.collect,
+    "cloud-deployment": cloud_deployment_collector.collect,
 }
 
 TASK_PROMPTS = {
@@ -25,6 +49,9 @@ TASK_PROMPTS = {
     "compose": "compose_task_prompt.txt",
     "mcp": "mcp_task_prompt.txt",
     "rag": "rag_task_prompt.txt",
+    "multi-agent": "multi_agent_task_prompt.txt",
+    "testing": "testing_task_prompt.txt",
+    "cloud-deployment": "cloud_deployment_task_prompt.txt",
 }
 
 IMPLEMENTATION_PIPELINES = {
@@ -34,6 +61,9 @@ IMPLEMENTATION_PIPELINES = {
     "compose": compose_pipeline.build_user_prompt,
     "mcp": mcp_pipeline.build_user_prompt,
     "rag": rag_pipeline.build_user_prompt,
+    "multi-agent": multi_agent_pipeline.build_user_prompt,
+    "testing": testing_pipeline.build_user_prompt,
+    "cloud-deployment": cloud_deployment_pipeline.build_user_prompt,
 }
 
 

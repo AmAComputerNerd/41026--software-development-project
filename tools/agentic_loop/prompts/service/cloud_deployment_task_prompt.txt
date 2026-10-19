@@ -1,0 +1,20 @@
+Review Target: Release 2 Cloud Deployment Report Review
+
+Cloud Deployment Evidence:
+{{VALIDATION_EVIDENCE}}
+
+Project Context:
+{{PROJECT_CONTEXT}}
+
+{{DOCUMENTATION_CONTEXT}}
+
+Task:
+Validate only what the evidence establishes:
+- Reusable cloud deployment scripts and Infrastructure-as-Code (`infra/azure/main.bicep`, `infra/azure/deploy.sh`, `infra/azure/validate-cloud.sh`) and `.github/workflows/cloud-deployment.yml` are implemented for Microsoft Azure Container Apps.
+- In the required baseline cloud deployment (Criterion 7), `AI-Mode`, `MCP Server`, `RAG Server`, and `Multi-Agent Server` are disabled by default while frontend UI, backend APIs, databases, and CRUD operations remain operational.
+- Optional Bonus Cloud parameters (B1-B6) cleanly enable cloud AI services and endpoint/data security controls (HTTPS/TLS, Key Vault secrets, internal network isolation) when opted in.
+- Provide an explicit Release Readiness Recommendation to support the final human release decision.
+
+Output Format:
+- Return 3 concise bullet points: (1) Baseline Cloud & CI/CD Verification, (2) Bonus AI & Security Profile Verification, and (3) Final Release Readiness Recommendation for Human Sign-Off.
+- Maximum 130 words total.

@@ -1,13 +1,16 @@
 def print_owner_menu(owners: list[str]) -> None:
     print()
     print("=" * 70)
-    print("AGENTIC REVIEW MENU")
+    print("AGENTIC REVIEW MENU (Release 1 + Release 2 Modes)")
     for index, owner in enumerate(owners, start=1):
         print(f"{index} - {owner}")
     print(f"{len(owners) + 1} - docker-compose (architecture review)")
     print(f"{len(owners) + 2} - MCP (live tool validation)")
     print(f"{len(owners) + 3} - RAG (grounding validation)")
-    print(f"{len(owners) + 4} - Run All (every owner/layer + compose + MCP + RAG)")
+    print(f"{len(owners) + 4} - Multi-Agent Workflow Review (Release 2)")
+    print(f"{len(owners) + 5} - Testing Report Review (Release 2)")
+    print(f"{len(owners) + 6} - Cloud Deployment Report Review (Release 2)")
+    print(f"{len(owners) + 7} - Run All (every owner/layer + compose + MCP + RAG + Release 2 modes)")
     print("0 - Exit")
     print("=" * 70)
 

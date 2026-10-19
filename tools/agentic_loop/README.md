@@ -51,12 +51,15 @@ tools/
     │   ├── log_writer.py       # Tees each run to a timestamped transcript
     │   └── reporter.py         # Terminal output formatting
     ├── collectors/
-    │   ├── frontend_collector.py  # Vue 3 + @better-canvas/ui-kit static & live collector
-    │   ├── backend_collector.py   # .NET minimal-API route discovery + live GET prober
-    │   ├── database_collector.py  # SQLite PRAGMA schema introspector
-    │   ├── compose_collector.py   # docker-compose.yml configuration collector
-    │   ├── mcp_collector.py       # Static boundaries + live MCP invocation
-    │   └── rag_collector.py       # Grounded + insufficient-context validation
+    │   ├── frontend_collector.py         # Vue 3 + @better-canvas/ui-kit static & live collector
+    │   ├── backend_collector.py          # .NET minimal-API route discovery + live GET prober
+    │   ├── database_collector.py         # SQLite PRAGMA / PostgreSQL schema introspector
+    │   ├── compose_collector.py          # docker-compose.yml configuration collector
+    │   ├── mcp_collector.py              # Static boundaries + live MCP invocation
+    │   ├── rag_collector.py              # Grounded + insufficient-context validation
+    │   ├── multi_agent_collector.py      # Release 2: Multi-Agent (Planner/Worker/Reviewer + HITL) collector
+    │   ├── testing_collector.py          # Release 2: Pre-commit security & post-commit CI/CD test collector
+    │   └── cloud_deployment_collector.py # Release 2: Azure IaC, baseline AI-disabled & bonus cloud collector
     ├── pipelines/
     │   ├── frontend_pipeline.py
     │   ├── backend_pipeline.py
@@ -64,6 +67,9 @@ tools/
     │   ├── compose_pipeline.py
     │   ├── mcp_pipeline.py
     │   ├── rag_pipeline.py
+    │   ├── multi_agent_pipeline.py
+    │   ├── testing_pipeline.py
+    │   ├── cloud_deployment_pipeline.py
     │   └── review_pipeline.py     # Second-pass critique & validation prompt builder
     ├── prompts/
     │   ├── service/               # Shared system baseline & task prompts
@@ -97,13 +103,14 @@ OPENROUTER_MODEL=minimax/minimax-m3:free
 ### Run
 From repository root:
 ```bash
+# Interactive menu
 python tools/agentic_loop.py
+
+# Non-interactive Release 2 modes (global or per-owner)
+python tools/agentic_loop.py --mode multi-agent --target student-1
+python tools/agentic_loop.py --mode testing --target student-1
+python tools/agentic_loop.py --mode cloud-deployment --target student-1
 ```
 
 Select a target owner (`student-1` through `student-5`, `shared`),
-`docker-compose`, `MCP`, `RAG`, or `Run All`.
-
-MCP mode invokes the selected feature's live tool, including Student 2's
-automation-health review. RAG mode submits one grounded and one unrelated
-question through the selected feature backend. The RAG transcript captures
-source citations, confidence, and the required insufficient-context result.
+`docker-compose`, `MCP`, `RAG`, `Multi-Agent`, `Testing`, `Cloud Deployment`, or `Run All`.

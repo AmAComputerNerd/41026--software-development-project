@@ -2,6 +2,7 @@
 import { nextTick, onMounted, ref, watch } from 'vue'
 import ChatSessionsDrawer from '@/components/notifications/ChatSessionsDrawer.vue'
 import MarkdownContent from '@/components/notifications/MarkdownContent.vue'
+import MultiAgentWorkflowPanel from '@/components/notifications/MultiAgentWorkflowPanel.vue'
 import { useChatAssistant } from '@/composables/useChatAssistant'
 
 const {
@@ -73,8 +74,11 @@ onMounted(async () => {
   <div class="nb-chat-page">
     <div class="nb-digest-header-banner">
       <h1 class="nb-digest__title">AI DIGEST</h1>
-      <span class="nb-mono nb-digest-subtitle">INTERACTIVE CHAT ASSISTANT</span>
+      <span class="nb-mono nb-digest-subtitle">INTERACTIVE CHAT ASSISTANT &amp; MULTI-AGENT WORKFLOW</span>
     </div>
+
+    <!-- Release 2 Multi-Agent Workflow Panel (Planner -> Worker -> Reviewer -> Human Review) -->
+    <MultiAgentWorkflowPanel />
 
     <!-- Collapsible Past Chats Drawer -->
     <ChatSessionsDrawer

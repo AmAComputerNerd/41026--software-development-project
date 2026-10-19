@@ -106,6 +106,95 @@ test.describe('AI Chat Assistant & Past Sessions Drawer', () => {
       }
     })
 
+    const mockWorkflowStage1 = {
+      id: '77777777-7777-7777-7777-777777777701',
+      owner: 'student-1',
+      studentId: '11111111-1111-1111-1111-111111111111',
+      goal: 'Triage my unread Canvas deadline and grade notifications and build a prioritised 48-hour action plan.',
+      status: 'AwaitingHumanReview',
+      createdAtUtc: new Date().toISOString(),
+      updatedAtUtc: new Date().toISOString(),
+      planner: {
+        objective: 'Create an evidence-backed student-1 triage and action plan',
+        requiredEvidence: ['PostgreSQL notifications_db', 'RAG course policies'],
+        steps: ['Step 1: Inspect unread alerts', 'Step 2: Prioritise deadlines'],
+        completedAtUtc: new Date().toISOString(),
+      },
+      worker: {
+        evidenceSummary: 'PostgreSQL notifications_db (3 unread deadline alerts)',
+        draftOutput: 'Priority 1: Complete 41026 Release 2 Multi-Agent integration within 24h.',
+        recommendedActions: ['Run AI Break Down', 'Verify Grade Impact'],
+        citations: ['student-1-backend:/notifications', 'rag-server:/api/answers'],
+        completedAtUtc: new Date().toISOString(),
+      },
+      reviewer: {
+        verdict: 'ReadyForHumanReview',
+        confidence: 'high',
+        critique: 'Verified Worker output against Planner steps and cited evidence.',
+        identifiedRisks: ['Confirm Canvas sync timestamp'],
+        recommendations: ['Approve the action plan'],
+        completedAtUtc: new Date().toISOString(),
+      },
+      humanReview: null,
+      auditLog: [
+        {
+          timestampUtc: new Date().toISOString(),
+          agent: 'Planner',
+          action: 'PlanCreated',
+          summary: 'Created 2-step plan',
+        },
+        {
+          timestampUtc: new Date().toISOString(),
+          agent: 'Worker',
+          action: 'TaskExecuted',
+          summary: 'Generated draft action plan',
+        },
+        {
+          timestampUtc: new Date().toISOString(),
+          agent: 'Reviewer',
+          action: 'OutputReviewed',
+          summary: 'Verified against evidence',
+        },
+      ],
+    }
+
+    await page.route('**/api/notifications/multi-agent/**', async (route) => {
+      const req = route.request()
+      const url = new URL(req.url())
+      if (req.method() === 'GET' && url.pathname.endsWith('/workflows')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([]),
+        })
+      } else if (req.method() === 'POST' && url.pathname.endsWith('/run')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(mockWorkflowStage1),
+        })
+      } else if (req.method() === 'POST' && url.pathname.endsWith('/review')) {
+        const body = JSON.parse(req.postData() || '{}')
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            ...mockWorkflowStage1,
+            status: 'Approved',
+            humanReview: {
+              decision: body.decision || 'Approve',
+              reviewerName: body.reviewerName || 'Bryan Lee (25495108)',
+              comments: body.comments || 'Approved',
+              finalOutput: mockWorkflowStage1.worker.draftOutput,
+              reviewedAtUtc: new Date().toISOString(),
+            },
+          }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
     await page.goto('./digest')
   })
 
@@ -148,4 +237,19 @@ test.describe('AI Chat Assistant & Past Sessions Drawer', () => {
     await expect(page.locator('.nb-message-content--user')).toContainText('What should I prioritize next?')
     await expect(page.locator('.nb-message-bubble--assistant').last()).toContainText('Here is your customized study guidance')
   })
+
+  test('executes Release 2 Planner -> Worker -> Reviewer -> Human Review workflow in UI', async ({ page }) => {
+    const panel = page.getByTestId('multi-agent-panel')
+    await expect(panel).toBeVisible()
+
+    await page.getByTestId('multi-agent-run-btn').click()
+
+    await expect(page.getByTestId('stage-planner')).toContainText('Create an evidence-backed student-1 triage')
+    await expect(page.getByTestId('stage-worker')).toContainText('Priority 1: Complete 41026 Release 2')
+    await expect(page.getByTestId('stage-reviewer')).toContainText('Verified Worker output against Planner steps')
+
+    await page.getByTestId('btn-human-approve').click()
+    await expect(page.getByTestId('human-review-completed')).toContainText('Approve')
+  })
 })
+

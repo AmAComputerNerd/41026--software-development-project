@@ -15,7 +15,8 @@ Keep `docs/architecture/overview.md` up to date with what's actually built.
 3. **AI Gateway (`ai-mode`)**: Only `ai-mode` holds `OPENROUTER_API_KEY`.
    AI Mode, MCP, and RAG run in Compose on the dedicated `ai-services`
    network with no published host ports. Calling backends receive service-DNS
-   URLs through environment variables.
+   URLs through environment variables, while the Release 2 Multi-Agent Server
+   runs on host port `5004`.
 4. **Design System**: Use `@better-canvas/ui-kit` (workspace package) with Vue 3 `<script setup>` and plain SCSS. Follow Neobrutalism tokens (`0px` radius, thick borders, raw drop shadows). No Vuetify in frontend slices.
 5. **Git Workflow**: Branch off `main` per feature (`feat/`, `fix/`, `docs/`), use Conventional Commits, and open PRs into `main`.
 
@@ -34,6 +35,7 @@ Keep `docs/architecture/overview.md` up to date with what's actually built.
 - Internal `ai-mode:8080` (`/v1/chat/completions`) — AI Mode
 - Internal `mcp-server:8080` (`/mcp`) — MCP server
 - Internal `rag-server:8080` (`/api/answers`) — RAG server
+- Host `5004` (`/api/workflows`) — Multi-Agent server (`Planner → Worker → Reviewer → Human Review`)
 
 ---
 

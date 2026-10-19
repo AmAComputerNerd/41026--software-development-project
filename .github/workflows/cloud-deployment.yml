@@ -1,0 +1,157 @@
+name: Cloud Deployment (Azure Container Apps)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/azure/**'
+      - 'docker-compose.yml'
+      - 'shared/**'
+      - 'student-1/**'
+      - 'student-2/**'
+      - 'student-3/**'
+      - 'student-4/**'
+      - 'student-5/**'
+      - 'ai-services/**'
+      - '.github/workflows/cloud-deployment.yml'
+  workflow_dispatch:
+    inputs:
+      deployment_profile:
+        description: 'Cloud deployment profile (baseline disables AI; bonus-full enables B1-B6)'
+        required: true
+        default: 'baseline'
+        type: choice
+        options:
+          - baseline
+          - bonus-full
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Stage 1: CI Pre-Deployment Verification & Baseline Flag Audit
+  # ---------------------------------------------------------------------------
+  validate-iac-and-tests:
+    name: Validate IaC, Baseline Flags & Student 1 Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Validate Azure Bicep Template & Deployment Script (Dry-Run)
+        run: |
+          chmod +x infra/azure/deploy.sh infra/azure/validate-cloud.sh
+          ./infra/azure/deploy.sh --mode baseline --dry-run
+          ./infra/azure/deploy.sh --mode bonus-full --dry-run
+
+      - name: Verify Baseline Profile Disables All 4 AI Flags by Default
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          bicep = Path("infra/azure/main.bicep").read_text(encoding="utf-8")
+          for flag in ("AI_MODE_ENABLED", "MCP_ENABLED", "RAG_ENABLED", "MULTI_AGENT_ENABLED"):
+              assert flag in bicep, f"Missing {flag} in infra/azure/main.bicep"
+          assert "param enableBonusAi bool = false" in bicep, "enableBonusAi must default to false"
+          print("Verified: Baseline Cloud Profile disables AI_MODE, MCP, RAG, and MULTI_AGENT by default.")
+          PY
+
+      - name: Build Shared Multi-Agent Server (:5004)
+        run: dotnet build ai-services/multi-agent-server/MultiAgentServer/MultiAgentServer.csproj --configuration Release -warnaserror
+
+      - name: Run Student 1 Backend Unit & Integration Tests (Baseline + Multi-Agent)
+        run: dotnet test student-1/backend/NotificationService.sln --configuration Release --verbosity normal
+
+  # ---------------------------------------------------------------------------
+  # Stage 2: Container Build & Baseline Smoke Verification (AI Disabled)
+  # ---------------------------------------------------------------------------
+  smoke-test-baseline-container:
+    name: Smoke Test Baseline Cloud Profile (AI Disabled)
+    needs: validate-iac-and-tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: notifications_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres # pragma: allowlist secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Run Student 1 Backend in Cloud Baseline Mode (All AI Flags False) & Execute CRUD Smoke Test
+        env:
+          ASPNETCORE_ENVIRONMENT: Production
+          ASPNETCORE_URLS: http://127.0.0.1:5101
+          ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=notifications_db;Username=postgres;Password=postgres # pragma: allowlist secret
+          AI_MODE_ENABLED: 'false'
+          MCP_ENABLED: 'false'
+          RAG_ENABLED: 'false'
+          MULTI_AGENT_ENABLED: 'false'
+          AiGateway__Enabled: 'false'
+          McpServer__Enabled: 'false'
+          RagServer__Enabled: 'false'
+          MultiAgentServer__Enabled: 'false'
+        run: |
+          dotnet run --project student-1/backend/Api/Api.csproj --no-launch-profile &
+          API_PID=$!
+          trap "kill $API_PID 2>/dev/null || true" EXIT
+
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:5101/health >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+
+          curl -fsS http://127.0.0.1:5101/health | grep -q '"status":"Healthy"'
+          curl -fsS http://127.0.0.1:5101/notifications | grep -q '\['
+          curl -fsS -X POST http://127.0.0.1:5101/notifications/push \
+            -H "Content-Type: application/json" \
+            -d '{"courseId":"CLOUD-CI-101","CourseName":"Cloud CI","Title":"Baseline Cloud Test","SourceType":"system","EventType":"ci_cloud","Content":"CRUD works with AI disabled"}' \
+            | grep -q '"courseId":"CLOUD-CI-101"'
+          curl -fsS http://127.0.0.1:5101/api/notifications/multi-agent/status | grep -q '"enabled":false'
+          echo "Cloud Baseline Profile CRUD + AI-Disabled verification passed."
+
+  # ---------------------------------------------------------------------------
+  # Stage 3: Azure Container Apps Deployment (Triggered when AZURE_CREDENTIALS configured)
+  # ---------------------------------------------------------------------------
+  deploy-to-azure:
+    name: Deploy to Azure Container Apps
+    needs: [validate-iac-and-tests, smoke-test-baseline-container]
+    runs-on: ubuntu-latest
+    if: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && vars.AZURE_DEPLOYMENT_ENABLED == 'true' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Execute Azure Container Apps Deployment
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP || 'rg-better-canvas-r2' }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION || 'australiaeast' }}
+          AZURE_ACR_NAME: ${{ vars.AZURE_ACR_NAME || 'acrbettercanvasr2' }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          chmod +x infra/azure/deploy.sh
+          PROFILE="${{ inputs.deployment_profile || 'baseline' }}"
+          ./infra/azure/deploy.sh --mode "$PROFILE"
