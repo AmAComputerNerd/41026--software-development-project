@@ -133,6 +133,12 @@ if [[ "$SKIP_BUILD" != "true" ]]; then
   build_and_push "student-4-backend" "$REPO_ROOT/student-4" "backend/Api/Dockerfile"
   build_and_push "student-5-database" "$REPO_ROOT/student-5" "database/Database/Dockerfile"
   build_and_push "student-5-backend" "$REPO_ROOT/student-5" "backend/GradesManager/GradesManager/Dockerfile"
+  build_and_push "student-1-frontend" "$REPO_ROOT" "student-1/frontend/Dockerfile"
+  build_and_push "student-2-frontend" "$REPO_ROOT" "student-2/frontend/Dockerfile"
+  build_and_push "student-3-frontend" "$REPO_ROOT" "student-3/frontend/Dockerfile"
+  build_and_push "student-4-authentication" "$REPO_ROOT/student-4" "authentication/Authentication/Dockerfile"
+  build_and_push "student-4-frontend" "$REPO_ROOT" "student-4/frontend/Dockerfile"
+  build_and_push "student-5-frontend" "$REPO_ROOT" "student-5/frontend/Dockerfile"
   build_and_push "shared-shell" "$REPO_ROOT" "shared/frontend/Dockerfile"
 
   if [[ "$ENABLE_BONUS_AI" == "true" ]]; then

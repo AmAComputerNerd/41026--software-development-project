@@ -352,6 +352,39 @@ resource student1Backend 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
+resource student1Frontend 'Microsoft.App/containerApps@2023-05-01' = {
+  name: 'student-1-frontend'
+  location: location
+  properties: {
+    managedEnvironmentId: managedEnv.id
+    configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
+        }
+      ]
+      ingress: { external: false, targetPort: 80 }
+      secrets: [
+        {
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'student-1-frontend'
+          image: '${acr.properties.loginServer}/student-1-frontend:${imageTag}'
+          resources: { cpu: json('0.25'), memory: '0.5Gi' }
+        }
+      ]
+    }
+  }
+}
+
 // ----------------------------------------------------------------------------
 // 7. Students 2–5 Microservices & Isolated Persistence Services (Rule 1)
 // ----------------------------------------------------------------------------
@@ -395,6 +428,39 @@ resource student2Backend 'Microsoft.App/containerApps@2023-05-01' = {
             { name: 'MultiAgentServer__Enabled', value: aiEnabledString }
             { name: 'MultiAgentServer__BaseUrl', value: multiAgentInternalUrl }
           ]
+        }
+      ]
+    }
+  }
+}
+
+resource student2Frontend 'Microsoft.App/containerApps@2023-05-01' = {
+  name: 'student-2-frontend'
+  location: location
+  properties: {
+    managedEnvironmentId: managedEnv.id
+    configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
+        }
+      ]
+      ingress: { external: false, targetPort: 80 }
+      secrets: [
+        {
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'student-2-frontend'
+          image: '${acr.properties.loginServer}/student-2-frontend:${imageTag}'
+          resources: { cpu: json('0.25'), memory: '0.5Gi' }
         }
       ]
     }
@@ -481,6 +547,39 @@ resource student3Backend 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
+resource student3Frontend 'Microsoft.App/containerApps@2023-05-01' = {
+  name: 'student-3-frontend'
+  location: location
+  properties: {
+    managedEnvironmentId: managedEnv.id
+    configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
+        }
+      ]
+      ingress: { external: false, targetPort: 80 }
+      secrets: [
+        {
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'student-3-frontend'
+          image: '${acr.properties.loginServer}/student-3-frontend:${imageTag}'
+          resources: { cpu: json('0.25'), memory: '0.5Gi' }
+        }
+      ]
+    }
+  }
+}
+
 resource student4Database 'Microsoft.App/containerApps@2023-05-01' = {
   name: 'student-4-database'
   location: location
@@ -560,6 +659,77 @@ resource student4Backend 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
+resource student4Authentication 'Microsoft.App/containerApps@2023-05-01' = {
+  name: 'student-4-authentication'
+  location: location
+  properties: {
+    managedEnvironmentId: managedEnv.id
+    configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
+        }
+      ]
+      ingress: { external: false, targetPort: 8080 }
+      secrets: [
+        {
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'student-4-authentication'
+          image: '${acr.properties.loginServer}/student-4-authentication:${imageTag}'
+          resources: { cpu: json('0.25'), memory: '0.5Gi' }
+          env: [
+            { name: 'ASPNETCORE_ENVIRONMENT', value: 'Production' }
+            { name: 'DatabaseService__BaseUrl', value: 'http://student-4-database:8080' }
+            { name: 'NotificationService__BaseUrl', value: 'http://student-1-backend:8080' }
+          ]
+        }
+      ]
+    }
+  }
+}
+
+resource student4Frontend 'Microsoft.App/containerApps@2023-05-01' = {
+  name: 'student-4-frontend'
+  location: location
+  properties: {
+    managedEnvironmentId: managedEnv.id
+    configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
+        }
+      ]
+      ingress: { external: false, targetPort: 80 }
+      secrets: [
+        {
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'student-4-frontend'
+          image: '${acr.properties.loginServer}/student-4-frontend:${imageTag}'
+          resources: { cpu: json('0.25'), memory: '0.5Gi' }
+        }
+      ]
+    }
+  }
+}
+
 resource student5Database 'Microsoft.App/containerApps@2023-05-01' = {
   name: 'student-5-database'
   location: location
@@ -633,6 +803,39 @@ resource student5Backend 'Microsoft.App/containerApps@2023-05-01' = {
             { name: 'MultiAgentServer__Enabled', value: aiEnabledString }
             { name: 'MultiAgentServer__BaseUrl', value: multiAgentInternalUrl }
           ]
+        }
+      ]
+    }
+  }
+}
+
+resource student5Frontend 'Microsoft.App/containerApps@2023-05-01' = {
+  name: 'student-5-frontend'
+  location: location
+  properties: {
+    managedEnvironmentId: managedEnv.id
+    configuration: {
+      registries: [
+        {
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password' // pragma: allowlist secret
+        }
+      ]
+      ingress: { external: false, targetPort: 80 }
+      secrets: [
+        {
+          name: 'acr-password' // pragma: allowlist secret
+          value: acr.listCredentials().passwords[0].value // pragma: allowlist secret
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'student-5-frontend'
+          image: '${acr.properties.loginServer}/student-5-frontend:${imageTag}'
+          resources: { cpu: json('0.25'), memory: '0.5Gi' }
         }
       ]
     }
