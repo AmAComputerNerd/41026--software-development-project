@@ -32,9 +32,23 @@ jobs:
   validate-iac-and-tests:
     name: Validate IaC, Baseline Flags & Student 1 Tests
     runs-on: ubuntu-latest
+    outputs:
+      azure_credentials_configured: ${{ steps.check-creds.outputs.configured }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Check Azure Deployment Credentials Availability
+        id: check-creds
+        env:
+          AZURE_CREDS: ${{ secrets.AZURE_CREDENTIALS }}
+          AZURE_DEP_SECRET: ${{ secrets.AZURE_DEPLOYMENT_ENABLED }}
+        run: |
+          if [ -n "$AZURE_CREDS" ] || [ "$AZURE_DEP_SECRET" = "true" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Setup .NET 10.0
         uses: actions/setup-dotnet@v4
@@ -135,7 +149,7 @@ jobs:
     name: Deploy to Azure Container Apps
     needs: [validate-iac-and-tests, smoke-test-baseline-container]
     runs-on: ubuntu-latest
-    if: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && (vars.AZURE_DEPLOYMENT_ENABLED == 'true' || secrets.AZURE_DEPLOYMENT_ENABLED == 'true' || secrets.AZURE_CREDENTIALS != '') }}
+    if: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && vars.AZURE_DEPLOYMENT_ENABLED != 'false' && (vars.AZURE_DEPLOYMENT_ENABLED == 'true' || needs.validate-iac-and-tests.outputs.azure_credentials_configured == 'true') }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
