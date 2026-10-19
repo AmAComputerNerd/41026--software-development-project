@@ -97,8 +97,10 @@ fi
 echo "[1/3] Ensuring Azure Resource Group '$RESOURCE_GROUP' exists..."
 az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --output none
 
-echo "[2/3] Deploying Bicep template $SCRIPT_DIR/main.bicep (enableBonusAi=$ENABLE_BONUS_AI)..."
-FQDN=$(az deployment group create \
+DEPLOY_NAME="better-canvas-$(date +%s)"
+echo "[2/3] Deploying Bicep template $SCRIPT_DIR/main.bicep (name=$DEPLOY_NAME, enableBonusAi=$ENABLE_BONUS_AI)..."
+if ! FQDN=$(az deployment group create \
+  --name "$DEPLOY_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --template-file "$SCRIPT_DIR/main.bicep" \
   --parameters \
@@ -109,7 +111,15 @@ FQDN=$(az deployment group create \
     openRouterApiKey="$OPENROUTER_API_KEY" \
     canvasApiToken="$CANVAS_API_TOKEN" \
   --query "properties.outputs.publicGatewayFqdn.value" \
-  --output tsv)
+  --output tsv); then
+  echo "::error::Azure deployment failed. Listing failed resource operations..."
+  az deployment operation group list \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$DEPLOY_NAME" \
+    --query "[?properties.provisioningState=='Failed'].{Resource:properties.targetResource.resourceName, Type:properties.targetResource.resourceType, Code:properties.statusMessage.error.code, Message:properties.statusMessage.error.message}" \
+    --output table || true
+  exit 1
+fi
 
 echo "[3/3] Cloud deployment complete."
 echo "Public Gateway URL: https://$FQDN"

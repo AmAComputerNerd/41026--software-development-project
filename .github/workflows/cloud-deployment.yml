@@ -161,7 +161,7 @@ jobs:
     name: Deploy to Azure Container Apps
     needs: [validate-iac-and-tests, smoke-test-baseline-container]
     runs-on: ubuntu-latest
-    if: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && vars.AZURE_DEPLOYMENT_ENABLED != 'false' && (vars.AZURE_DEPLOYMENT_ENABLED == 'true' || needs.validate-iac-and-tests.outputs.azure_credentials_configured == 'true') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && vars.AZURE_DEPLOYMENT_ENABLED != 'false' && (vars.AZURE_DEPLOYMENT_ENABLED == 'true' || needs.validate-iac-and-tests.outputs.azure_credentials_configured == 'true') }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

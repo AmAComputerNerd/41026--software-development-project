@@ -47,8 +47,9 @@ param canvasBaseUrl string = 'https://canvas.instructure.com'
 
 @secure()
 @description('PostgreSQL administrator password for student-1-database')
-param postgresPassword string = 'postgres-cloud-r2-secure'
+param postgresPassword string = ''
 
+var actualPostgresPassword = empty(postgresPassword) ? 'postgres-cloud-r2-secure' : postgresPassword
 var aiEnabledString = enableBonusAi ? 'true' : 'false'
 var aiModeInternalUrl = enableBonusAi ? 'http://ai-mode:5001' : 'http://localhost:5001'
 var mcpInternalUrl = enableBonusAi ? 'http://mcp-server:5002' : 'http://localhost:5002'
@@ -224,7 +225,7 @@ resource student1Database 'Microsoft.App/containerApps@2023-05-01' = {
       secrets: [
         {
           name: 'postgres-password'
-          value: postgresPassword
+          value: actualPostgresPassword
         }
       ]
     }
@@ -265,7 +266,7 @@ resource student1Backend 'Microsoft.App/containerApps@2023-05-01' = {
       secrets: [
         {
           name: 'db-connection'
-          value: 'Host=student-1-database;Port=5432;Database=notifications_db;Username=postgres;Password=${postgresPassword}'
+          value: 'Host=student-1-database;Port=5432;Database=notifications_db;Username=postgres;Password=${actualPostgresPassword}'
         }
       ]
     }
