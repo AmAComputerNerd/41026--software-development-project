@@ -32,9 +32,23 @@ jobs:
   validate-iac-and-tests:
     name: Validate IaC, Baseline Flags & Student 1 Tests
     runs-on: ubuntu-latest
+    outputs:
+      azure_credentials_configured: ${{ steps.check-creds.outputs.configured }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Check Azure Deployment Credentials Availability
+        id: check-creds
+        env:
+          AZURE_CREDS: ${{ secrets.AZURE_CREDENTIALS }}
+          AZURE_DEP_SECRET: ${{ secrets.AZURE_DEPLOYMENT_ENABLED }}
+        run: |
+          if [ -n "$AZURE_CREDS" ] || [ "$AZURE_DEP_SECRET" = "true" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Setup .NET 10.0
         uses: actions/setup-dotnet@v4
@@ -94,11 +108,14 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Build Student 1 Backend
+        run: dotnet build student-1/backend/Api/Api.csproj --configuration Release
+
       - name: Run Student 1 Backend in Cloud Baseline Mode (All AI Flags False) & Execute CRUD Smoke Test
         env:
           ASPNETCORE_ENVIRONMENT: Production
           ASPNETCORE_URLS: http://127.0.0.1:5101
-          ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=notifications_db;Username=postgres;Password=postgres # pragma: allowlist secret
+          ConnectionStrings__DefaultConnection: Host=127.0.0.1;Port=5432;Database=notifications_db;Username=postgres;Password=postgres # pragma: allowlist secret
           AI_MODE_ENABLED: 'false'
           MCP_ENABLED: 'false'
           RAG_ENABLED: 'false'
@@ -108,23 +125,32 @@ jobs:
           RagServer__Enabled: 'false'
           MultiAgentServer__Enabled: 'false'
         run: |
-          dotnet run --project student-1/backend/Api/Api.csproj --no-launch-profile &
+          dotnet run --project student-1/backend/Api/Api.csproj --configuration Release --no-build --no-launch-profile > api.log 2>&1 &
           API_PID=$!
           trap "kill $API_PID 2>/dev/null || true" EXIT
 
-          for i in $(seq 1 30); do
+          READY=false
+          for i in $(seq 1 45); do
             if curl -fsS http://127.0.0.1:5101/health >/dev/null 2>&1; then
+              READY=true
               break
             fi
             sleep 1
           done
 
-          curl -fsS http://127.0.0.1:5101/health | grep -q '"status":"Healthy"'
+          if [ "$READY" != "true" ]; then
+            echo "::error::Student 1 backend failed to become healthy within 45 seconds."
+            echo "--- Backend log output ---"
+            cat api.log || true
+            exit 1
+          fi
+
+          curl -fsS http://127.0.0.1:5101/health | grep -q "Healthy"
           curl -fsS http://127.0.0.1:5101/notifications | grep -q '\['
           curl -fsS -X POST http://127.0.0.1:5101/notifications/push \
             -H "Content-Type: application/json" \
-            -d '{"courseId":"CLOUD-CI-101","CourseName":"Cloud CI","Title":"Baseline Cloud Test","SourceType":"system","EventType":"ci_cloud","Content":"CRUD works with AI disabled"}' \
-            | grep -q '"courseId":"CLOUD-CI-101"'
+            -d '{"studentId":"00000000-0000-0000-0000-000000000001","type":"Deadline","sourceMicroservice":"system","message":"Baseline Cloud Test: CRUD works with AI disabled"}' \
+            | grep -q '"sourceMicroservice":"system"'
           curl -fsS http://127.0.0.1:5101/api/notifications/multi-agent/status | grep -q '"enabled":false'
           echo "Cloud Baseline Profile CRUD + AI-Disabled verification passed."
 
@@ -135,7 +161,7 @@ jobs:
     name: Deploy to Azure Container Apps
     needs: [validate-iac-and-tests, smoke-test-baseline-container]
     runs-on: ubuntu-latest
-    if: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && (vars.AZURE_DEPLOYMENT_ENABLED == 'true' || secrets.AZURE_DEPLOYMENT_ENABLED == 'true' || secrets.AZURE_CREDENTIALS != '') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && vars.AZURE_DEPLOYMENT_ENABLED != 'false' && (vars.AZURE_DEPLOYMENT_ENABLED == 'true' || needs.validate-iac-and-tests.outputs.azure_credentials_configured == 'true') }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

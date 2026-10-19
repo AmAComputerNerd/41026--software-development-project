@@ -9,6 +9,7 @@ set -euo pipefail
 
 MODE="baseline"
 DRY_RUN="false"
+SKIP_BUILD="false"
 RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-rg-better-canvas-r2}"
 LOCATION="${AZURE_LOCATION:-australiaeast}"
 ACR_NAME="${AZURE_ACR_NAME:-acrbettercanvasr2}"
@@ -37,6 +38,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dry-run)
       DRY_RUN="true"
+      shift
+      ;;
+    --skip-build)
+      SKIP_BUILD="true"
       shift
       ;;
     --openrouter-key)
@@ -80,6 +85,7 @@ echo "RAG_ENABLED         : $ENABLE_BONUS_AI"
 echo "MULTI_AGENT_ENABLED : $ENABLE_BONUS_AI"
 echo "OPENROUTER_KEY      : $(if [[ -n "$OPENROUTER_API_KEY" ]]; then echo "[CONFIGURED]"; else echo "[NOT CONFIGURED]"; fi)"
 echo "CANVAS_TOKEN        : $(if [[ -n "$CANVAS_API_TOKEN" ]]; then echo "[CONFIGURED]"; else echo "[NOT CONFIGURED]"; fi)"
+echo "Skip Build          : $SKIP_BUILD"
 echo "Dry Run             : $DRY_RUN"
 echo "=================================================================="
 
@@ -94,11 +100,62 @@ if [[ "$DRY_RUN" == "true" ]]; then
   exit 0
 fi
 
-echo "[1/3] Ensuring Azure Resource Group '$RESOURCE_GROUP' exists..."
+echo "[1/4] Ensuring Azure Resource Group '$RESOURCE_GROUP' and Container Registry '$ACR_NAME' exist..."
 az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --output none
+if ! az acr show --name "$ACR_NAME" --resource-group "$RESOURCE_GROUP" >/dev/null 2>&1; then
+  echo "Creating Azure Container Registry '$ACR_NAME'..."
+  az acr create --resource-group "$RESOURCE_GROUP" --name "$ACR_NAME" --sku Basic --admin-enabled true --location "$LOCATION" --output none
+fi
 
-echo "[2/3] Deploying Bicep template $SCRIPT_DIR/main.bicep (enableBonusAi=$ENABLE_BONUS_AI)..."
-FQDN=$(az deployment group create \
+if [[ "$SKIP_BUILD" != "true" ]]; then
+  echo "[2/4] Logging into Azure Container Registry '$ACR_NAME' and pushing images..."
+  az acr login --name "$ACR_NAME"
+
+  build_and_push() {
+    local svc="$1"
+    local ctx="$2"
+    local df="$3"
+    local target_image="${ACR_NAME}.azurecr.io/${svc}:${IMAGE_TAG}"
+
+    echo "==> Building and pushing $svc ($target_image)..."
+    docker build -t "$target_image" -f "$ctx/$df" "$ctx"
+    docker push "$target_image"
+  }
+
+  echo "==> Building and pushing baseline service containers..."
+  build_and_push "shared-backend" "$REPO_ROOT/shared/backend" "Api/Dockerfile"
+  build_and_push "student-1-database" "$REPO_ROOT/student-1/database" "Dockerfile"
+  build_and_push "student-1-backend" "$REPO_ROOT/student-1/backend" "Api/Dockerfile"
+  build_and_push "student-2-backend" "$REPO_ROOT/student-2/backend" "Api/Dockerfile"
+  build_and_push "student-3-database" "$REPO_ROOT/student-3" "database/Database/Dockerfile"
+  build_and_push "student-3-backend" "$REPO_ROOT/student-3" "backend/Api/Dockerfile"
+  build_and_push "student-4-database" "$REPO_ROOT/student-4" "database/Database/Dockerfile"
+  build_and_push "student-4-backend" "$REPO_ROOT/student-4" "backend/Api/Dockerfile"
+  build_and_push "student-5-database" "$REPO_ROOT/student-5" "database/Database/Dockerfile"
+  build_and_push "student-5-backend" "$REPO_ROOT/student-5" "backend/GradesManager/GradesManager/Dockerfile"
+  build_and_push "student-1-frontend" "$REPO_ROOT" "student-1/frontend/Dockerfile"
+  build_and_push "student-2-frontend" "$REPO_ROOT" "student-2/frontend/Dockerfile"
+  build_and_push "student-3-frontend" "$REPO_ROOT" "student-3/frontend/Dockerfile"
+  build_and_push "student-4-authentication" "$REPO_ROOT/student-4" "authentication/Authentication/Dockerfile"
+  build_and_push "student-4-frontend" "$REPO_ROOT" "student-4/frontend/Dockerfile"
+  build_and_push "student-5-frontend" "$REPO_ROOT" "student-5/frontend/Dockerfile"
+  build_and_push "shared-shell" "$REPO_ROOT" "shared/frontend/Dockerfile"
+
+  if [[ "$ENABLE_BONUS_AI" == "true" ]]; then
+    echo "==> Building and pushing bonus AI service containers..."
+    build_and_push "ai-mode" "$REPO_ROOT/ai-services/ai-mode" "Api/Dockerfile"
+    build_and_push "mcp-server" "$REPO_ROOT/ai-services/mcp-server" "McpServer/Dockerfile"
+    build_and_push "rag-server" "$REPO_ROOT" "ai-services/rag-server/RagServer/Dockerfile"
+    build_and_push "multi-agent-server" "$REPO_ROOT/ai-services/multi-agent-server/MultiAgentServer" "Dockerfile"
+  fi
+else
+  echo "[2/4] Skipping container image build (--skip-build requested)..."
+fi
+
+DEPLOY_NAME="better-canvas-$(date +%s)"
+echo "[3/4] Deploying Bicep template $SCRIPT_DIR/main.bicep (name=$DEPLOY_NAME, enableBonusAi=$ENABLE_BONUS_AI)..."
+if ! FQDN=$(az deployment group create \
+  --name "$DEPLOY_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --template-file "$SCRIPT_DIR/main.bicep" \
   --parameters \
@@ -109,7 +166,15 @@ FQDN=$(az deployment group create \
     openRouterApiKey="$OPENROUTER_API_KEY" \
     canvasApiToken="$CANVAS_API_TOKEN" \
   --query "properties.outputs.publicGatewayFqdn.value" \
-  --output tsv)
+  --output tsv); then
+  echo "::error::Azure deployment failed. Listing failed resource operations..."
+  az deployment operation group list \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$DEPLOY_NAME" \
+    --query "[?properties.provisioningState=='Failed'].{Resource:properties.targetResource.resourceName, Type:properties.targetResource.resourceType, Code:properties.statusMessage.error.code, Message:properties.statusMessage.error.message}" \
+    --output table || true
+  exit 1
+fi
 
-echo "[3/3] Cloud deployment complete."
+echo "[4/4] Cloud deployment complete."
 echo "Public Gateway URL: https://$FQDN"
