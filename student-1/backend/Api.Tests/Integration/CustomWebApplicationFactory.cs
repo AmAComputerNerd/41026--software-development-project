@@ -18,6 +18,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     public Mock<ISharedCanvasClient> SharedCanvasClientMock { get; } = new();
     public Mock<IMcpClient> McpClientMock { get; } = new();
     public Mock<IRagClient> RagClientMock { get; } = new();
+    public Mock<IMultiAgentClient> MultiAgentClientMock { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -90,6 +91,15 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 services.Remove(ragClientDescriptor);
             }
             services.AddSingleton(RagClientMock.Object);
+
+            var multiAgentClientDescriptor = services.SingleOrDefault(d =>
+                d.ServiceType == typeof(IMultiAgentClient));
+            if (multiAgentClientDescriptor != null)
+            {
+                services.Remove(multiAgentClientDescriptor);
+            }
+            MultiAgentClientMock.SetupGet(m => m.IsEnabled).Returns(true);
+            services.AddSingleton(MultiAgentClientMock.Object);
         });
     }
 

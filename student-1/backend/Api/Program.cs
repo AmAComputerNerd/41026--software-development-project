@@ -67,9 +67,22 @@ builder.Services.AddHttpClient<IRagClient, RagClient>((services, client) =>
     var options = services.GetRequiredService<IOptions<RagServerOptions>>().Value;
     if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var uri))
     {
-        client.BaseAddress = uri;
+        client.BaseAddress = new Uri($"{uri.ToString().TrimEnd('/')}/", UriKind.Absolute);
     }
     client.Timeout = TimeSpan.FromSeconds(90);
+});
+
+builder.Services
+    .AddOptions<MultiAgentServerOptions>()
+    .Bind(builder.Configuration.GetSection(MultiAgentServerOptions.SectionName));
+builder.Services.AddHttpClient<IMultiAgentClient, MultiAgentClient>((services, client) =>
+{
+    var options = services.GetRequiredService<IOptions<MultiAgentServerOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var uri))
+    {
+        client.BaseAddress = new Uri($"{uri.ToString().TrimEnd('/')}/", UriKind.Absolute);
+    }
+    client.Timeout = TimeSpan.FromSeconds(60);
 });
 
 builder.Services.AddScoped<IChatAssistantService, ChatAssistantService>();
@@ -108,6 +121,7 @@ app.MapAiDigestEndpoints();
 app.MapCanvasSyncEndpoints();
 app.MapChatEndpoints();
 app.MapMcpRagIntegrationEndpoints();
+app.MapMultiAgentIntegrationEndpoints();
 app.MapHealthChecks(
     "/health/live",
     new HealthCheckOptions

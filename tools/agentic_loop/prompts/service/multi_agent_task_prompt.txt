@@ -1,0 +1,22 @@
+Review Target: Release 2 Multi-Agent Workflow Review
+
+Multi-Agent Workflow Evidence:
+{{VALIDATION_EVIDENCE}}
+
+Project Context:
+{{PROJECT_CONTEXT}}
+
+{{DOCUMENTATION_CONTEXT}}
+
+Task:
+Validate only what the evidence establishes:
+- The shared Multi-Agent Server (`:5004`) remains a non-containerised local service launched via `tools/run_ai_services.py`.
+- It implements and coordinates the `Planner -> Worker -> Reviewer -> Human Review` workflow.
+- Human Review supports approval, correction, partial acceptance, or rejection and records an immutable coordination/audit log (`workflows.json`).
+- The student microservice accesses the Multi-Agent Server over HTTP API boundaries without cross-database violations.
+
+If no issue is supported by the evidence, say exactly: "No evidence-backed improvement identified."
+
+Output Format:
+- Return at most 3 concise bullet points (Workflow Verification, Audit & Boundary Compliance, Recommendation), or the no-evidence sentence.
+- Maximum 120 words total.

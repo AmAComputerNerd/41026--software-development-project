@@ -1,0 +1,192 @@
+[
+  {
+    "id": "90c4718f-ef0f-4773-acf4-18900626fc37",
+    "owner": "student-1",
+    "studentId": "11111111-1111-1111-1111-111111111111",
+    "goal": "Triage my unread Canvas deadline and grade notifications and build a 48-hour action plan.",
+    "status": "Approved",
+    "createdAtUtc": "2026-10-19T05:58:34.240336Z",
+    "updatedAtUtc": "2026-10-19T05:58:34.313803Z",
+    "planner": {
+      "objective": "Create an evidence-backed student-1 triage and action plan for: Triage my unread Canvas deadline and grade notifications and build a 48-hour action plan.",
+      "requiredEvidence": [
+        "student-1 microservice live database records (notifications, delivery preferences, and recent activity)",
+        "RAG grounded course/platform policy excerpts (rag-server :5003)",
+        "MCP cross-service tool state (mcp-server :5002)"
+      ],
+      "steps": [
+        "Inspect live student-1 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-19T05:58:34.282995Z"
+    },
+    "worker": {
+      "evidenceSummary": "Verified student-1 bounded-context state for student 11111111-1111-1111-1111-111111111111: active unread Canvas assignment notifications, upcoming assessment reminders, and delivery preference rules.",
+      "draftOutput": "[Worker Synthesis for student-1] Evaluated goal \u0027Triage my unread Canvas deadline and grade notifications and build a 48-hour action plan.\u0027 against live notification and course evidence. Priority 1: Address high-urgency unread deadline and grade alerts within the next 24 hours. Priority 2: Trigger subtask breakdown and verify grade impact for upcoming assessments. Priority 3: Keep SSE real-time toast alerts enabled for immediate Canvas updates.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-1:seed-and-contract-context"
+      ],
+      "completedAtUtc": "2026-10-19T05:58:34.289431Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "medium",
+      "critique": "Verified Worker output against student-1 Planner steps and cited evidence (student-1:seed-and-contract-context). The proposed triage order aligns with assignment urgency and preserves database isolation (Rule 1) and Canvas gateway boundaries (Rule 2).",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-19T05:58:34.291306Z"
+    },
+    "humanReview": {
+      "decision": "Approve",
+      "reviewerName": "Bryan Lee (25495108)",
+      "comments": "Verified notification priorities and approved the 48-hour study action plan.",
+      "finalOutput": "[Worker Synthesis for student-1] Evaluated goal \u0027Triage my unread Canvas deadline and grade notifications and build a 48-hour action plan.\u0027 against live notification and course evidence. Priority 1: Address high-urgency unread deadline and grade alerts within the next 24 hours. Priority 2: Trigger subtask breakdown and verify grade impact for upcoming assessments. Priority 3: Keep SSE real-time toast alerts enabled for immediate Canvas updates.",
+      "reviewedAtUtc": "2026-10-19T05:58:34.313803Z"
+    },
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-19T05:58:34.240336Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-1 (studentId=11111111-1111-1111-1111-111111111111)."
+      },
+      {
+        "timestampUtc": "2026-10-19T05:58:34.282995Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Create an evidence-backed student-1 triage and action plan for: Triage my unread Canvas deadline and grade notifications and build a 48-hour action plan.\u0027 with 3 execution steps and 3 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-19T05:58:34.289431Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-19T05:58:34.291306Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=medium) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-19T05:58:34.291442Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      },
+      {
+        "timestampUtc": "2026-10-19T05:58:34.313803Z",
+        "agent": "HumanReviewer",
+        "action": "Decision:Approve",
+        "summary": "Bryan Lee (25495108) recorded decision \u0027Approve\u0027 -\u003E final status \u0027Approved\u0027. Notes: Verified notification priorities and approved the 48-hour study action plan."
+      }
+    ]
+  },
+  {
+    "id": "ea9acdcc-41f6-49ba-ad88-7e01bef0c681",
+    "owner": "student-1",
+    "studentId": "11111111-1111-1111-1111-111111111111",
+    "goal": "Draft a prioritized study digest for my upcoming Software Development Project Release 2 submission and quiz deadlines.",
+    "status": "Corrected",
+    "createdAtUtc": "2026-10-19T05:59:03.877137Z",
+    "updatedAtUtc": "2026-10-19T05:59:03.933117Z",
+    "planner": {
+      "objective": "Create an evidence-backed student-1 triage and action plan for: Draft a prioritized study digest for my upcoming Software Development Project Release 2 submission and quiz deadlines.",
+      "requiredEvidence": [
+        "student-1 microservice live database records (notifications, delivery preferences, and recent activity)",
+        "RAG grounded course/platform policy excerpts (rag-server :5003)",
+        "MCP cross-service tool state (mcp-server :5002)"
+      ],
+      "steps": [
+        "Inspect live student-1 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-19T05:59:03.91177Z"
+    },
+    "worker": {
+      "evidenceSummary": "Verified student-1 bounded-context state for student 11111111-1111-1111-1111-111111111111: active unread Canvas assignment notifications, upcoming assessment reminders, and delivery preference rules.",
+      "draftOutput": "[Worker Synthesis for student-1] Evaluated goal \u0027Draft a prioritized study digest for my upcoming Software Development Project Release 2 submission and quiz deadlines.\u0027 against live notification and course evidence. Priority 1: Address high-urgency unread deadline and grade alerts within the next 24 hours. Priority 2: Trigger subtask breakdown and verify grade impact for upcoming assessments. Priority 3: Keep SSE real-time toast alerts enabled for immediate Canvas updates.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-1:seed-and-contract-context"
+      ],
+      "completedAtUtc": "2026-10-19T05:59:03.920324Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "medium",
+      "critique": "Verified Worker output against student-1 Planner steps and cited evidence (student-1:seed-and-contract-context). The proposed triage order aligns with assignment urgency and preserves database isolation (Rule 1) and Canvas gateway boundaries (Rule 2).",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-19T05:59:03.922193Z"
+    },
+    "humanReview": {
+      "decision": "Correct",
+      "reviewerName": "Bryan Lee (25495108)",
+      "comments": "Refined Priority 1 deadline window and added explicit RAG citation check before Quiz 4.",
+      "finalOutput": "[Human-Corrected Digest for student-1] Priority 1: Complete Release 2 Multi-Agent \u002B Cloud Deployment verification by 17:00 UTC. Priority 2: Submit Quiz 4 after reviewing RAG citations. Priority 3: Keep SSE real-time notifications enabled for final team merge alerts.",
+      "reviewedAtUtc": "2026-10-19T05:59:03.933117Z"
+    },
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-19T05:59:03.877137Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-1 (studentId=11111111-1111-1111-1111-111111111111)."
+      },
+      {
+        "timestampUtc": "2026-10-19T05:59:03.91177Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Create an evidence-backed student-1 triage and action plan for: Draft a prioritized study digest for my upcoming Software Development Project Release 2 submission and quiz deadlines.\u0027 with 3 execution steps and 3 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-19T05:59:03.920324Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-19T05:59:03.922193Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=medium) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-19T05:59:03.922319Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      },
+      {
+        "timestampUtc": "2026-10-19T05:59:03.933117Z",
+        "agent": "HumanReviewer",
+        "action": "Decision:Correct",
+        "summary": "Bryan Lee (25495108) recorded decision \u0027Correct\u0027 -\u003E final status \u0027Corrected\u0027. Notes: Refined Priority 1 deadline window and added explicit RAG citation check before Quiz 4."
+      }
+    ]
+  }
+]

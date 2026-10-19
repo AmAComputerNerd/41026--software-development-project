@@ -27,6 +27,10 @@ SERVICE_SPECS = (
         "rag",
         REPOSITORY_ROOT / "ai-services" / "rag-server" / "RagServer" / "RagServer.csproj",
     ),
+    (
+        "multi-agent",
+        REPOSITORY_ROOT / "ai-services" / "multi-agent-server" / "MultiAgentServer" / "MultiAgentServer.csproj",
+    ),
 )
 CORPUS_SOURCES = (
     Path("AGENTS.md"),
@@ -57,9 +61,11 @@ def load_root_environment() -> dict[str, str]:
     return values
 
 
-def configured_port(name: str, root_environment: dict[str, str]) -> int:
+def configured_port(name: str, root_environment: dict[str, str], default_port: int | None = None) -> int:
     raw_value = os.environ.get(name, root_environment.get(name, "")).strip()
     if not raw_value:
+        if default_port is not None:
+            return default_port
         raise ValueError(
             f"{name} must be configured in the root .env. "
             "Run python tools/setup_env.py."
@@ -75,7 +81,7 @@ def configured_port(name: str, root_environment: dict[str, str]) -> int:
 
 def parse_args(root_environment: dict[str, str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run the non-containerised AI Mode, MCP, and RAG services."
+        description="Run the non-containerised AI Mode, MCP, RAG, and Multi-Agent services."
     )
     parser.add_argument(
         "--mcp-port",
@@ -91,6 +97,11 @@ def parse_args(root_environment: dict[str, str]) -> argparse.Namespace:
         "--ai-mode-port",
         type=int,
         default=configured_port("AI_MODE_HOST_PORT", root_environment),
+    )
+    parser.add_argument(
+        "--multi-agent-port",
+        type=int,
+        default=configured_port("MULTI_AGENT_HOST_PORT", root_environment, 5004),
     )
     parser.add_argument(
         "--student-5-port",
@@ -217,6 +228,7 @@ def main() -> int:
         args.mcp_port,
         args.rag_port,
         args.ai_mode_port,
+        args.multi_agent_port,
         args.student_1_port,
         args.student_2_port,
         args.student_3_port,
@@ -276,6 +288,18 @@ def main() -> int:
                     "AiGateway__BaseUrl": f"http://127.0.0.1:{args.ai_mode_port}",
                     "Rag__CorpusPath": corpus_directory,
                 },
+                "multi-agent": {
+                    **base_environment,
+                    "ASPNETCORE_URLS": f"http://127.0.0.1:{args.multi_agent_port}",
+                    "MultiAgent__AiGatewayBaseUrl": f"http://127.0.0.1:{args.ai_mode_port}",
+                    "MultiAgent__McpBaseUrl": f"http://127.0.0.1:{args.mcp_port}",
+                    "MultiAgent__RagBaseUrl": f"http://127.0.0.1:{args.rag_port}",
+                    "MultiAgent__Student1BaseUrl": f"http://127.0.0.1:{args.student_1_port}",
+                    "MultiAgent__Student2BaseUrl": f"http://127.0.0.1:{args.student_2_port}",
+                    "MultiAgent__Student3BaseUrl": f"http://127.0.0.1:{args.student_3_port}",
+                    "MultiAgent__Student4BaseUrl": f"http://127.0.0.1:{args.student_4_port}",
+                    "MultiAgent__Student5BaseUrl": f"http://127.0.0.1:{args.student_5_port}",
+                },
             }
 
             for name, project in SERVICE_SPECS:
@@ -295,6 +319,10 @@ def main() -> int:
                 "RAG": (
                     process_by_name["rag"],
                     f"http://127.0.0.1:{args.rag_port}/health/ready",
+                ),
+                "Multi-Agent": (
+                    process_by_name["multi-agent"],
+                    f"http://127.0.0.1:{args.multi_agent_port}/health/ready",
                 ),
             }
             for name, (process, readiness_url) in readiness_urls.items():

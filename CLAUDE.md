@@ -13,7 +13,7 @@ Keep `docs/architecture/overview.md` up to date with what's actually built.
 1. **Database Boundaries**: Each student slice owns an isolated database (Student 1 uses a PostgreSQL 16 container `notifications_db`; Students 3, 4, 5 delegate persistence to internal SQLite database services on isolated networks; Student 2 and shared-backend use SQLite). **Zero cross-database queries**; all communication is via HTTP APIs.
 2. **Canvas Gateway**: `shared/backend` exclusively owns Canvas API communication (`courses`, `assignments`, `users`, `recipients`, `conversations`, Classic Quizzes). Assignments' untrusted HTML is sanitized into plain text at the gateway.
 3. **AI Gateway (`ai-mode`)**: Only `ai-mode` holds `OPENROUTER_API_KEY`.
-   AI Mode, MCP, and RAG run as non-containerised .NET host services through
+   AI Mode, MCP, RAG, and Multi-Agent Server run as non-containerised .NET host services through
    `python tools/run_ai_services.py`; Docker backends call them through
    `host.docker.internal`.
 4. **Design System**: Use `@better-canvas/ui-kit` (workspace package) with Vue 3 `<script setup>` and plain SCSS. Follow Neobrutalism tokens (`0px` radius, thick borders, raw drop shadows). No Vuetify in frontend slices.
@@ -34,7 +34,7 @@ Keep `docs/architecture/overview.md` up to date with what's actually built.
 - Host `5001` (`/v1/chat/completions`) — AI Mode (OpenRouter Gateway)
 - Host `5002` (`/mcp`) — MCP server
 - Host `5003` (`/api/answers`) — RAG server
-- Host `5001` (`/v1/chat/completions`) — AI Mode
+- Host `5004` (`/api/workflows`) — Multi-Agent server (`Planner → Worker → Reviewer → Human Review`)
 
 ---
 

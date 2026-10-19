@@ -47,12 +47,32 @@ def _run_all(ai: AIRunner) -> None:
     _run_and_report("compose", None, ai)
     _run_and_report("mcp", None, ai)
     _run_and_report("rag", None, ai)
+    _run_and_report("multi-agent", None, ai)
+    _run_and_report("testing", None, ai)
+    _run_and_report("cloud-deployment", None, ai)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Shared Team Agentic AI Loop")
     parser.add_argument("--target", "--owner", dest="target", choices=OWNERS, help="Target student or microservice")
-    parser.add_argument("--mode", "--layer", dest="mode", choices=["frontend", "backend", "database", "compose", "mcp", "rag", "all"], help="Layer or mode to evaluate")
+    parser.add_argument(
+        "--mode",
+        "--layer",
+        dest="mode",
+        choices=[
+            "frontend",
+            "backend",
+            "database",
+            "compose",
+            "mcp",
+            "rag",
+            "multi-agent",
+            "testing",
+            "cloud-deployment",
+            "all",
+        ],
+        help="Layer or mode to evaluate",
+    )
     args = parser.parse_args()
 
     ai = AIRunner(repo_root=REPO_ROOT)
@@ -68,11 +88,14 @@ def main() -> None:
                     _run_and_report(key, target, ai)
                 _run_and_report("mcp", target, ai)
                 _run_and_report("rag", target, ai)
+                _run_and_report("multi-agent", target, ai)
+                _run_and_report("testing", target, ai)
+                _run_and_report("cloud-deployment", target, ai)
             else:
                 _run_all(ai)
             return
 
-        if mode in {"compose", "mcp", "rag"}:
+        if mode in {"compose", "mcp", "rag", "multi-agent", "testing", "cloud-deployment"}:
             _run_and_report(mode, target, ai)
             return
 
@@ -110,13 +133,25 @@ def main() -> None:
             continue
 
         if choice == str(len(OWNERS) + 4):
+            _run_and_report("multi-agent", None, ai)
+            continue
+
+        if choice == str(len(OWNERS) + 5):
+            _run_and_report("testing", None, ai)
+            continue
+
+        if choice == str(len(OWNERS) + 6):
+            _run_and_report("cloud-deployment", None, ai)
+            continue
+
+        if choice == str(len(OWNERS) + 7):
             _run_all(ai)
             continue
 
         try:
             owner = OWNERS[int(choice) - 1]
         except (ValueError, IndexError):
-            print(f"Invalid choice. Select 0-{len(OWNERS) + 4}.")
+            print(f"Invalid choice. Select 0-{len(OWNERS) + 7}.")
             continue
 
         _owner_submenu(owner, ai)

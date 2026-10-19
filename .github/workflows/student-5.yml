@@ -11,7 +11,7 @@ on:
       - "shared/ui-kit/**"
       - "package.json"
       - "package-lock.json"
-      - ".github/workflows/student-5-ci.yml"
+      - ".github/workflows/student-5.yml"
   pull_request:
     paths:
       - "student-5/backend/**"
@@ -21,7 +21,7 @@ on:
       - "shared/ui-kit/**"
       - "package.json"
       - "package-lock.json"
-      - ".github/workflows/student-5-ci.yml"
+      - ".github/workflows/student-5.yml"
 
 concurrency:
   group: student-5-ci-${{ github.ref }}

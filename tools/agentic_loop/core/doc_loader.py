@@ -139,6 +139,33 @@ def load_documentation(
             doc_sections.append(_format_doc_section("Cross-Service Data Flows", data_flows_doc, content))
             loaded_paths.append("docs/architecture/data-flows.md")
 
+    elif layer == "multi-agent":
+        mas_readme = repo_root / "ai-services" / "multi-agent-server" / "README.md"
+        content = _read_file_safe(mas_readme)
+        if content:
+            doc_sections.append(_format_doc_section("Multi-Agent Server Architecture & Roles", mas_readme, content))
+            loaded_paths.append("ai-services/multi-agent-server/README.md")
+
+        data_flows_doc = repo_root / "docs" / "architecture" / "data-flows.md"
+        content = _read_file_safe(data_flows_doc)
+        if content:
+            doc_sections.append(_format_doc_section("Cross-Service Data Flows", data_flows_doc, content))
+            loaded_paths.append("docs/architecture/data-flows.md")
+
+    elif layer == "testing":
+        testing_doc = repo_root / "docs" / "development" / "testing-and-ci.md"
+        content = _read_file_safe(testing_doc)
+        if content:
+            doc_sections.append(_format_doc_section("Testing & CI/CD Specification", testing_doc, content))
+            loaded_paths.append("docs/development/testing-and-ci.md")
+
+    elif layer == "cloud-deployment":
+        overview_doc = repo_root / "docs" / "architecture" / "overview.md"
+        content = _read_file_safe(overview_doc)
+        if content:
+            doc_sections.append(_format_doc_section("Architecture Topology & Cloud Boundaries", overview_doc, content))
+            loaded_paths.append("docs/architecture/overview.md")
+
     # 3. Owner-level README (if present)
     if owner and owner != "shared":
         owner_readme = repo_root / owner / "README.md"

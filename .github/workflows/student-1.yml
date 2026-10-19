@@ -10,7 +10,7 @@ on:
       - "shared/ui-kit/**"
       - "package.json"
       - "package-lock.json"
-      - ".github/workflows/student-1-ci.yml"
+      - ".github/workflows/student-1.yml"
   pull_request:
     paths:
       - "student-1/backend/**"
@@ -19,7 +19,7 @@ on:
       - "shared/ui-kit/**"
       - "package.json"
       - "package-lock.json"
-      - ".github/workflows/student-1-ci.yml"
+      - ".github/workflows/student-1.yml"
 
 # Cancel superseded runs on the same branch/PR to save CI minutes.
 concurrency:
@@ -66,6 +66,7 @@ jobs:
     env:
       McpServer__Enabled: "false"
       RagServer__Enabled: "false"
+      MultiAgentServer__Enabled: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,7 +90,10 @@ jobs:
       - name: Build (Release, warnings as errors)
         run: dotnet build "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-restore -warnaserror
 
-      - name: Run Unit & Integration Tests
+      - name: Post-Commit CI/CD Endpoint Tests (Endpoint 1 GET /notifications & Endpoint 2 POST /notifications/push)
+        run: dotnet test "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-build --filter "FullyQualifiedName~NotificationEndpointsTests|FullyQualifiedName~MultiAgentIntegrationEndpointsTests" --logger "console;verbosity=normal"
+
+      - name: Run Full Unit & Integration Test Suite
         run: dotnet test "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-build
 
       - name: Verify code formatting

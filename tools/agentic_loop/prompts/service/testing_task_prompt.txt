@@ -1,0 +1,21 @@
+Review Target: Release 2 Testing Report Review (Pre-Commit Security & Post-Commit CI/CD Endpoint Testing)
+
+Testing Evidence:
+{{VALIDATION_EVIDENCE}}
+
+Project Context:
+{{PROJECT_CONTEXT}}
+
+{{DOCUMENTATION_CONTEXT}}
+
+Task:
+Validate only what the evidence establishes:
+- Local pre-commit security scanning is configured with Ruff security rules (`S`), `detect-secrets`, and `pip-audit` in `.pre-commit-config.yaml` and enforced in `security-ci.yml`.
+- Post-commit CI/CD workflows (`student-1.yml` to `student-5.yml`) execute automated tests for at least two backend/API endpoint functions per student.
+- Optional AI services (`AI-Mode`, `MCP`, `RAG`, `Multi-Agent`) are safely disabled or mocked during baseline CI endpoint runs.
+
+If no issue is supported by the evidence, say exactly: "No evidence-backed improvement identified."
+
+Output Format:
+- Return at most 3 concise bullet points (Pre-Commit Security Coverage, Post-Commit Endpoint Coverage, Recommendation), or the no-evidence sentence.
+- Maximum 120 words total.

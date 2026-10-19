@@ -196,15 +196,15 @@ The shared Canvas and task-tracker databases persist timestamps as
 
 ## Running a single service outside Docker
 
-AI Mode, MCP, and RAG intentionally run outside Docker. After starting
-Compose, launch all three host services from the repository root:
+AI Mode, MCP, RAG, and Multi-Agent Server intentionally run outside Docker. After starting
+Compose, launch all four host services from the repository root:
 
 ```bash
 python tools/run_ai_services.py
 ```
 
 The launcher loads OpenRouter configuration from the root `.env`, prepares
-the curated RAG corpus, starts all three .NET projects, waits for their
+the curated RAG corpus, starts all four .NET projects (`:5001`–`:5004`), waits for their
 readiness endpoints, and stops all processes together.
 
 Each backend is a standalone ASP.NET project (`Api/` for most slices,
@@ -225,11 +225,12 @@ Workflows under `.github/workflows/`:
 
 - `docker-ci.yml` — Docker image build and Compose contract validation for the full stack (fires on any change under `ai-services/`, `shared/`, `student-*/`, `docker-compose.yml`, `package.json`, `package-lock.json`, or `.env.example`).
 - `shared-ci.yml` — Shared shell and backend build, format check, EF migrations drift check, and NuGet vulnerability scan.
-- `student-1-ci.yml` — Notifications frontend build + Playwright E2E, .NET build/test/format check, EF migration drift check, and NuGet audit.
-- `student-2-ci.yml` — Automations frontend build, .NET build/format check, EF migration drift check, and NuGet audit.
-- `student-3-ci.yml` — Deadlines frontend build, .NET build/format check, API contract smoke test, EF migration drift check, and NuGet audit.
-- `student-4-ci.yml` — Account & Auth frontend build, .NET build/format check, EF migration drift check, and NuGet audit.
-- `student-5-ci.yml` — Grades frontend build, .NET build/format check, API contract smoke test, EF migration drift check, and NuGet audit.
+- `student-1.yml` — Notifications frontend build + Playwright E2E, .NET build/test/format check, post-commit endpoint smoke tests (`GET /notifications` & `POST /notifications/push`), EF migration drift check, and NuGet audit.
+- `student-2.yml` — Automations frontend build, .NET build/format check, EF migration drift check, and NuGet audit.
+- `student-3.yml` — Deadlines frontend build, .NET build/format check, API contract smoke test, EF migration drift check, and NuGet audit.
+- `student-4.yml` — Account & Auth frontend build, .NET build/format check, EF migration drift check, and NuGet audit.
+- `student-5.yml` — Grades frontend build, .NET build/format check, API contract smoke test, EF migration drift check, and NuGet audit.
+- `cloud-deployment.yml` — Azure Container Apps Bicep IaC validation, baseline AI-disabled smoke test, and cloud deployment workflow.
 
 Workflows run on PRs targeting `main` and pushes to `main`.
 
