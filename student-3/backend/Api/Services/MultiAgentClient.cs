@@ -40,6 +40,11 @@ public sealed class MultiAgentClient(
         SendAsync<MultiAgentWorkflowDto>(
             HttpMethod.Post, $"api/workflows/{id}/human-review", request, cancellationToken);
 
+    public Task<MultiAgentWorkflowDto> ReviseAsync(
+        Guid id, MultiAgentRevisionRequestDto request, CancellationToken cancellationToken) =>
+        SendAsync<MultiAgentWorkflowDto>(
+            HttpMethod.Post, $"api/workflows/{id}/revise", request, cancellationToken);
+
     private async Task<T> SendAsync<T>(
         HttpMethod method, string path, object? body, CancellationToken cancellationToken)
     {
@@ -51,6 +56,11 @@ public sealed class MultiAgentClient(
             using var response = await httpClient.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
+                if (response.StatusCode == HttpStatusCode.Conflict)
+                {
+                    throw new BreakdownConflictException(
+                        "The workflow changed or a different human decision was recorded. Only the current proposal can be reviewed.");
+                }
                 throw new MultiAgentServiceException(
                     $"The Multi-Agent server returned HTTP {(int)response.StatusCode}.",
                     statusCode: response.StatusCode);
@@ -76,7 +86,7 @@ public sealed class MultiAgentClient(
         catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
             throw new MultiAgentServiceException(
-                "The Multi-Agent request timed out. No tasks were created by this request; the server may still record the workflow or review. Retry a failed save with the same selections and comments.",
+                "The Multi-Agent request timed out. No tasks were created by this request; the server may still record the workflow, revision or review. Retry a correction with the same feedback, or a failed save with the same selections and comments.",
                 exception);
         }
         catch (HttpRequestException exception)

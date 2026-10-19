@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import DOMPurify from 'dompurify'
+import { marked } from 'marked'
 import BaseDialog from '@/components/BaseDialog.vue'
 import { useTasks } from '@/composables/useTasks'
 import type { BreakdownProposal, GeneratedSubtask, TaskItem, TaskPriority } from '@/types/task'
@@ -41,7 +43,7 @@ const templates: Template[] = [
   },
 ]
 
-const { generateBreakdown, reviewBreakdown, aiBreakdownEnabled } = useTasks()
+const { generateBreakdown, reviewBreakdown, reviseBreakdown, aiBreakdownEnabled } = useTasks()
 const selectedTemplateName = ref(templates[0]!.name)
 const prompt = ref('')
 const priority = ref<TaskPriority>('Medium')
@@ -51,7 +53,9 @@ const error = ref('')
 const proposal = ref<BreakdownProposal | null>(null)
 const proposedTasks = ref<(GeneratedSubtask & { selected: boolean; index: number })[]>([])
 const reviewerName = ref('')
-const reviewComments = ref('')
+const mode = ref<'decision' | 'partial' | 'correct'>('decision')
+const feedback = ref('')
+const correctionRequestId = ref<string | null>(null)
 const selectedTasks = computed(() => proposedTasks.value.filter((task) => task.selected))
 const busy = computed(() => generating.value || saving.value)
 let revision = 0
@@ -71,11 +75,15 @@ watch(
     proposal.value = null
     proposedTasks.value = []
     reviewerName.value = ''
-    reviewComments.value = ''
+    mode.value = 'decision'
+    feedback.value = ''
+    correctionRequestId.value = null
     saving.value = false
     generating.value = false
   },
 )
+
+watch([feedback, reviewerName], () => { correctionRequestId.value = null }, { flush: 'sync' })
 
 watch(selectedTemplateName, (name) => {
   const template = templates.find((item) => item.name === name)
@@ -86,6 +94,29 @@ watch(selectedTemplateName, (name) => {
 
 function close() {
   emit('update:modelValue', false)
+}
+
+function renderMarkdown(source: string) {
+  return DOMPurify.sanitize(marked.parse(source, { async: false, breaks: true, gfm: true }))
+}
+
+function setProposal(result: BreakdownProposal) {
+  proposal.value = result
+  cancelDecision()
+}
+
+function cancelDecision() {
+  proposedTasks.value = proposal.value?.tasks.map((task, index) => ({ ...task, index, selected: true })) ?? []
+  mode.value = 'decision'
+  feedback.value = ''
+  correctionRequestId.value = null
+  error.value = ''
+}
+
+function submit() {
+  if (!proposal.value) return createPlan()
+  if (mode.value === 'correct') return requestCorrection()
+  return submitReview(mode.value === 'partial' ? 'PartialAccept' : 'Approve')
 }
 
 async function createPlan() {
@@ -109,8 +140,7 @@ async function createPlan() {
       priority: priority.value,
     })
     if (currentRevision !== revision) return
-    proposal.value = result
-    proposedTasks.value = result.tasks.map((task, index) => ({ ...task, index, selected: true }))
+    setProposal(result)
   } catch (reason) {
     if (currentRevision === revision) {
       error.value = reason instanceof Error ? reason.message : 'Unable to generate this plan.'
@@ -120,12 +150,9 @@ async function createPlan() {
   }
 }
 
-async function submitReview(reject: boolean) {
+async function submitReview(decision: 'Approve' | 'PartialAccept' | 'Reject') {
   if (!props.assignment || !proposal.value || busy.value || !aiBreakdownEnabled.value) return
-  if (!reviewerName.value.trim() || !reviewComments.value.trim()) {
-    error.value = 'Enter your reviewer name and review comments.'
-    return
-  }
+  const reject = decision === 'Reject'
   if (!reject && !selectedTasks.value.length) {
     error.value = 'Select at least one task, or reject the proposal.'
     return
@@ -136,10 +163,15 @@ async function submitReview(reject: boolean) {
   try {
     const result = await reviewBreakdown(props.assignment.id, {
       workflowId: proposal.value.workflow.id,
+      revision: proposal.value.workflow.revision,
+      decision,
       reject,
-      reviewerName: reviewerName.value.trim(),
-      comments: reviewComments.value.trim(),
-      tasks: reject ? [] : selectedTasks.value.map(({ index, title, description }) => ({
+      reviewerName: reviewerName.value.trim() || 'Student Reviewer',
+      comments: reject ? 'Rejected the proposed subtasks.' :
+        decision === 'PartialAccept' ? 'Accepted selected subtasks with optional manual edits.' : 'Accepted all proposed subtasks.',
+      tasks: reject ? [] : (decision === 'Approve'
+        ? proposal.value.tasks.map((task, index) => ({ ...task, index }))
+        : selectedTasks.value).map(({ index, title, description }) => ({
         index, title, description,
       })),
     })
@@ -153,6 +185,34 @@ async function submitReview(reject: boolean) {
     if (currentRevision === revision) saving.value = false
   }
 }
+
+async function requestCorrection() {
+  if (!props.assignment || !proposal.value || busy.value || !aiBreakdownEnabled.value) return
+  if (!feedback.value.trim()) {
+    error.value = 'Describe what the agents should change.'
+    return
+  }
+  const currentRevision = revision
+  correctionRequestId.value ??= crypto.randomUUID()
+  generating.value = true
+  error.value = ''
+  try {
+    const result = await reviseBreakdown(props.assignment.id, {
+      workflowId: proposal.value.workflow.id,
+      requestId: correctionRequestId.value,
+      revision: proposal.value.workflow.revision,
+      reviewerName: reviewerName.value.trim() || 'Student Reviewer',
+      feedback: feedback.value.trim(),
+    })
+    if (currentRevision === revision) setProposal(result)
+  } catch (reason) {
+    if (currentRevision === revision) {
+      error.value = reason instanceof Error ? reason.message : 'Unable to revise this proposal. Retry with the same feedback.'
+    }
+  } finally {
+    if (currentRevision === revision) generating.value = false
+  }
+}
 </script>
 
 <template>
@@ -162,14 +222,14 @@ async function submitReview(reject: boolean) {
     width="700px"
     @update:model-value="emit('update:modelValue', $event)"
   >
-    <form @submit.prevent="proposal ? submitReview(false) : createPlan()">
+    <form @submit.prevent="submit">
       <div class="nb-dialog__header">
         <span class="nb-mono">AI ASSIGNMENT PLAN</span>
         <button class="nb-icon-btn" type="button" aria-label="Close" @click="close">&times;</button>
       </div>
       <div class="nb-dialog__body">
         <h2 id="breakdown-dialog-title">Break down {{ assignment?.title }}</h2>
-        <p>Planner, Worker and Reviewer propose sub-tasks. Review, edit and select them before saving.</p>
+        <p>Review the agents' proposed sub-tasks, then accept, partially accept, request corrections or reject.</p>
         <div v-if="error" class="nb-alert nb-alert--error" role="alert">{{ error }}</div>
         <template v-if="!proposal">
           <div class="nb-form-grid">
@@ -199,10 +259,11 @@ async function submitReview(reject: boolean) {
             THE ASSIGNMENT CONTEXT COMES FROM THE TRACKER. GENERATING A PROPOSAL DOES NOT CREATE TASKS.
           </p>
           <p v-if="generating" role="status">
-            Waiting for Planner, Worker and Reviewer. The existing server does not expose live stage progress.
+            Waiting for Planner, Worker and Reviewer.
           </p>
         </template>
         <template v-else>
+          <p class="nb-helper nb-mono">PROPOSAL REVISION {{ proposal.workflow.revision }}</p>
           <p class="nb-helper">
             The shared server can return fallback review text. Check the proposal against the assignment;
             its reported confidence is not independently verified.
@@ -210,21 +271,28 @@ async function submitReview(reject: boolean) {
           <details class="nb-assistant-response">
             <summary>Planner and reviewer outputs</summary>
             <h3>PLANNER</h3>
-            <p>{{ proposal.workflow.planner.objective }}</p>
-            <ol><li v-for="(step, index) in proposal.workflow.planner.steps" :key="index">{{ step }}</li></ol>
+            <div class="nb-breakdown-markdown" v-html="renderMarkdown(proposal.workflow.planner.objective)" />
+            <ol>
+              <li v-for="(step, index) in proposal.workflow.planner.steps" :key="index" class="nb-breakdown-markdown" v-html="renderMarkdown(step)" />
+            </ol>
             <h3>REVIEWER</h3>
             <p>{{ proposal.workflow.reviewer.verdict }} / {{ proposal.workflow.reviewer.confidence }}</p>
-            <p class="nb-rag-answer">{{ proposal.workflow.reviewer.critique }}</p>
-            <ul><li v-for="(risk, index) in proposal.workflow.reviewer.identifiedRisks" :key="index">{{ risk }}</li></ul>
+            <div class="nb-breakdown-markdown" v-html="renderMarkdown(proposal.workflow.reviewer.critique)" />
+            <ul>
+              <li v-for="(risk, index) in proposal.workflow.reviewer.identifiedRisks" :key="index" class="nb-breakdown-markdown" v-html="renderMarkdown(risk)" />
+            </ul>
             <h3>RECOMMENDATIONS</h3>
-            <ul><li v-for="(item, index) in proposal.workflow.reviewer.recommendations" :key="index">{{ item }}</li></ul>
+            <ul>
+              <li v-for="(item, index) in proposal.workflow.reviewer.recommendations" :key="index" class="nb-breakdown-markdown" v-html="renderMarkdown(item)" />
+            </ul>
           </details>
-          <fieldset v-for="task in proposedTasks" :key="task.index" class="nb-breakdown-task" :disabled="busy">
+          <fieldset v-for="task in proposedTasks" :key="task.index" class="nb-breakdown-task" :disabled="busy || mode !== 'partial'">
             <legend>
-              <label>
-                <input v-model="task.selected" type="checkbox" />
+              <label v-if="mode === 'partial'">
+                <input v-model="task.selected" type="checkbox" :disabled="busy" />
                 Include task {{ task.index + 1 }}
               </label>
+              <span v-else>Task {{ task.index + 1 }}</span>
             </legend>
             <label class="nb-field">
               <span>Title</span>
@@ -236,16 +304,19 @@ async function submitReview(reject: boolean) {
             </label>
           </fieldset>
           <label class="nb-field">
-            <span>Reviewer name</span>
-            <input v-model="reviewerName" maxlength="100" required :disabled="busy" />
+            <span>Reviewer name (optional)</span>
+            <input v-model="reviewerName" maxlength="100" placeholder="Student Reviewer" :disabled="busy" />
           </label>
-          <label class="nb-field">
-            <span>Review comments</span>
-            <textarea v-model="reviewComments" rows="3" maxlength="2000" required :disabled="busy" />
+          <label v-if="mode === 'correct'" class="nb-field">
+            <span>Feedback for the agents</span>
+            <textarea v-model="feedback" rows="4" maxlength="2000" required :disabled="busy" />
+            <small>The same workflow returns to Planner, Worker and Reviewer. No tasks are created until you accept.</small>
           </label>
-          <p class="nb-helper">
-            Saving records Approve, Correct or PartialAccept based on your edits and selection,
-            then creates only the selected tasks. Reject records your decision without creating tasks.
+          <p v-if="mode === 'partial'" class="nb-helper">
+            Edit or exclude tasks, then Accept to create only your selected subtasks. Cancel discards these edits.
+          </p>
+          <p v-if="generating" role="status">
+            Planner, Worker and Reviewer are preparing a revised proposal.
           </p>
           <details class="nb-assistant-response">
             <summary>Coordination audit</summary>
@@ -258,21 +329,36 @@ async function submitReview(reject: boolean) {
         </template>
       </div>
       <div class="nb-dialog__actions">
-        <button class="nb-btn nb-btn--outline" type="button" @click="close">Cancel</button>
-        <button v-if="proposal" class="nb-btn nb-btn--outline" type="button" :disabled="busy" @click="proposal = null">
-          Regenerate
-        </button>
-        <button v-if="proposal" class="nb-btn nb-btn--outline" type="button" :disabled="busy || !aiBreakdownEnabled" @click="submitReview(true)">
-          Reject
-        </button>
-        <button
-          class="nb-btn nb-btn--accent"
-          type="submit"
-          :disabled="busy || !aiBreakdownEnabled || (!proposal && !canGenerate) || (!!proposal && !selectedTasks.length)"
-          :title="!aiBreakdownEnabled ? 'AI Mode or Multi-Agent is unavailable' : undefined"
-        >
-          {{ generating ? 'Agents are preparing a proposal...' : saving ? 'Saving reviewed tasks...' : proposal ? 'Save selected tasks' : 'Generate proposal' }}
-        </button>
+        <template v-if="!proposal">
+          <button class="nb-btn nb-btn--outline" type="button" @click="close">Cancel</button>
+          <button class="nb-btn nb-btn--accent" type="submit" :disabled="!canGenerate">
+            {{ generating ? 'Agents are preparing a proposal...' : 'Generate proposal' }}
+          </button>
+        </template>
+        <template v-else-if="mode === 'decision'">
+          <button class="nb-btn nb-btn--accent" type="submit" :disabled="busy || !aiBreakdownEnabled">
+            {{ saving ? 'Saving reviewed tasks...' : 'Accept' }}
+          </button>
+          <button class="nb-btn nb-btn--outline" type="button" :disabled="busy || !aiBreakdownEnabled" @click="mode = 'partial'">
+            Partially Accept
+          </button>
+          <button class="nb-btn nb-btn--outline" type="button" :disabled="busy || !aiBreakdownEnabled" @click="mode = 'correct'">
+            Correct
+          </button>
+          <button class="nb-btn nb-btn--outline" type="button" :disabled="busy || !aiBreakdownEnabled" @click="submitReview('Reject')">
+            Reject
+          </button>
+        </template>
+        <template v-else>
+          <button
+            class="nb-btn nb-btn--accent"
+            type="submit"
+            :disabled="busy || !aiBreakdownEnabled || (mode === 'partial' ? !selectedTasks.length : !feedback.trim())"
+          >
+            {{ generating ? 'Revising proposal...' : saving ? 'Saving reviewed tasks...' : mode === 'partial' ? 'Accept' : 'Send feedback' }}
+          </button>
+          <button class="nb-btn nb-btn--outline" type="button" :disabled="busy" @click="cancelDecision">Cancel</button>
+        </template>
       </div>
     </form>
   </BaseDialog>

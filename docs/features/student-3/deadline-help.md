@@ -56,10 +56,19 @@ On 03 ASSIGNMENTS, choose AI breakdown for an assignment. Review or edit the
 planning prompt and select the priority for the generated sub-tasks. The
 backend loads the saved assignment and course context and calls the existing
 Multi-Agent Server's Planner, Worker and Reviewer. Generating a proposal
-does not create tasks. Review the proposed tasks, edit their titles or
-descriptions, and select which ones to keep. Enter a reviewer name and
-comments, then save the selected tasks together or reject the proposal.
-The recorded decision reflects approval, correction or partial acceptance.
+does not create tasks. **Accept** creates all proposed subtasks.
+**Partially Accept** enables edits and exclusion; its **Accept** saves your
+selected tasks and **Cancel** discards edits and restores the four decisions.
+**Correct** opens a follow-up feedback box. Sending feedback returns the same
+workflow to Planner, Worker and Reviewer with the assignment context and prior
+feedback; the revised proposal still requires human acceptance.
+The latest feedback takes precedence over conflicting earlier feedback.
+Task titles must remain unique; the agents should adapt conflicting requests
+as closely as possible and explain the adaptation in the review.
+**Reject** records rejection and closes the dialog without creating tasks.
+Reviewer name is optional and defaults to `Student Reviewer`.
+Previous proposals, correction feedback and coordination audit remain in the
+workflow history. A stale proposal cannot overwrite a newer revision.
 Repeated saves of the same reviewed workflow do not duplicate tasks.
 Breakdown requires both AI Mode and Multi-Agent to be enabled. The existing
 server does not expose live stage progress; invalid task output is rejected.

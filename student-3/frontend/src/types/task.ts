@@ -78,6 +78,16 @@ export interface BreakdownReviewInput {
   reviewerName: string
   comments: string
   tasks: (GeneratedSubtask & { index: number })[]
+  revision: number
+  decision: 'Approve' | 'PartialAccept' | 'Reject'
+}
+
+export interface BreakdownRevisionInput {
+  workflowId: string
+  requestId: string
+  revision: number
+  reviewerName: string
+  feedback: string
 }
 
 export interface BreakdownReviewResult {

@@ -24,7 +24,16 @@ public sealed record SubmitBreakdownReviewRequestDto(
     bool Reject,
     string ReviewerName,
     string Comments,
-    IReadOnlyList<ReviewedSubtaskDto> Tasks);
+    IReadOnlyList<ReviewedSubtaskDto> Tasks,
+    int Revision = 0,
+    string? Decision = null);
+
+public sealed record ReviseBreakdownRequestDto(
+    Guid WorkflowId,
+    Guid RequestId,
+    int Revision,
+    string ReviewerName,
+    string Feedback);
 
 public sealed record BreakdownReviewResultDto(
     MultiAgentWorkflowDto Workflow,

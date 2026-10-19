@@ -11,6 +11,7 @@ import type {
   BreakdownProposal,
   BreakdownReviewInput,
   BreakdownReviewResult,
+  BreakdownRevisionInput,
 } from '@/types/task'
 
 export const getTasks = () => request<TaskItem[]>('/tasks/')
@@ -41,6 +42,12 @@ export const generateTaskBreakdown = (id: string, input: GenerateTaskBreakdownIn
 
 export const reviewTaskBreakdown = (id: string, input: BreakdownReviewInput) =>
   request<BreakdownReviewResult>(`/tasks/${id}/ai-breakdown/review`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+
+export const reviseTaskBreakdown = (id: string, input: BreakdownRevisionInput) =>
+  request<BreakdownProposal>(`/tasks/${id}/ai-breakdown/revise`, {
     method: 'POST',
     body: JSON.stringify(input),
   })

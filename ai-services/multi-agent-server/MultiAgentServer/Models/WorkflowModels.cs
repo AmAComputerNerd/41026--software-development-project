@@ -12,7 +12,24 @@ public sealed record HumanReviewRequest(
     [property: JsonPropertyName("decision")] string Decision,
     [property: JsonPropertyName("reviewerName")] string ReviewerName,
     [property: JsonPropertyName("comments")] string? Comments = null,
-    [property: JsonPropertyName("correctedOutput")] string? CorrectedOutput = null);
+    [property: JsonPropertyName("correctedOutput")] string? CorrectedOutput = null,
+    [property: JsonPropertyName("expectedRevision")] int? ExpectedRevision = null);
+
+public sealed record ReviseWorkflowRequest(
+    Guid RequestId,
+    int ExpectedRevision,
+    string ReviewerName,
+    string Feedback);
+
+public sealed record WorkflowRevision(
+    int Revision,
+    Guid RequestId,
+    string ReviewerName,
+    string Feedback,
+    DateTime RequestedAtUtc,
+    PlannerStageOutput Planner,
+    WorkerStageOutput Worker,
+    ReviewerStageOutput Reviewer);
 
 public sealed record PlannerStageOutput(
     [property: JsonPropertyName("objective")] string Objective,
@@ -60,4 +77,9 @@ public sealed record MultiAgentWorkflowRecord(
     [property: JsonPropertyName("worker")] WorkerStageOutput Worker,
     [property: JsonPropertyName("reviewer")] ReviewerStageOutput Reviewer,
     [property: JsonPropertyName("humanReview")] HumanReviewStageOutput? HumanReview,
-    [property: JsonPropertyName("auditLog")] IReadOnlyList<CoordinationAuditEntry> AuditLog);
+    [property: JsonPropertyName("auditLog")] IReadOnlyList<CoordinationAuditEntry> AuditLog)
+{
+    public int Revision { get; init; }
+    public string? EvidenceSnapshot { get; init; }
+    public IReadOnlyList<WorkflowRevision> Revisions { get; init; } = [];
+}

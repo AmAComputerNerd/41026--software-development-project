@@ -26,7 +26,7 @@ public sealed partial class AssignmentBreakdownService(
         var goal = new WorkflowGoal(
             Feature, assignment.Id, request.Priority, Fingerprint(AssignmentContext(assignment)), request.Prompt.Trim(),
             "Return only compact JSON: {\"tasks\":[{\"title\":\"Action\",\"description\":\"Short description\"}]}. " +
-            "Create 2-10 distinct assignment subtasks; titles at most 120 characters, descriptions at most 500. " +
+            "Create 2-10 distinct assignment subtasks with unique titles; titles at most 120 characters, descriptions at most 500. " +
             "Use the supplied assignment context, not notification triage. Keep the response within the worker's output budget.");
         var workflow = await client.RunAsync(
             JsonSerializer.Serialize(goal, JsonOptions), evidence, cancellationToken);
@@ -44,6 +44,10 @@ public sealed partial class AssignmentBreakdownService(
         if (workflow is null) return null;
         var goal = ReadGoal(workflow.Goal);
         if (goal.Feature != Feature || goal.AssignmentId != assignmentId) return null;
+        if (workflow.Revision != request.Revision)
+        {
+            throw new BreakdownConflictException("This proposal has been revised. Review the current revision before saving tasks.");
+        }
         var assignment = await database.GetTaskAsync(assignmentId, cancellationToken);
         if (assignment is null) return null;
         if (!request.Reject)
@@ -54,7 +58,7 @@ public sealed partial class AssignmentBreakdownService(
                 throw new BreakdownConflictException("The assignment changed. Generate a new proposal before saving tasks.");
             }
         }
-        var original = ParseTasks(workflow.Worker.DraftOutput, 2);
+        var original = request.Reject ? [] : ParseTasks(workflow.Worker.DraftOutput, 2);
         if (request.Tasks is null || request.Tasks.Count > original.Count ||
             request.Tasks.Any(task => task is null || task.Index < 0 || task.Index >= original.Count) ||
             request.Tasks.Select(task => task.Index).Distinct().Count() != request.Tasks.Count ||
@@ -69,15 +73,23 @@ public sealed partial class AssignmentBreakdownService(
         {
             throw new BreakdownValidationException("Select 1-10 distinct tasks with titles of 1-120 characters and descriptions of at most 500.");
         }
-        var decision = request.Reject ? "Reject" :
+        var decision = request.Decision ?? (request.Reject ? "Reject" :
             selected.Count < original.Count ? "PartialAccept" :
-            selected.SequenceEqual(original) ? "Approve" : "Correct";
+            selected.SequenceEqual(original) ? "Approve" : "Correct");
+        if (request.Decision is not null &&
+            (decision is not ("Approve" or "PartialAccept" or "Reject") ||
+             request.Reject != (decision == "Reject") ||
+             (decision == "Approve" && !selected.SequenceEqual(original))))
+        {
+            throw new BreakdownValidationException("Accept must include every unchanged proposed task; use Partially Accept to edit or exclude tasks.");
+        }
         var wasAwaiting = workflow.Status == "AwaitingHumanReview" && workflow.HumanReview is null;
         if (wasAwaiting)
         {
             workflow = await client.ReviewAsync(workflow.Id, new MultiAgentReviewRequestDto(
                 decision, request.ReviewerName.Trim(), request.Comments.Trim(),
-                decision is "Correct" or "PartialAccept" ? SerializeTasks(selected) : null), cancellationToken);
+                decision is "Correct" or "PartialAccept" ? SerializeTasks(selected) : null,
+                request.Revision), cancellationToken);
         }
         var review = workflow.HumanReview;
         var expectedStatus = decision switch
@@ -87,7 +99,7 @@ public sealed partial class AssignmentBreakdownService(
             "PartialAccept" => "PartiallyAccepted",
             _ => "Rejected"
         };
-        if (workflow.Id != request.WorkflowId || workflow.Status != expectedStatus ||
+        if (workflow.Id != request.WorkflowId || workflow.Revision != request.Revision || workflow.Status != expectedStatus ||
             review is null || review.Decision != decision ||
             review.ReviewerName != request.ReviewerName.Trim() || review.Comments != request.Comments.Trim() ||
             (!request.Reject && !ParseTasks(review.FinalOutput, 1).SequenceEqual(selected)))
@@ -116,6 +128,36 @@ public sealed partial class AssignmentBreakdownService(
         }
         return tasks is null ? null : new BreakdownReviewResultDto(
             workflow, tasks.Select(task => task.ToDto()).ToList());
+    }
+
+    public async Task<BreakdownProposalDto?> ReviseAsync(
+        Guid assignmentId, ReviseBreakdownRequestDto request, CancellationToken cancellationToken)
+    {
+        var workflow = await client.GetAsync(request.WorkflowId, cancellationToken);
+        if (workflow is null) return null;
+        var goal = ReadGoal(workflow.Goal);
+        if (goal.Feature != Feature || goal.AssignmentId != assignmentId) return null;
+        var assignment = await database.GetTaskAsync(assignmentId, cancellationToken);
+        if (assignment is null) return null;
+        EnsureApplicable(assignment);
+        if (goal.AssignmentFingerprint != Fingerprint(AssignmentContext(assignment)))
+        {
+            throw new BreakdownConflictException("The assignment changed. Generate a new proposal before requesting corrections.");
+        }
+        if (workflow.Status != "AwaitingHumanReview" || workflow.HumanReview is not null)
+        {
+            throw new BreakdownConflictException("This workflow already has a final human decision.");
+        }
+        var revised = await client.ReviseAsync(workflow.Id, new MultiAgentRevisionRequestDto(
+            request.RequestId, request.Revision, request.ReviewerName.Trim(), request.Feedback.Trim()),
+            cancellationToken);
+        if (revised.Id != workflow.Id || revised.Goal != workflow.Goal ||
+            revised.Revision != request.Revision + 1 ||
+            revised.Status != "AwaitingHumanReview" || revised.HumanReview is not null)
+        {
+            throw new MultiAgentServiceException("The Multi-Agent server did not return a revised proposal awaiting human review.");
+        }
+        return new BreakdownProposalDto(revised, ParseTasks(revised.Worker.DraftOutput, 2));
     }
 
     private static WorkflowGoal ReadGoal(string goal)

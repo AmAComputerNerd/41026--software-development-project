@@ -4,7 +4,14 @@ public sealed record MultiAgentReviewRequestDto(
     string Decision,
     string ReviewerName,
     string Comments,
-    string? CorrectedOutput = null);
+    string? CorrectedOutput = null,
+    int? ExpectedRevision = null);
+
+public sealed record MultiAgentRevisionRequestDto(
+    Guid RequestId,
+    int ExpectedRevision,
+    string ReviewerName,
+    string Feedback);
 
 public sealed record MultiAgentPlannerDto(
     string Objective,
@@ -40,6 +47,16 @@ public sealed record MultiAgentAuditEntryDto(
     string Action,
     string Summary);
 
+public sealed record MultiAgentRevisionDto(
+    int Revision,
+    Guid RequestId,
+    string ReviewerName,
+    string Feedback,
+    DateTime RequestedAtUtc,
+    MultiAgentPlannerDto Planner,
+    MultiAgentWorkerDto Worker,
+    MultiAgentReviewerDto Reviewer);
+
 public sealed record MultiAgentWorkflowDto(
     Guid Id,
     string Owner,
@@ -52,4 +69,6 @@ public sealed record MultiAgentWorkflowDto(
     MultiAgentWorkerDto Worker,
     MultiAgentReviewerDto Reviewer,
     MultiAgentHumanReviewDto? HumanReview,
-    IReadOnlyList<MultiAgentAuditEntryDto> AuditLog);
+    IReadOnlyList<MultiAgentAuditEntryDto> AuditLog,
+    int Revision = 0,
+    IReadOnlyList<MultiAgentRevisionDto>? Revisions = null);

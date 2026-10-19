@@ -39,13 +39,20 @@ Restart `python tools/run_ai_services.py` after changing corpus documentation.
 ### Multi-Agent AI Breakdown
 
 Use the existing **AI BREAKDOWN** button on an assignment. Generate a
-proposal, inspect the Planner/Reviewer outputs and audit, then select and
-edit the proposed tasks in the same dialog. Enter a reviewer name and
-comments before saving or rejecting. There is no separate Multi-Agent tab.
+proposal and inspect the Planner/Reviewer outputs and audit in the same dialog.
+There is no separate Multi-Agent tab. The four explicit decisions are:
 
-Generation creates no tasks. Saving all unchanged tasks records Approve;
-editing them records Correct; selecting a subset records PartialAccept.
-Reject records the decision without creating anything. Accepted tasks are
+- **Accept** creates every proposed subtask unchanged.
+- **Partially Accept** enables editing and exclusion. The buttons become
+  **Accept** and **Cancel**; Cancel discards edits and restores the four decisions.
+- **Correct** opens a feedback box. **Send feedback** reruns Planner, Worker and
+  Reviewer on the same workflow, retaining previous outputs, feedback and audit.
+  The revised proposal requires a new human decision and creates no tasks.
+- **Reject** records rejection and closes the dialog without creating tasks.
+
+The reviewer name is optional in the dialog and defaults to `Student Reviewer`.
+Accept and Partially Accept record `Approve` and `PartialAccept`, respectively.
+Accepted tasks are
 created atomically through `student-3-database`. A durable workflow receipt
 makes repeated saves return the original result instead of duplicating tasks.
 Assignment changes require a new proposal. A recorded decision can only be
@@ -65,18 +72,24 @@ firewall. A standalone backend uses
 Set `MultiAgentServer__Enabled=true` or `false` explicitly for standalone
 backend runs. Changing the shared server's deployment is deferred.
 
-The existing server executes synchronously and does not expose live stage
+The server executes synchronously and does not expose live stage
 progress. The dialog displays a waiting message, not simulated agent states.
 The Worker is asked for compact task JSON; malformed/truncated output and
 canned prose are rejected with no task writes. Reviewer text and confidence
-can still be canned, so the dialog explicitly requires human checking.
-Shared-server retries, real progress events and stronger output contracts
-remain for the next PR. Workflow writes are not automatically retried.
+can still be canned on the initial run, so the dialog explicitly requires human
+checking. Corrections require successful AI responses rather than canned fallback
+output. Real progress events and stronger output contracts remain deferred.
+Workflow writes are not automatically retried; correction retries reuse their
+request ID so they cannot create duplicate revisions.
 
 `POST /api/tasks/{id}/ai-breakdown` now returns a workflow and proposed tasks,
 not created tasks. `POST /api/tasks/{id}/ai-breakdown/review` takes the
-workflow ID, selected task indices/edits, reviewer name/comments and a reject
-flag. It returns the human-reviewed workflow and any created tasks.
+workflow ID/current revision, explicit decision, selected task indices/edits,
+reviewer name/comments and a reject flag. It returns the human-reviewed workflow
+and any created tasks. `POST /api/tasks/{id}/ai-breakdown/revise` takes the
+workflow ID/current revision, a request ID, reviewer name and feedback; it
+returns the revised proposal without writing subtasks. Superseded proposals
+cannot be accepted or used to overwrite a newer revision.
 `GET /api/integrations/capabilities` exposes `aiBreakdownEnabled` separately
 from `aiModeEnabled`. Disabled breakdown operations return 503; invalid
 structured output/upstream failures return 502; stale/conflicting reviews

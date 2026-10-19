@@ -49,4 +49,15 @@ export interface MultiAgentWorkflow {
     action: string
     summary: string
   }[]
+  revision: number
+  revisions?: {
+    revision: number
+    requestId: string
+    reviewerName: string
+    feedback: string
+    requestedAtUtc: string
+    planner: MultiAgentWorkflow['planner']
+    worker: MultiAgentWorkflow['worker']
+    reviewer: MultiAgentWorkflow['reviewer']
+  }[]
 }

@@ -236,16 +236,6 @@ Each of those database services is attached only to its internal `student-N-data
 - The launcher injects the OpenRouter key only into AI Mode and copies ten
   curated Markdown sources into a temporary RAG corpus. Restart the launcher
   after corpus edits. Cloud images retain their packaged corpus separately.
-- Student 3 uses `http://host.docker.internal:5002/mcp` for MCP and
-  `http://host.docker.internal:5003` for RAG. Both integrations remain optional and
-  never participate in Student 3 readiness.
-- Student 3's existing AI Breakdown uses the host Multi-Agent Server for
-  Planner → Worker → Reviewer proposals. The same dialog lets students review,
-  edit and select subtasks before explicitly saving them. Only accepted tasks
-  are written, atomically through `student-3-database`, with a durable workflow
-  receipt preventing duplicate applications. Breakdown requires AI Mode and
-  Multi-Agent to be enabled; description generation still uses AI Mode directly.
-  Live stage progress and shared-server reliability changes are deferred.
 - MCP accesses all five public backends through their published host ports
   using bounded HTTP APIs; RAG
   does not access feature databases.

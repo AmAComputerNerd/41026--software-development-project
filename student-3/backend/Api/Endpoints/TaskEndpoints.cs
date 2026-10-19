@@ -19,6 +19,7 @@ public static class TaskEndpoints
         group.MapPost("/ai-description", GenerateDescription);
         group.MapPost("/{id:guid}/ai-breakdown", GenerateBreakdown);
         group.MapPost("/{id:guid}/ai-breakdown/review", ReviewBreakdown);
+        group.MapPost("/{id:guid}/ai-breakdown/revise", ReviseBreakdown);
         group.MapPut("/{id:guid}", UpdateTask);
         group.MapDelete("/{id:guid}", DeleteTask);
         return endpoints;
@@ -156,13 +157,33 @@ public static class TaskEndpoints
     {
         if (options.Value.Enabled is not true) throw new AiGatewayConfigurationException("AI Mode is disabled.");
         if (!multiAgent.IsEnabled) throw new MultiAgentIntegrationDisabledException();
-        if (request.WorkflowId == Guid.Empty ||
+        if (request.WorkflowId == Guid.Empty || request.Revision < 0 ||
             string.IsNullOrWhiteSpace(request.ReviewerName) || request.ReviewerName.Length > 100 ||
             string.IsNullOrWhiteSpace(request.Comments) || request.Comments.Length > 2000)
         {
             return Results.BadRequest("Supply a workflow ID, reviewer name (1-100 characters) and review comments (1-2000 characters).");
         }
         var result = await breakdown.ReviewAsync(id, request, cancellationToken);
+        return result is null ? Results.NotFound() : Results.Ok(result);
+    }
+
+    private static async Task<IResult> ReviseBreakdown(
+        Guid id,
+        ReviseBreakdownRequestDto request,
+        IOptions<AiGatewayOptions> options,
+        IMultiAgentClient multiAgent,
+        AssignmentBreakdownService breakdown,
+        CancellationToken cancellationToken)
+    {
+        if (options.Value.Enabled is not true) throw new AiGatewayConfigurationException("AI Mode is disabled.");
+        if (!multiAgent.IsEnabled) throw new MultiAgentIntegrationDisabledException();
+        if (request.WorkflowId == Guid.Empty || request.RequestId == Guid.Empty || request.Revision < 0 ||
+            string.IsNullOrWhiteSpace(request.ReviewerName) || request.ReviewerName.Length > 100 ||
+            string.IsNullOrWhiteSpace(request.Feedback) || request.Feedback.Length > 2000)
+        {
+            return Results.BadRequest("Supply workflow/request IDs, the current revision, reviewer name (1-100 characters) and feedback (1-2000 characters).");
+        }
+        var result = await breakdown.ReviseAsync(id, request, cancellationToken);
         return result is null ? Results.NotFound() : Results.Ok(result);
     }
 

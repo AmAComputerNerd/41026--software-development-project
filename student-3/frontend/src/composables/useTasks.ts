@@ -3,6 +3,7 @@ import * as taskApi from '@/api/tasks'
 import type {
   CanvasSyncResult,
   BreakdownReviewInput,
+  BreakdownRevisionInput,
   Course,
   CreateTaskInput,
   GenerateTaskBreakdownInput,
@@ -141,6 +142,10 @@ export function useTasks() {
     return result
   }
 
+  async function reviseBreakdown(id: string, input: BreakdownRevisionInput) {
+    return taskApi.reviseTaskBreakdown(id, input)
+  }
+
   async function generateDescription(input: GenerateTaskDescriptionInput) {
     const result = await taskApi.generateTaskDescription(input)
     return result.description
@@ -163,6 +168,7 @@ export function useTasks() {
     sync,
     generateBreakdown,
     reviewBreakdown,
+    reviseBreakdown,
     generateDescription,
   }
 }
