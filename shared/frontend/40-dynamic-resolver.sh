@@ -11,10 +11,14 @@ if [ -n "$NAMESERVERS" ]; then
 fi
 
 # Detect domain suffix: prioritize explicit ACA_ENVIRONMENT_DOMAIN env var, then search domains from /etc/resolv.conf
+# In Azure Container Apps, internal ingress apps (external: false) have FQDN: <APP_NAME>.internal.<ENVIRONMENT_DOMAIN>
 DOMAIN_SUFFIX=""
 if [ -n "$ACA_ENVIRONMENT_DOMAIN" ]; then
-    DOMAIN_SUFFIX="${ACA_ENVIRONMENT_DOMAIN}"
-    echo "[40-dynamic-resolver.sh] Using ACA_ENVIRONMENT_DOMAIN: ${DOMAIN_SUFFIX}"
+    case "$ACA_ENVIRONMENT_DOMAIN" in
+        internal.*) DOMAIN_SUFFIX="${ACA_ENVIRONMENT_DOMAIN}" ;;
+        *) DOMAIN_SUFFIX="internal.${ACA_ENVIRONMENT_DOMAIN}" ;;
+    esac
+    echo "[40-dynamic-resolver.sh] Using ACA internal domain suffix: ${DOMAIN_SUFFIX}"
 else
     # In Azure Container Apps / Kubernetes, /etc/resolv.conf contains search domains
     K8S_SEARCH=$(awk '$1=="search" {print $2}' /etc/resolv.conf)
