@@ -57,6 +57,18 @@ Any AI agent modifying or extending this codebase **must strictly follow these 5
 - Always branch off `main` for new features or fixes (`feat/<feature-name>`, `fix/<fix-name>`, `docs/<doc-name>`).
 - Use **Conventional Commits** (`feat(...)`, `fix(...)`, `docs(...)`, `chore(...)`, `refactor(...)`).
 - Never push directly to `main`; submit a Pull Request targeting `main`.
+- **Mandatory Post-Commit & Major-Change Verification**: After **every commit** and **every major change**, agents **must** execute the safeguards in **Rule 6** and **Section 9** before concluding their turn.
+
+### Rule 6: Mandatory Log, Google Doc Consistency & Link Safeguards
+Whenever any log, architecture detail, endpoint, test report, or major codebase change is made or committed, agents **must**:
+1. **Keep Logs & Report Synchronised**: Ensure all relevant logs (`tools/agentic_loop/logs/`, CI/CD test logs, pre-commit security logs, deployment logs) and the shared **[Release 2 Technical Report & Logs Google Doc](https://docs.google.com/document/d/19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ/edit?usp=sharing)** are updated.
+2. **Verify Zero Cross-Microservice Conflicts after Every Commit**: After each commit, inspect the **[Release 2 Google Doc](https://docs.google.com/document/d/19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ/edit?usp=sharing)** and repository documentation (`AGENTS.md`, `docs/`) to verify there is **no conflicting material between microservices** (`student-1` through `student-5`, `shared-backend`, `shared-shell`, `ai-mode`, `mcp-server`, `rag-server`, `multi-agent-server`) — checking student names/IDs, port mappings, database engines (`PostgreSQL 16` for Student 1 vs `SQLite` for Students 2–5), API routes, and CI workflow filenames (`student-1.yml` to `student-5.yml`). Run `python3 .agents/skills/proofread/scripts/verify_doc_and_links.py` (and the `proofread` skill) to automate this check.
+3. **Always Double-Check Link Accessibility**: Verify that every link in `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/`, and the **[Release 2 Google Doc](https://docs.google.com/document/d/19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ/edit?usp=sharing)** resolves and is accessible (no broken local file links, dead HTTP URLs, or unreplaced `<org>/<repo>` placeholders).
+4. **Always Prompt the User at the End of Each Major Change and/or Commit**: At the end of every major change and/or commit response, explicitly present a **Post-Change & Post-Commit Safeguard Checklist** to the user confirming:
+   - Whether logs and the **[Release 2 Google Doc](https://docs.google.com/document/d/19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ/edit?usp=sharing)** need updating or have been updated;
+   - That cross-microservice consistency in the Google Doc and repo docs was verified with zero conflicts;
+   - That all links were double-checked and confirmed accessible;
+   - And prompt the user on whether they would like to run the `proofread` skill or sync the latest changes/logs to the Google Doc now.
 
 ---
 
@@ -328,8 +340,92 @@ flowchart TD
 
 ---
 
-## 9. Related Documentation Links
+## 9. Release 2 Report, Logs & Google Workspace MCP Safeguards
 
+### 9.1 Authoritative Release 2 Report & Specification Links
+- **Release 2 Technical Report & Logs (Google Doc)**: [Assessment 3 – Release 2: Multi-Agent Systems, Testing & Cloud Deployment](https://docs.google.com/document/d/19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ/edit?usp=sharing)
+- **Release 2 Canvas Assignment Page**: [Canvas Course 39716 — Assignment 267943](https://canvas.uts.edu.au/courses/39716/assignments/267943) *(accessed programmatically via Isaac's Canvas API Gateway `shared-backend` at `GET /api/canvas/courses/39716/assignments`)*
+- **ASD 2026 Project Specifications (Google Drive PDF)**: [ASD_2026_Project_Specifications.pdf](https://drive.google.com/file/d/1foChRW51MBtemJWPHmD5zLwRejxuxJQb/view?usp=sharing)
+- **Proofread & Consistency Skill**: [`.agents/skills/proofread/SKILL.md`](.agents/skills/proofread/SKILL.md)
+
+### 9.2 Setting Up the Google Workspace MCP Server & CLI Plugins
+
+To allow AI coding agents (Antigravity, Claude Code, Cursor) to read, proofread, and update the shared Release 2 Google Doc and Drive specifications directly:
+
+#### Option A: Antigravity Google Workspace Plugins (`gdocs` & `gdrive` CLI Skills)
+1. Authenticate the Google Docs CLI plugin:
+   ```bash
+   ~/.gemini/config/plugins/gdocs/skills/gdocs/scripts/gdocs auth status
+   # If not logged in:
+   ~/.gemini/config/plugins/gdocs/skills/gdocs/scripts/gdocs auth login
+   ```
+2. Authenticate the Google Drive CLI plugin:
+   ```bash
+   ~/.gemini/config/plugins/gdrive/skills/gdrive/scripts/gdrive auth status
+   # If not logged in:
+   ~/.gemini/config/plugins/gdrive/skills/gdrive/scripts/gdrive auth login
+   ```
+3. Verify read access to the Release 2 Google Doc (`19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ`):
+   ```bash
+   ~/.gemini/config/plugins/gdocs/skills/gdocs/scripts/gdocs readonly list-tabs 19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ
+   ```
+   *(Ensure your authenticated Google account has Viewer/Editor permissions on the shared Google Doc, or export via `https://docs.google.com/document/d/19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ/export?format=txt`).*
+
+#### Option B: Standard Google Workspace MCP Server (`mcp.json` / `.mcp.json`)
+For MCP-enabled clients (Claude Code, Cursor, VS Code, or Antigravity MCP), configure the Google Workspace MCP server in your MCP configuration (`~/.gemini/antigravity/mcp_config.json`, `.mcp.json`, or `.cursor/mcp.json`):
+
+1. **Create Google Cloud OAuth 2.0 Credentials**:
+   - In the Google Cloud Console, enable the **Google Docs API** and **Google Drive API**.
+   - Create an **OAuth 2.0 Client ID** (Desktop App) and download the credentials JSON (or note `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`).
+2. **Register the MCP Server**:
+   ```json
+   {
+     "mcpServers": {
+       "google-workspace": {
+         "command": "uvx",
+         "args": ["workspace-mcp", "--tools", "drive", "docs"],
+         "env": {
+           "GOOGLE_OAUTH_CLIENT_ID": "<YOUR_GOOGLE_CLIENT_ID>",
+           "GOOGLE_OAUTH_CLIENT_SECRET": "<YOUR_GOOGLE_CLIENT_SECRET>",
+           "OAUTHLIB_INSECURE_TRANSPORT": "1"
+         }
+       }
+     }
+   }
+   ```
+3. **Authenticate on First Tool Call**:
+   - Trigger any `google-workspace` read tool (e.g., reading document ID `19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ`) and complete the browser OAuth consent flow.
+
+### 9.3 Mandatory Post-Commit & Major-Change Safeguard Protocol
+
+To ensure anything related to logs, microservice specifications, and report evidence is **always** kept up to date, agents **must** execute the following 4-step protocol after **every commit** and **every major change**:
+
+1. **Log & Report Synchronisation Check**:
+   - Verify whether any modified code, endpoints, CI workflows (`student-1.yml` to `student-5.yml`, `cloud-deployment.yml`), pre-commit security scans, or `tools/agentic_loop/logs/` transcripts impact the repository docs or the [Release 2 Google Doc](https://docs.google.com/document/d/19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ/edit?usp=sharing), and update them accordingly.
+2. **Cross-Microservice Conflict Verification (Every Commit)**:
+   - Verify that there is **zero conflicting material between microservices** (`student-1` through `student-5`, `shared-backend`, `shared-shell`, `ai-mode`, `mcp-server`, `rag-server`, `multi-agent-server`) across the [Release 2 Google Doc](https://docs.google.com/document/d/19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ/edit?usp=sharing), `AGENTS.md`, and `docs/`.
+   - Specifically verify: student names & IDs, vertical slice ownership, port numbers (`5101`–`5105`, `5110`, `5114`, `5001`–`5004`, `8080`), database engines (`PostgreSQL 16` for Student 1 vs `SQLite` for Students 2–5), endpoint paths, and local vs cloud AI service states.
+3. **Link Accessibility Verification (Every Commit & Major Change)**:
+   - Double-check that **every link** in `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/`, and the [Release 2 Google Doc](https://docs.google.com/document/d/19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ/edit?usp=sharing) is accessible (valid local file paths and reachable HTTP/HTTPS URLs with no unreplaced template placeholders).
+   - Run the automated verifier:
+     ```bash
+     python3 .agents/skills/proofread/scripts/verify_doc_and_links.py
+     ```
+4. **Mandatory End-of-Turn User Prompt**:
+   - At the end of **every major change and/or commit**, always prompt the user with a structured summary of the steps above:
+     - [ ] **Logs & Docs Updated**: Confirm which log files, `docs/`, and [Release 2 Google Doc](https://docs.google.com/document/d/19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ/edit?usp=sharing) sections were updated (or need syncing).
+     - [ ] **No Microservice Conflicts**: Confirm that `student-1`..`student-5` and shared services have no conflicting claims in the Google Doc or repo docs.
+     - [ ] **All Links Accessible**: Confirm that all links in the Google Doc and repo markdown files were verified accessible.
+     - [ ] **Next Action Prompt**: Ask the user if they want to run the [`proofread`](.agents/skills/proofread/SKILL.md) skill (which checks against the Release 2 Canvas rubric via Isaac's Canvas API and the Google Drive PDF specs) or push updates to the Google Doc.
+
+---
+
+## 10. Related Documentation Links
+
+- [Release 2 Technical Report & Logs (Google Doc)](https://docs.google.com/document/d/19wEstx_ulZECxXk-INTRDa-nWoNjEaTHW4ewxbZe6kQ/edit?usp=sharing)
+- [Release 2 Canvas Assignment Page (Course 39716, Assignment 267943)](https://canvas.uts.edu.au/courses/39716/assignments/267943)
+- [ASD 2026 Project Specifications PDF (Google Drive)](https://drive.google.com/file/d/1foChRW51MBtemJWPHmD5zLwRejxuxJQb/view?usp=sharing)
+- [Proofread Skill (`.agents/skills/proofread/SKILL.md`)](.agents/skills/proofread/SKILL.md)
 - [Documentation Index](docs/README.md)
 - [Architecture Deep-Dive](docs/architecture/overview.md)
 - [Microservices Catalog](docs/architecture/services.md)
@@ -341,3 +437,4 @@ flowchart TD
 - [Playbook: New Backend Slice](docs/playbooks/new-backend-microservice.md)
 - [Playbook: Split Database Service](docs/playbooks/split-database-service.md)
 - [Playbook: Agentic Loop Evaluation](docs/playbooks/agentic-loop-guide.md)
+
