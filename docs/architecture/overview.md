@@ -233,6 +233,13 @@ Each of those database services is attached only to its internal `student-N-data
 - Student 3 uses `http://mcp-server:8080/mcp` for MCP and
   `http://rag-server:8080` for RAG. Both integrations remain optional and
   never participate in Student 3 readiness.
+- Student 3's existing AI Breakdown uses the host Multi-Agent Server for
+  Planner → Worker → Reviewer proposals. The same dialog lets students review,
+  edit and select subtasks before explicitly saving them. Only accepted tasks
+  are written, atomically through `student-3-database`, with a durable workflow
+  receipt preventing duplicate applications. Breakdown requires AI Mode and
+  Multi-Agent to be enabled; description generation still uses AI Mode directly.
+  Live stage progress and shared-server reliability changes are deferred.
 - MCP accesses all five public backends through their bounded HTTP APIs on
   `ai-services`; RAG
   does not access feature databases.

@@ -54,8 +54,15 @@ task and course lists rather than deleted.
 
 On 03 ASSIGNMENTS, choose AI breakdown for an assignment. Review or edit the
 planning prompt and select the priority for the generated sub-tasks. The
-backend loads the saved assignment and course context and calls the local
-AI Mode gateway. Validated generated sub-tasks are saved together.
+backend loads the saved assignment and course context and calls the existing
+Multi-Agent Server's Planner, Worker and Reviewer. Generating a proposal
+does not create tasks. Review the proposed tasks, edit their titles or
+descriptions, and select which ones to keep. Enter a reviewer name and
+comments, then save the selected tasks together or reject the proposal.
+The recorded decision reflects approval, correction or partial acceptance.
+Repeated saves of the same reviewed workflow do not duplicate tasks.
+Breakdown requires both AI Mode and Multi-Agent to be enabled. The existing
+server does not expose live stage progress; invalid task output is rejected.
 
 For a non-Canvas task, Generate description with AI drafts a description from
 the title and selected course or parent assessment. The draft can be edited

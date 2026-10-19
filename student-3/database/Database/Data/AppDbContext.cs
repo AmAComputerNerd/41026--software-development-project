@@ -18,9 +18,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<TaskEntity> Tasks { get; set; } = null!;
     public DbSet<Course> Courses { get; set; } = null!;
+    public DbSet<BreakdownApplication> BreakdownApplications { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<BreakdownApplication>()
+            .HasKey(application => application.WorkflowId);
+        
+        modelBuilder.Entity<BreakdownApplication>()
+            .Property(application => application.WorkflowId)
+            .ValueGeneratedNever();
+        
         modelBuilder.Entity<Course>()
             .HasKey(c => c.Id);
 

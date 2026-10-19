@@ -93,7 +93,9 @@ jobs:
               ($backend.environment.McpServer__BaseUrl == "http://mcp-server:8080/mcp") and
               ($backend.environment.RagServer__BaseUrl == "http://rag-server:8080") and
               ($backend.networks | has("ai-services")) and
-              ($backend | has("extra_hosts") | not) and
+              (if $student == 3 then
+                $backend.extra_hosts == ["host.docker.internal=host-gateway"]
+              else ($backend | has("extra_hosts") | not) end) and
               ($config.services["mcp-server"].environment["Student\($student)__BaseUrl"] ==
                 "http://student-\($student)-backend:8080")
             )) and
@@ -101,6 +103,9 @@ jobs:
             (.services["student-1-backend"].environment.MultiAgentServer__BaseUrl |
               startswith("http://host.docker.internal:")) and
             (.services["student-3-backend"].environment.McpServer__Enabled == "false") and
+            (.services["student-3-backend"].environment.MultiAgentServer__Enabled == "false") and
+            (.services["student-3-backend"].environment.MultiAgentServer__BaseUrl |
+              startswith("http://host.docker.internal:")) and
             (.services["student-3-backend"].environment.RagServer__Enabled == "false") and
             (.services["student-4-backend"].environment.McpServer__Enabled == "false") and
             (.services["student-4-backend"].environment.RagServer__Enabled == "false") and
@@ -165,6 +170,7 @@ jobs:
           MCP_ENABLED=false
           RAG_ENABLED=false
           AI_MODE_ENABLED=false
+          MULTI_AGENT_ENABLED=false
           EOF
           python -c 'import secrets; print("POSTGRES_PASSWORD=" + secrets.token_hex(32))' >> .env
 
@@ -199,6 +205,7 @@ jobs:
           MCP_ENABLED=false
           RAG_ENABLED=false
           AI_MODE_ENABLED=false
+          MULTI_AGENT_ENABLED=false
           EOF
           python -c 'import secrets; print("POSTGRES_PASSWORD=" + secrets.token_hex(32))' >> .env
 

@@ -48,7 +48,8 @@ public sealed record GeneratedSubtaskRecord(string Title, string? Description);
 
 public sealed record CreateSubtasksCommand(
     string Priority,
-    IReadOnlyList<GeneratedSubtaskRecord> Tasks);
+    IReadOnlyList<GeneratedSubtaskRecord> Tasks,
+    Guid? WorkflowId = null);
 
 public sealed record CanvasSnapshotCommand(IReadOnlyList<CanvasCourseSnapshot> Courses);
 

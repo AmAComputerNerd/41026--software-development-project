@@ -881,6 +881,16 @@
   }
 }
 
+.nb-breakdown-task {
+  margin: var(--nb-space-4) 0;
+  border: var(--nb-border-width-md) solid var(--nb-color-ink);
+  padding: var(--nb-space-3);
+
+  legend {
+    font-family: var(--nb-font-mono);
+  }
+}
+
 .nb-assistant-json {
   max-height: 240px;
   overflow: auto;

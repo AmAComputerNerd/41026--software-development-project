@@ -206,8 +206,12 @@ services:
             RagServer__Enabled: ${RAG_ENABLED:?Run python tools/setup_env.py}
             RagServer__BaseUrl: http://rag-server:8080
             DueSoonReminder__IntervalMinutes: "15"
+            MultiAgentServer__Enabled: ${MULTI_AGENT_ENABLED:?Run python tools/setup_env.py}
+            MultiAgentServer__BaseUrl: http://host.docker.internal:${MULTI_AGENT_HOST_PORT:-5004}
             DueSoonReminder__HoursBeforeDue: "24"
             DueSoonReminder__FinalHoursBeforeDue: "3"
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         networks:
             - default
             - ai-services
