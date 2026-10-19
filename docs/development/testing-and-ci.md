@@ -67,7 +67,7 @@ The repository enforces CI checks on all pull requests targeting `main` and all 
 
 | Workflow File | Trigger Paths | Key Jobs Executed |
 |---|---|---|
-| **`docker-ci.yml`** | `ai-services/**`, `shared/**`, `student-*/**`, `docker-compose.yml`, `package.json`, `package-lock.json`, `.env.example` | Compose contract validation, dynamically discovered parallel image builds, and a Student 3 Compose integration smoke test |
+| **`docker-ci.yml`** | `ai-services/**`, `shared/**`, `student-*/**`, `docker-compose.yml`, `package.json`, `package-lock.json`, `.env.example`, launcher/setup scripts and launcher tests | Host-service Compose contract, core and optional cloud AI image builds, launcher regression checks, and a Student 3 integration smoke test against host-run AI services |
 | **`shared-ci.yml`** | `shared/backend/**`, `shared/frontend/**`, `shared/ui-kit/**` | Frontend build, .NET build/format check, EF migrations drift check, NuGet vulnerability audit |
 | **`student-1.yml`** | `student-1/**`, `shared/ui-kit/**` | Notifications frontend build + Playwright E2E, .NET build/test/format check, post-commit endpoint smoke tests, EF migration drift check, NuGet audit |
 | **`student-2.yml`** | `student-2/**`, `shared/ui-kit/**` | Automations frontend build, .NET build/format check, EF migration drift check, NuGet audit |

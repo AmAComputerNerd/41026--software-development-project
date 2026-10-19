@@ -8,7 +8,7 @@ OpenRouter.
 
 ```mermaid
 flowchart TD
-    Client["student-1 through student-5 backends"] -- "POST /api/answers<br>{ question, scope }" --> RAG["rag-server (:8080, internal)"]
+    Client["student-1 through student-5 backends"] -- "POST /api/answers<br>{ question, scope }" --> RAG["Host rag-server (:5003)"]
 
     subgraph Indexing["Corpus & Retrieval Pipeline"]
         Corpus[("Curated Markdown Corpus<br>Feature help, READMEs and shared sources")]
@@ -21,7 +21,7 @@ flowchart TD
     LexicalSearch --> ContextCheck
     ContextCheck -- "No match" --> Insufficient["Return status: insufficient_context<br>(Model not called)"]
     ContextCheck -- "Matches found" --> Prompt["Assemble Grounded Prompt + Citations"]
-    Prompt -- "POST /v1/chat/completions" --> AIM["ai-mode (:8080, internal)"]
+    Prompt -- "POST /v1/chat/completions" --> AIM["Host ai-mode (:5001)"]
     AIM --> OpenRouter["OpenRouter LLM"]
     OpenRouter --> Answer["Return Grounded Answer + Citations"]
 ```
@@ -90,13 +90,17 @@ is deferred until corpus size or retrieval quality justifies it.
 Start the shared AI services from the repository root:
 
 ```bash
-docker compose up --build -d ai-mode mcp-server rag-server
+python tools/run_ai_services.py
 ```
 
-There is no published host port. Callers on the `ai-services` network use
-`http://rag-server:8080`.
-The image contains only the curated Markdown sources under `/app/Corpus`;
-it does not mount the repository, secrets, or feature databases. RAG runs
-as a non-root user and calls `http://ai-mode:8080` without an OpenRouter key.
-After editing corpus sources, run `docker compose up --build -d rag-server`
-to refresh the packaged documents and startup index.
+RAG runs outside Docker on `RAG_HOST_PORT` (`5003` in `.env.example`).
+Docker callers use `http://host.docker.internal:5003`; host callers use
+`http://127.0.0.1:5003`. The launcher copies the curated Markdown sources
+into a temporary corpus, with no secrets or feature database files, and
+configures RAG to call host AI Mode without an OpenRouter key.
+Restart the launcher after corpus edits to refresh the documents and startup
+index. The launcher listens on all host interfaces for Docker access;
+restrict the development ports with your host firewall.
+
+The Dockerfile remains for optional cloud bonus deployment and packages the
+same curated sources under `/app/Corpus`; it is not used by local Compose.

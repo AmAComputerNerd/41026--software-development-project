@@ -28,9 +28,9 @@ Knowledge page -> POST /api/users/{userId}/mcp-readiness
               -> student-1-backend /health/ready (notification readiness)
 ```
 
-Docker Compose starts MCP and configures its Student 4 callback URL as
-`http://student-4-backend:8080`. The account backend uses
-`http://mcp-server:8080/mcp` on the dedicated `ai-services` network.
+The host launcher starts MCP and configures its Student 4 callback URL as
+`http://127.0.0.1:5104`. The containerised account backend uses
+`http://host.docker.internal:5002/mcp` with a Linux host-gateway mapping.
 
 `MCP_ENABLED` in the generated `.env` controls the integration. It is
 optional for account readiness, explicitly disabled in Student 4 CI, and
@@ -73,7 +73,7 @@ Account Help UI -> POST /api/users/help/answers { question }
                 -> answer + server-derived citations + confidence
 ```
 
-The RAG image includes this README and
+The host RAG corpus includes this README and
 the [Account Help guide](../docs/features/student-4/account-help.md) in the curated corpus.
 Student 4 scope searches its README and `docs/features/student-4/` guides
 plus explicitly shared sources, so unrelated
@@ -84,15 +84,15 @@ number of matched excerpts. No relevant chunks returns `insufficient_context`
 without calling the model; the model can also decline an unsupported question.
 
 `RAG_ENABLED` comes from the generated `.env`. Compose
-routes the backend to `http://rag-server:8080` without publishing a host port.
+routes the backend to `http://host.docker.internal:5003` on the configured host port.
 Standalone backends must set `RagServer__Enabled` explicitly and, when
 enabled, `RagServer__BaseUrl`. Disabled RAG returns `503`; service/model
 failures return a friendly `502`. Questions must contain 3-500 trimmed
 characters. CI explicitly disables both MCP and RAG, and backend readiness
 continues to depend only on its database.
 
-Run `docker compose up --build -d rag-server` after editing corpus files
-because documents are packaged into the image and indexed at startup.
+Restart `python tools/run_ai_services.py` after editing corpus files
+because documents are copied into a temporary corpus and indexed at startup.
 
 Future releases will focus on improving the AI summary by giving it
 context from other services and expanding on user roles and
@@ -118,7 +118,7 @@ flowchart TD
 
     subgraph ExternalServices["External & Shared Services"]
         MailHog["MailHog (:1025 SMTP / :8025 Web)<br>Developer Mailbox"]
-        AIM["ai-mode (:8080, internal)<br>Profile Summary LLM"]
+        AIM["Host ai-mode (:5001)<br>Profile Summary LLM"]
     end
 
     Shell -- "Proxy /account/" --> FE

@@ -22,7 +22,8 @@ if [ -n "$ACA_ENVIRONMENT_DOMAIN" ]; then
 else
     # In Azure Container Apps / Kubernetes, /etc/resolv.conf contains search domains
     K8S_SEARCH=$(awk '$1=="search" {print $2}' /etc/resolv.conf)
-    if [ -n "$K8S_SEARCH" ]; then
+    # Docker's "search ." denotes the DNS root, not a cloud ingress domain.
+    if [ -n "$K8S_SEARCH" ] && [ "$K8S_SEARCH" != "." ]; then
         DOMAIN_SUFFIX="${K8S_SEARCH}"
         echo "[40-dynamic-resolver.sh] Using resolv.conf search domain: ${DOMAIN_SUFFIX}"
     fi

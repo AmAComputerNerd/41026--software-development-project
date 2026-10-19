@@ -13,10 +13,10 @@ Keep `docs/architecture/overview.md` up to date with what's actually built.
 1. **Database Boundaries**: Each student slice owns an isolated database (Student 1 uses a PostgreSQL 16 container `notifications_db`; Students 3, 4, 5 delegate persistence to internal SQLite database services on isolated networks; Student 2 and shared-backend use SQLite). **Zero cross-database queries**; all communication is via HTTP APIs.
 2. **Canvas Gateway**: `shared/backend` exclusively owns Canvas API communication (`courses`, `assignments`, `users`, `recipients`, `conversations`, Classic Quizzes). Assignments' untrusted HTML is sanitized into plain text at the gateway.
 3. **AI Gateway (`ai-mode`)**: Only `ai-mode` holds `OPENROUTER_API_KEY`.
-   AI Mode, MCP, and RAG run in Compose on the dedicated `ai-services`
-   network with no published host ports. Calling backends receive service-DNS
-   URLs through environment variables, while the Release 2 Multi-Agent Server
-   runs on host port `5004`.
+   AI Mode, MCP, RAG and Multi-Agent run as host processes via
+   `python tools/run_ai_services.py`, on configured ports `5001`-`5004`.
+   Docker backends use `host.docker.internal` with Linux host-gateway mappings.
+   Their Dockerfiles are retained only for optional cloud bonus deployment.
 4. **Design System**: Use `@better-canvas/ui-kit` (workspace package) with Vue 3 `<script setup>` and plain SCSS. Follow Neobrutalism tokens (`0px` radius, thick borders, raw drop shadows). No Vuetify in frontend slices.
 5. **Git Workflow**: Branch off `main` per feature (`feat/`, `fix/`, `docs/`), use Conventional Commits, and open PRs into `main`.
 
@@ -32,9 +32,9 @@ Keep `docs/architecture/overview.md` up to date with what's actually built.
 - `http://localhost:8080/grades/` / API: `5105` (`/api/grades/`) — Student 5 (Grades & Progress)
 - API: `5110` (`/api/canvas/*`) — Shared Backend (Canvas Gateway)
 - `http://localhost:8025` (`1025` SMTP) — MailHog development inbox
-- Internal `ai-mode:8080` (`/v1/chat/completions`) — AI Mode
-- Internal `mcp-server:8080` (`/mcp`) — MCP server
-- Internal `rag-server:8080` (`/api/answers`) — RAG server
+- Host `5001` (`/v1/chat/completions`) — AI Mode
+- Host `5002` (`/mcp`) — MCP server
+- Host `5003` (`/api/answers`) — RAG server
 - Host `5004` (`/api/workflows`) — Multi-Agent server (`Planner → Worker → Reviewer → Human Review`)
 
 ---
@@ -86,4 +86,3 @@ proxy block in `shared/frontend/nginx.conf`, add your service to the root
   2. **Verify Zero Cross-Microservice Conflicts**: After every commit, verify there is no conflicting material between microservices (`student-1` through `student-5` and shared services) in the Google Doc and repo docs.
   3. **Verify All Links Are Accessible**: Double-check that every link in `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/`, and the Google Doc resolves (`python3 .agents/skills/proofread/scripts/verify_doc_and_links.py`).
   4. **Always Prompt the User**: At the end of every major change and/or commit, present the **Post-Change & Post-Commit Safeguard Checklist** and ask if the user would like to run the [`proofread`](.agents/skills/proofread/SKILL.md) skill or sync updates to the Google Doc.
-

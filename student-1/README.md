@@ -32,9 +32,9 @@ flowchart TD
     end
 
     subgraph AIServices["Shared AI Infrastructure"]
-        AIM["ai-mode (:8080, internal)<br>OpenRouter Gateway"]
-        MCP["mcp-server (:8080, internal)<br>Shared MCP Tools"]
-        RAG["rag-server (:8080, internal)<br>Curated Course RAG"]
+        AIM["Host ai-mode (:5001)<br>OpenRouter Gateway"]
+        MCP["Host mcp-server (:5002)<br>Shared MCP Tools"]
+        RAG["Host rag-server (:5003)<br>Curated Course RAG"]
     end
 
     Shell -- "Proxy /notifications/" --> Frontend
@@ -61,8 +61,8 @@ The Notification service manages incoming academic notifications across student 
   - Interactive Q&A augmented by the shared RAG server with source citations and confidence metrics.
   - Collapsible Past Chats drawer for quick access to conversation history.
 - **Shared MCP & RAG Server Integrations**:
-  - Exposes tool `notifications_broadcast_alert` on `mcp-server:8080` with urgency validation.
-  - Consumes `rag-server:8080` via `POST /api/notifications/rag/query` with fallback for unsupported queries.
+  - Exposes tool `notifications_broadcast_alert` on host MCP (`host.docker.internal:5002` from Docker) with urgency validation.
+  - Consumes host RAG (`host.docker.internal:5003` from Docker) via `POST /api/notifications/rag/query` with fallback for unsupported queries.
   - Accessible via top toolbar action buttons `[🧠 QUERY COURSE RAG]` and `[⚡ MCP BROADCAST TOOL]`.
 
 ---

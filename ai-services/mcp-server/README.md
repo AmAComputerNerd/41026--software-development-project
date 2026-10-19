@@ -6,7 +6,7 @@ transport.
 
 ```mermaid
 flowchart LR
-    Caller["student-1 through student-5 backends"] -- "mcp-server:8080/mcp<br>Streamable HTTP Transport" --> MCPServer["mcp-server (:8080, internal)"]
+    Caller["student-1 through student-5 backends"] -- "host.docker.internal:5002/mcp<br>Streamable HTTP Transport" --> MCPServer["Host mcp-server (:5002)"]
 
     subgraph Tools["Registered MCP Tools"]
         T1["deadlines_list_upcoming"]
@@ -17,7 +17,7 @@ flowchart LR
     end
 
     MCPServer --> T1 & T2 & T3 & T4 & T5
-    T1 -- "student-3-backend:8080 (bounded API)" --> S3API["Student 3 Public API"]
+    T1 -- "127.0.0.1:5103 (bounded API)" --> S3API["Student 3 Public API"]
     T2 -- "POST /notifications/push" --> S1API["Student 1 Notification API"]
     T3 -- "GET /internal/ai-context/automation-health" --> S2API["Student 2 Public API"]
     T4 -- "GET /internal/ai-context/accounts/{userId}/readiness" --> S4API["Student 4 Public API"]
@@ -74,7 +74,7 @@ flowchart LR
   Unavailable optional dependencies appear as findings, not missing checks.
 - Errors: invalid UUID, account not found, unreachable/timed-out account
   service, or invalid upstream result
-- Compose supplies `Student4__BaseUrl=http://student-4-backend:8080`.
+- The host launcher supplies `Student4__BaseUrl=http://127.0.0.1:5104`.
 
 ### `grades_list_weightings`
 
@@ -94,10 +94,13 @@ flowchart LR
 Launch the shared services from the repository root:
 
 ```bash
-docker compose up --build -d ai-mode mcp-server rag-server
+python tools/run_ai_services.py
 ```
 
-There is no published host port. Callers on the `ai-services` network use
-`http://mcp-server:8080/mcp`. MCP calls all five public backends using
-`http://student-N-backend:8080`. Start the relevant feature backend to use
-its tools.
+MCP runs outside Docker on `MCP_HOST_PORT` (`5002` in `.env.example`).
+Docker callers use `http://host.docker.internal:5002/mcp`; host callers use
+`http://127.0.0.1:5002/mcp`. MCP calls the five public backends through
+loopback ports `5101`-`5105`, not Docker service DNS. Start the relevant
+feature backend to use its tools. The launcher listens on all host interfaces
+for Docker access; restrict these development ports with the host firewall.
+The Dockerfile remains for optional cloud bonus deployment.

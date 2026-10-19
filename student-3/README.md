@@ -34,7 +34,7 @@ MCP displays the returned tool name and structured JSON alongside readable
 results; **OPEN TASK** opens the existing task editor. RAG provides sample
 questions and retrieves this feature's sources, including
 [Deadline Tracker Help](../docs/features/student-3/deadline-help.md), plus explicitly shared sources.
-Run `docker compose up --build -d rag-server` after changing corpus documentation.
+Restart `python tools/run_ai_services.py` after changing corpus documentation.
 
 ### Multi-Agent AI Breakdown
 
@@ -58,11 +58,10 @@ applied to that assignment.
 Set `MULTI_AGENT_ENABLED=true` in the root `.env` and recreate
 `student-3-backend`. Compose uses the existing host-server model at
 `http://host.docker.internal:${MULTI_AGENT_HOST_PORT:-5004}` and maps that
-hostname to the host gateway on Linux. The server must listen on an interface
-reachable from Docker; the current launcher's loopback-only binding is not
-reachable through that gateway. For this host deployment, run the existing
-server with `--urls http://0.0.0.0:5004` (restrict host access appropriately),
-or run the backend standalone with `MultiAgentServer__BaseUrl=http://127.0.0.1:5004`.
+hostname to the host gateway on Linux. The host launcher listens on all
+interfaces for Docker access; restrict these development ports with the host
+firewall. A standalone backend uses
+`MultiAgentServer__BaseUrl=http://127.0.0.1:5004`.
 Set `MultiAgentServer__Enabled=true` or `false` explicitly for standalone
 backend runs. Changing the shared server's deployment is deferred.
 
@@ -100,11 +99,11 @@ flowchart TD
 
     subgraph ExternalIntegrations["External Gateways & Services"]
         SB["shared-backend (:5110)<br>Canvas API Gateway"]
-        AIM["ai-mode (:8080, internal)<br>AI Description"]
+        AIM["Host ai-mode (:5001)<br>AI Description"]
         MA["Existing Multi-Agent Server (:5004)<br>Reviewed AI Breakdown"]
         S1["student-1-backend (:5101)<br>Due-Soon Push Reminders"]
-        MCP["mcp-server (:8080, internal)<br>Upcoming Deadlines Tool"]
-        RAG["rag-server (:8080, internal)<br>Curated Q&A Corpus"]
+        MCP["Host mcp-server (:5002)<br>Upcoming Deadlines Tool"]
+        RAG["Host rag-server (:5003)<br>Curated Q&A Corpus"]
     end
 
     Shell -- "Proxy /deadlines/" --> FE
@@ -113,8 +112,8 @@ flowchart TD
     BE -- "Canvas Sync" --> SB
     BE -- "AI Description" --> AIM
     BE -- "POST /notifications/push" --> S1
-    BE -. "mcp-server:8080/mcp" .-> MCP
-    BE -. "rag-server:8080" .-> RAG
+    BE -. "host.docker.internal:5002/mcp" .-> MCP
+    BE -. "host.docker.internal:5003" .-> RAG
     BE -. "host coordinator / HTTP" .-> MA
     MA -- "Planner / Worker / Reviewer" --> AIM
 ```

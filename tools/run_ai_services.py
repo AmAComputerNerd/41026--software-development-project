@@ -4,6 +4,7 @@ import argparse
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -248,6 +249,7 @@ def main() -> int:
         try:
             prepare_corpus(Path(corpus_directory))
             base_environment = os.environ.copy()
+            base_environment.pop("OPENROUTER_API_KEY", None)
             base_environment["ASPNETCORE_ENVIRONMENT"] = "Development"
             base_environment["DOTNET_NOLOGO"] = "true"
             base_environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "true"
@@ -273,13 +275,13 @@ def main() -> int:
             environments = {
                 "ai-mode": {
                     **base_environment,
-                    "ASPNETCORE_URLS": f"http://127.0.0.1:{args.ai_mode_port}",
+                    "ASPNETCORE_URLS": f"http://0.0.0.0:{args.ai_mode_port}",
                     "OPENROUTER_API_KEY": openrouter_api_key,
                     "OPENROUTER_MODEL": openrouter_model,
                 },
                 "mcp": {
                     **base_environment,
-                    "ASPNETCORE_URLS": f"http://127.0.0.1:{args.mcp_port}",
+                    "ASPNETCORE_URLS": f"http://0.0.0.0:{args.mcp_port}",
                     "Student5__BaseUrl": f"http://127.0.0.1:{args.student_5_port}",
                     "Student3__BaseUrl": f"http://127.0.0.1:{args.student_3_port}",
                     "Student2__BaseUrl": f"http://127.0.0.1:{args.student_2_port}",
@@ -288,13 +290,13 @@ def main() -> int:
                 },
                 "rag": {
                     **base_environment,
-                    "ASPNETCORE_URLS": f"http://127.0.0.1:{args.rag_port}",
+                    "ASPNETCORE_URLS": f"http://0.0.0.0:{args.rag_port}",
                     "AiGateway__BaseUrl": f"http://127.0.0.1:{args.ai_mode_port}",
                     "Rag__CorpusPath": corpus_directory,
                 },
                 "multi-agent": {
                     **base_environment,
-                    "ASPNETCORE_URLS": f"http://127.0.0.1:{args.multi_agent_port}",
+                    "ASPNETCORE_URLS": f"http://0.0.0.0:{args.multi_agent_port}",
                     "MultiAgent__AiGatewayBaseUrl": f"http://127.0.0.1:{args.ai_mode_port}",
                     "MultiAgent__McpBaseUrl": f"http://127.0.0.1:{args.mcp_port}",
                     "MultiAgent__RagBaseUrl": f"http://127.0.0.1:{args.rag_port}",
@@ -306,6 +308,10 @@ def main() -> int:
                 },
             }
 
+            print(
+                "[launcher] AI services listen on all host interfaces for Docker access. "
+                "Restrict these development ports with your host firewall; do not expose them publicly."
+            )
             for name, project in SERVICE_SPECS:
                 process = start_service(name, project, environments[name])
                 processes.append((name, process))
@@ -375,5 +381,10 @@ def main() -> int:
     return 0
 
 
+def request_shutdown(_signal_number: int, _frame: object) -> None:
+    raise KeyboardInterrupt
+
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, request_shutdown)
     raise SystemExit(main())
