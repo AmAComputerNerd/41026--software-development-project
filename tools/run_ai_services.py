@@ -38,10 +38,10 @@ CORPUS_SOURCES = (
     Path("student-5/README.md"),
     Path("student-3/README.md"),
     Path("student-2/README.md"),
-    Path("student-3/docs/deadline-help.md"),
+    Path("docs/features/student-3/deadline-help.md"),
     Path("student-1/README.md"),
     Path("student-4/README.md"),
-    Path("student-4/docs/account-help.md"),
+    Path("docs/features/student-4/account-help.md"),
     Path("docs/knowledge-base/course_policies.md"),
 )
 
@@ -101,12 +101,17 @@ def parse_args(root_environment: dict[str, str]) -> argparse.Namespace:
     parser.add_argument(
         "--multi-agent-port",
         type=int,
-        default=configured_port("MULTI_AGENT_HOST_PORT", root_environment, 5004),
+        default=configured_port("MULTI_AGENT_HOST_PORT", root_environment),
     )
     parser.add_argument(
         "--student-5-port",
         type=int,
         default=5105,
+    )
+    parser.add_argument(
+        "--student-4-port",
+        type=int,
+        default=5104,
     )
     parser.add_argument(
         "--student-3-port",
@@ -123,7 +128,6 @@ def parse_args(root_environment: dict[str, str]) -> argparse.Namespace:
         type=int,
         default=5101,
     )
-    parser.add_argument("--student-4-port", type=int, default=5104)
     return parser.parse_args()
 
 
@@ -333,8 +337,20 @@ def main() -> int:
                 f"http://127.0.0.1:{args.student_1_port}/health/ready",
             )
             report_dependency(
+                "Student 2 backend",
+                f"http://127.0.0.1:{args.student_2_port}/health/ready",
+            )
+            report_dependency(
                 "Student 3 backend",
                 f"http://127.0.0.1:{args.student_3_port}/health/ready",
+            )
+            report_dependency(
+                "Student 4 backend",
+                f"http://127.0.0.1:{args.student_4_port}/health/ready",
+            )
+            report_dependency(
+                "Student 5 backend",
+                f"http://127.0.0.1:{args.student_5_port}/health/ready",
             )
             print("[launcher] AI services are running. Press Ctrl+C to stop.")
 
