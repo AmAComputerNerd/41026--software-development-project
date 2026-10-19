@@ -10,6 +10,8 @@ RUN npm run build --workspace=shared-frontend
 # Serve stage
 FROM nginx:1.27-alpine AS serve
 COPY shared/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY shared/frontend/40-dynamic-resolver.sh /docker-entrypoint.d/40-dynamic-resolver.sh
+RUN chmod +x /docker-entrypoint.d/40-dynamic-resolver.sh
 COPY --from=build /app/shared/frontend/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
