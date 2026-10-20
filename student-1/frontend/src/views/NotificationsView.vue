@@ -56,6 +56,7 @@ useNotificationStream((n) => {
 // Dialog state
 const breakdownTaskId = ref<string | null>(null)
 const breakdownTaskTitle = ref<string | undefined>(undefined)
+const gradeDialogOpen = ref(false)
 const gradeAssignmentId = ref<string | null>(null)
 const gradeMessage = ref<string | undefined>(undefined)
 
@@ -67,6 +68,7 @@ function handleBreakdownTask(taskId: string, message: string) {
 function handleSimulateGrade(assignmentId: string | null, message: string) {
   gradeAssignmentId.value = assignmentId
   gradeMessage.value = message
+  gradeDialogOpen.value = true
 }
 
 onMounted(fetchNotifications)
@@ -156,10 +158,10 @@ onMounted(fetchNotifications)
 
     <!-- Grade Impact Simulator Dialog (Student-5) -->
     <GradeImpactDialog
-      v-if="gradeAssignmentId !== null"
+      v-if="gradeDialogOpen"
       :assignment-id="gradeAssignmentId"
       :message="gradeMessage"
-      @close="gradeAssignmentId = null"
+      @close="() => { gradeDialogOpen = false; gradeAssignmentId = null; }"
     />
 
     <!-- Real-time SSE Notification Toast -->

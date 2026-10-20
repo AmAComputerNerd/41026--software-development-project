@@ -23,8 +23,8 @@
 
 ---
 
-## 3. Notification Service Levels (SLA) & Priorities
-Student 1 NotificationService categorises all system events into five distinct streams:
+## 3. Notification Service Levels (SLA / SLAs), Priorities, Deadlines & Grades
+Student 1 NotificationService categorises all system events into five distinct streams, establishing notification SLAs for deadlines, tasks, and grades:
 
 1. **Deadline Notifications**:
    - Sent at 24 hours and 3 hours prior to any assignment or task due date.
