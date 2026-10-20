@@ -37,7 +37,7 @@ flowchart TD
     end
 
     subgraph ExternalServices["External & Shared Services"]
-        AIM["ai-mode (:8080, internal)<br>OpenRouter AI Gateway"]
+        AIM["Host ai-mode (:5001)<br>OpenRouter AI Gateway"]
         S1["student-1-backend (:5101)<br>Notifications Service"]
     end
 

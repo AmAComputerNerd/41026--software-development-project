@@ -1,3 +1,5 @@
+import type { MultiAgentWorkflow } from './multiAgent'
+
 export type TaskPriority = 'Low' | 'Medium' | 'High'
 export type TaskStatus = 'Todo' | 'InProgress' | 'Completed'
 
@@ -58,6 +60,39 @@ export interface CanvasSyncResult {
 export interface GenerateTaskBreakdownInput {
   prompt: string
   priority: TaskPriority
+}
+
+export interface GeneratedSubtask {
+  title: string
+  description: string | null
+}
+
+export interface BreakdownProposal {
+  workflow: MultiAgentWorkflow
+  tasks: GeneratedSubtask[]
+}
+
+export interface BreakdownReviewInput {
+  workflowId: string
+  reject: boolean
+  reviewerName: string
+  comments: string
+  tasks: (GeneratedSubtask & { index: number })[]
+  revision: number
+  decision: 'Approve' | 'PartialAccept' | 'Reject'
+}
+
+export interface BreakdownRevisionInput {
+  workflowId: string
+  requestId: string
+  revision: number
+  reviewerName: string
+  feedback: string
+}
+
+export interface BreakdownReviewResult {
+  workflow: MultiAgentWorkflow
+  tasks: TaskItem[]
 }
 
 export interface GenerateTaskDescriptionInput {

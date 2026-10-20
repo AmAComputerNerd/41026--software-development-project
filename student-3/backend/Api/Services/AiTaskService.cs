@@ -11,8 +11,6 @@ public sealed partial class AiTaskService(
     HttpClient httpClient,
     ILogger<AiTaskService> logger) : IAiTaskService
 {
-    private const int MinimumSubtasks = 2;
-    private const int MaximumSubtasks = 10;
     private const int MaximumCompletionAttempts = 3;
     private const int MaximumContextDescriptionLength = 12000;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -56,13 +54,7 @@ public sealed partial class AiTaskService(
                 string.IsNullOrWhiteSpace(task.Description) ? null : task.Description.Trim()))
             .ToList() ?? [];
 
-        if (tasks.Count is < MinimumSubtasks or > MaximumSubtasks ||
-            tasks.Any(task =>
-                task.Title.Length is 0 or > 120 ||
-                task.Description?.Length > 500) ||
-            tasks.Select(task => task.Title)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Count() != tasks.Count)
+        if (!TaskBreakdownValidation.IsValid(tasks))
         {
             LogInvalidTaskBreakdown(logger);
             throw new AiGatewayException("The AI service returned an invalid task breakdown.");

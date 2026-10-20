@@ -15,12 +15,12 @@ flowchart LR
     end
 
     subgraph AIServices["AI Services"]
-        RAG["rag-server (:8080, internal)"]
-        AIM["ai-mode (:8080, internal)<br>(Holds OPENROUTER_API_KEY)"]
+        RAG["Host rag-server (:5003)"]
+        AIM["Host ai-mode (:5001)<br>(Holds OPENROUTER_API_KEY)"]
     end
 
-    Backends -- "ai-mode:8080<br>/v1/chat/completions" --> AIM
-    RAG -- "ai-mode:8080" --> AIM
+    Backends -- "host.docker.internal:5001<br>/v1/chat/completions" --> AIM
+    RAG -- "127.0.0.1:5001" --> AIM
     AIM -- "HTTPS (Bearer Token)" --> OpenRouter["OpenRouter API<br>(nemotron-3.5-lightning:free)"]
 ```
 
@@ -29,13 +29,13 @@ flowchart LR
 Start the shared AI services from the repository root:
 
 ```bash
-docker compose up --build -d ai-mode mcp-server rag-server
+python tools/run_ai_services.py
 ```
 
 From inside a backend container:
 
 ```http
-POST http://ai-mode:8080/v1/chat/completions
+POST http://host.docker.internal:5001/v1/chat/completions
 ```
 
 Same request shape as OpenAI's chat completions API:
@@ -61,6 +61,11 @@ explicitly.
 
 ## Health
 
-AI Mode runs in Docker Compose. Its `/health/live` endpoint reports
+AI Mode runs as a host process on `AI_MODE_HOST_PORT` (`5001` in `.env.example`).
+Host callers use `127.0.0.1`; Docker callers use `host.docker.internal`.
+The launcher listens on all interfaces for Docker access, so restrict the
+development ports with your host firewall. Its `/health/live` endpoint reports
 process liveness and `/health/ready` verifies that the OpenRouter key and
 model loaded from the root `.env` are configured.
+
+The Dockerfile is retained for optional cloud bonus deployment only.

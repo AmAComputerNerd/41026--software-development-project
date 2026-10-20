@@ -10,10 +10,11 @@
 
 Better Canvas is an **LLM-enhanced microservices web platform** designed around autonomous vertical slices. Each student owns a bounded business context, backed by dedicated infrastructure services for Canvas LMS connectivity, OpenRouter AI completions, and unified dashboard proxying.
 
-Docker Compose runs AI Mode, MCP, and RAG on a dedicated `ai-services`
-network with no published host ports. Only the five calling feature
-backends join that network and receive service URLs through environment
-variables. The network permits outbound requests to OpenRouter.
+AI Mode, MCP, RAG and Multi-Agent run as non-containerised host processes,
+started by `python tools/run_ai_services.py`. Docker Compose runs the core
+application only. Calling backends use `host.docker.internal` on configured
+ports `5001`-`5004`, with host-gateway mappings for Linux. AI Dockerfiles
+remain available for optional cloud bonus deployment.
 
 ```mermaid
 flowchart TD
@@ -42,8 +43,8 @@ flowchart TD
         DB5[("student-5-database<br>EF Core SQLite (grades.db)")]
     end
 
-    subgraph AIServices["AI Services Network"]
-        AIM["ai-mode (:8080)<br>OpenRouter Gateway"]
+    subgraph AIServices["Non-containerised Host AI Services"]
+        AIM["Host ai-mode (:5001)<br>OpenRouter Gateway"]
     end
 
     subgraph SharedGateway["Shared Gateway"]
@@ -126,9 +127,9 @@ flowchart TD
 
     subgraph SharedAndAI["Shared & AI Gateways"]
         SB["shared-backend (:5110)"]
-        AIM["ai-mode (:8080, internal)"]
-        MCP["MCP Server (:8080, internal)"]
-        RAG["RAG Server (:8080, internal)"]
+        AIM["Host ai-mode (:5001)"]
+        MCP["Host MCP Server (:5002)"]
+        RAG["Host RAG Server (:5003)"]
         CanvasAPI["Canvas LMS API"]
         OpenRouterAPI["OpenRouter API"]
     end
@@ -147,10 +148,10 @@ flowchart TD
     B4 -.-> AIM
     B5 -.-> AIM
 
-    B3 -- "mcp-server:8080/mcp" --> MCP
-    MCP -- "student-3-backend:8080" --> B3
-    B3 -- "rag-server:8080" --> RAG
-    RAG -- "ai-mode:8080" --> AIM
+    B3 -- "host.docker.internal:5002/mcp" --> MCP
+    MCP -- "127.0.0.1:5103" --> B3
+    B3 -- "host.docker.internal:5003" --> RAG
+    RAG -- "127.0.0.1:5001" --> AIM
 
     SB -- "HTTPS" --> CanvasAPI
     AIM -- "HTTPS" --> OpenRouterAPI
@@ -159,9 +160,9 @@ flowchart TD
 ### Infrastructure & Shared Services
 - **`shared-shell`** (Port 8080): Vue 3 shell dashboard and Nginx reverse proxy routing web requests and API paths.
 - **`shared-backend`** (Port 5110): Exclusive Canvas LMS API client with 3-minute in-memory caching and HTML sanitization.
-- **`ai-mode`** (Internal 8080): Chat completions gateway proxying requests to OpenRouter LLMs.
-- **`mcp-server`** (Internal 8080): MCP server exposing bounded tools over `/mcp`.
-- **`rag-server`** (Internal 8080): Grounded-answer service using curated project documentation packaged into its image and AI Mode over HTTP.
+- **`ai-mode`** (Host 5001): Non-containerised chat completions gateway proxying requests to OpenRouter LLMs.
+- **`mcp-server`** (Host 5002): Non-containerised MCP server exposing bounded tools over `/mcp` and calling published backend ports.
+- **`rag-server`** (Host 5003): Non-containerised grounded-answer service using a temporary curated documentation corpus and host AI Mode over HTTP.
 - **`mailhog`** (SMTP: 1025 / Web UI: 8025): Local SMTP mock service for developer email verification.
 
 ### Vertical Microservice Slices
@@ -193,6 +194,10 @@ The Nginx server running inside `shared-shell` is the sole entry point exposed o
 Bare paths (`/automations`, `/deadlines`, `/account`, `/grades`) redirect
 permanently to their trailing-slash form.
 
+The shell's DNS startup script ignores the root search domain (`search .`),
+preserving Docker service names and backend port `8080`. Actual cloud
+domain suffixes still select the existing internal-ingress hostname mapping.
+
 ---
 
 ## 4. Cross-Service Boundaries & Communication Rules
@@ -219,22 +224,20 @@ Each of those database services is attached only to its internal `student-N-data
 ### Centralized AI Mode Boundary
 - `ai-services/ai-mode` is the only service that reads `OPENROUTER_API_KEY`.
 - Docker backends send chat completion requests to
-  `http://ai-mode:8080/v1/chat/completions`.
-- RAG reaches AI Mode directly through `http://ai-mode:8080`.
+  `http://host.docker.internal:5001/v1/chat/completions`.
+- RAG reaches AI Mode directly through `http://127.0.0.1:5001`.
 - `OPENROUTER_MODEL` is required and sourced from the generated `.env`; individual requests may override it.
 
-### AI Services Network Boundary
-- AI Mode, MCP, and RAG run as non-root containers on `ai-services`, not the
-  default application network. They publish no host ports and have no access
-  to private database networks or volumes.
-- Compose injects OpenRouter configuration only into AI Mode. The RAG image
-  includes the same ten curated Markdown sources previously copied by the
-  host launcher, without mounting the repository. Rebuild RAG after corpus edits.
-- Student 3 uses `http://mcp-server:8080/mcp` for MCP and
-  `http://rag-server:8080` for RAG. Both integrations remain optional and
-  never participate in Student 3 readiness.
-- MCP accesses all five public backends through their bounded HTTP APIs on
-  `ai-services`; RAG
+### Local AI Services Boundary
+- AI Mode, MCP, RAG and Multi-Agent run outside Compose. The launcher binds
+  their configured ports on all host interfaces so Docker can reach them;
+  restrict access with the host firewall rather than exposing them publicly.
+  They do not receive private database volumes or direct database access.
+- The launcher injects the OpenRouter key only into AI Mode and copies ten
+  curated Markdown sources into a temporary RAG corpus. Restart the launcher
+  after corpus edits. Cloud images retain their packaged corpus separately.
+- MCP accesses all five public backends through their published host ports
+  using bounded HTTP APIs; RAG
   does not access feature databases.
 - RAG feature scopes retrieve only their `student-N/` README sources and
   `docs/features/student-N/` guides plus explicitly
@@ -281,7 +284,7 @@ Notifications carry structured action metadata enabling cross-service operations
   mutate accounts or return credentials. These optional checks do not gate
   backend readiness; MCP is disabled in CI.
 - Student 4's **Account Help / RAG** panel on **03 KNOWLEDGE** routes documentation questions
-  through `POST /api/users/help/answers` to `http://rag-server:8080`.
+  through `POST /api/users/help/answers` to the host RAG service on port `5003`.
   The backend fixes scope to `student-4`; RAG retrieves only the account
   README and account-help guide, then sends excerpts through AI Mode.
   Answers display server-derived citations and retrieval-based confidence.

@@ -18,6 +18,8 @@ public static class TaskEndpoints
         group.MapPost("/", AddTask);
         group.MapPost("/ai-description", GenerateDescription);
         group.MapPost("/{id:guid}/ai-breakdown", GenerateBreakdown);
+        group.MapPost("/{id:guid}/ai-breakdown/review", ReviewBreakdown);
+        group.MapPost("/{id:guid}/ai-breakdown/revise", ReviseBreakdown);
         group.MapPut("/{id:guid}", UpdateTask);
         group.MapDelete("/{id:guid}", DeleteTask);
         return endpoints;
@@ -117,10 +119,8 @@ public static class TaskEndpoints
         [FromRoute] Guid id,
         GenerateTaskBreakdownRequestDto request,
         IOptions<AiGatewayOptions> options,
-        IDatabaseClient database,
-        IAiTaskService aiTaskService,
-        INotificationClient notificationClient,
-        ILoggerFactory loggerFactory,
+        AssignmentBreakdownService breakdown,
+        IMultiAgentClient multiAgent,
         CancellationToken cancellationToken)
     {
         if (options.Value.Enabled is false)
@@ -129,6 +129,7 @@ public static class TaskEndpoints
                 statusCode: StatusCodes.Status503ServiceUnavailable,
                 title: "AI Mode is disabled.");
         }
+        if (!multiAgent.IsEnabled) throw new MultiAgentIntegrationDisabledException();
 
         var prompt = request.Prompt?.Trim();
         if (string.IsNullOrWhiteSpace(prompt) || prompt.Length > 2000)
@@ -142,56 +143,48 @@ public static class TaskEndpoints
                 "`priority` could not be correlated with a valid TaskPriority.");
         }
 
-        var assignment = await database.GetTaskAsync(id, cancellationToken);
-        if (assignment is null)
+        var proposal = await breakdown.GenerateAsync(id, request with { Prompt = prompt }, cancellationToken);
+        return proposal is null ? Results.NotFound() : Results.Ok(proposal);
+    }
+
+    private static async Task<IResult> ReviewBreakdown(
+        Guid id,
+        SubmitBreakdownReviewRequestDto request,
+        IOptions<AiGatewayOptions> options,
+        IMultiAgentClient multiAgent,
+        AssignmentBreakdownService breakdown,
+        CancellationToken cancellationToken)
+    {
+        if (options.Value.Enabled is not true) throw new AiGatewayConfigurationException("AI Mode is disabled.");
+        if (!multiAgent.IsEnabled) throw new MultiAgentIntegrationDisabledException();
+        if (request.WorkflowId == Guid.Empty || request.Revision < 0 ||
+            string.IsNullOrWhiteSpace(request.ReviewerName) || request.ReviewerName.Length > 100 ||
+            string.IsNullOrWhiteSpace(request.Comments) || request.Comments.Length > 2000)
         {
-            return Results.NotFound();
+            return Results.BadRequest("Supply a workflow ID, reviewer name (1-100 characters) and review comments (1-2000 characters).");
         }
+        var result = await breakdown.ReviewAsync(id, request, cancellationToken);
+        return result is null ? Results.NotFound() : Results.Ok(result);
+    }
 
-        var generatedTasks = await aiTaskService.GenerateSubtasksAsync(
-            new AiTaskContext(
-                assignment.Title,
-                assignment.Description,
-                assignment.CourseName,
-                null,
-                assignment.DueDate),
-            prompt,
-            cancellationToken);
-        var tasks = await database.CreateSubtasksAsync(
-            assignment.Id,
-            new CreateSubtasksCommand(
-                request.Priority,
-                generatedTasks
-                    .Select(task => new GeneratedSubtaskRecord(task.Title, task.Description))
-                    .ToList()),
-            cancellationToken);
-
-        if (tasks is not null && tasks.Count > 0)
+    private static async Task<IResult> ReviseBreakdown(
+        Guid id,
+        ReviseBreakdownRequestDto request,
+        IOptions<AiGatewayOptions> options,
+        IMultiAgentClient multiAgent,
+        AssignmentBreakdownService breakdown,
+        CancellationToken cancellationToken)
+    {
+        if (options.Value.Enabled is not true) throw new AiGatewayConfigurationException("AI Mode is disabled.");
+        if (!multiAgent.IsEnabled) throw new MultiAgentIntegrationDisabledException();
+        if (request.WorkflowId == Guid.Empty || request.RequestId == Guid.Empty || request.Revision < 0 ||
+            string.IsNullOrWhiteSpace(request.ReviewerName) || request.ReviewerName.Length > 100 ||
+            string.IsNullOrWhiteSpace(request.Feedback) || request.Feedback.Length > 2000)
         {
-            try
-            {
-                await notificationClient.PushAsync(
-                    new PushNotificationDto(
-                        StudentId: DemoStudentId,
-                        Type: "Deadline",
-                        SourceMicroservice: "deadlines",
-                        Message: $"{tasks.Count} subtask(s) generated for \"{assignment.Title}\".",
-                        RelatedEntityType: "Task",
-                        RelatedEntityId: assignment.Id),
-                    cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                var logger = loggerFactory.CreateLogger("Api.Endpoints.TaskEndpoints");
-                TaskEndpointsLog.PushNotificationFailed(logger, assignment.Id, ex);
-            }
+            return Results.BadRequest("Supply workflow/request IDs, the current revision, reviewer name (1-100 characters) and feedback (1-2000 characters).");
         }
-
-        return tasks is null
-            ? Results.NotFound()
-            : Results.Created(
-                $"/api/tasks/{assignment.Id}",
-                tasks.Select(task => task.ToDto()).ToList());
+        var result = await breakdown.ReviseAsync(id, request, cancellationToken);
+        return result is null ? Results.NotFound() : Results.Ok(result);
     }
 
     private static async Task<IResult> GenerateDescription(

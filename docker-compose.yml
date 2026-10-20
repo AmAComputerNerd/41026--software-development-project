@@ -1,62 +1,5 @@
 services:
 
-    ai-mode:
-        build:
-            context: ./ai-services/ai-mode
-            dockerfile: Api/Dockerfile
-        networks:
-            - ai-services
-        environment:
-            ASPNETCORE_ENVIRONMENT: Development
-            OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-            OPENROUTER_MODEL: ${OPENROUTER_MODEL:?Run python tools/setup_env.py}
-        restart: unless-stopped
-        healthcheck:
-            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
-            interval: 10s
-            timeout: 3s
-            retries: 5
-            start_period: 15s
-
-    mcp-server:
-        build:
-            context: ./ai-services/mcp-server
-            dockerfile: McpServer/Dockerfile
-        networks:
-            - ai-services
-        environment:
-            ASPNETCORE_ENVIRONMENT: Development
-            Student1__BaseUrl: http://student-1-backend:8080
-            Student2__BaseUrl: http://student-2-backend:8080
-            Student3__BaseUrl: http://student-3-backend:8080
-            Student4__BaseUrl: http://student-4-backend:8080
-            Student5__BaseUrl: http://student-5-backend:8080
-        restart: unless-stopped
-        healthcheck:
-            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
-            interval: 10s
-            timeout: 3s
-            retries: 5
-            start_period: 15s
-
-    rag-server:
-        build:
-            context: .
-            dockerfile: ai-services/rag-server/RagServer/Dockerfile
-        networks:
-            - ai-services
-        environment:
-            ASPNETCORE_ENVIRONMENT: Development
-            AiGateway__BaseUrl: http://ai-mode:8080
-            Rag__CorpusPath: /app/Corpus
-        restart: unless-stopped
-        healthcheck:
-            test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
-            interval: 10s
-            timeout: 3s
-            retries: 5
-            start_period: 15s
-
     shared-backend:
         build:
             context: ./shared/backend
@@ -112,17 +55,18 @@ services:
             Cors__AllowedOrigins__3: http://localhost:5174
             Cors__AllowedOrigins__4: http://localhost:5199
             SharedService__BaseUrl: http://shared-backend:8080
-            AiGateway__BaseUrl: http://ai-mode:8080
+            AiGateway__BaseUrl: http://host.docker.internal:${AI_MODE_HOST_PORT:?Run python tools/setup_env.py}
             McpServer__Enabled: ${MCP_ENABLED:?Run python tools/setup_env.py}
-            McpServer__BaseUrl: http://mcp-server:8080/mcp
+            McpServer__BaseUrl: http://host.docker.internal:${MCP_HOST_PORT:?Run python tools/setup_env.py}/mcp
             RagServer__Enabled: ${RAG_ENABLED:?Run python tools/setup_env.py}
-            RagServer__BaseUrl: http://rag-server:8080
+            RagServer__BaseUrl: http://host.docker.internal:${RAG_HOST_PORT:?Run python tools/setup_env.py}
             MultiAgentServer__Enabled: ${MULTI_AGENT_ENABLED:-false}
             MultiAgentServer__BaseUrl: http://host.docker.internal:${MULTI_AGENT_HOST_PORT:-5004}
             CanvasSync__IntervalMinutes: "2"
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         networks:
             - default
-            - ai-services
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -150,15 +94,16 @@ services:
             Cors__AllowedOrigins__1: http://localhost:8080
             SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__Enabled: "true"
-            AiGateway__BaseUrl: http://ai-mode:8080
+            AiGateway__BaseUrl: http://host.docker.internal:${AI_MODE_HOST_PORT:?Run python tools/setup_env.py}
             NotificationService__BaseUrl: http://student-1-backend:8080
             McpServer__Enabled: ${MCP_ENABLED:?Run python tools/setup_env.py}
-            McpServer__BaseUrl: http://mcp-server:8080/mcp
+            McpServer__BaseUrl: http://host.docker.internal:${MCP_HOST_PORT:?Run python tools/setup_env.py}/mcp
             RagServer__Enabled: ${RAG_ENABLED:?Run python tools/setup_env.py}
-            RagServer__BaseUrl: http://rag-server:8080
+            RagServer__BaseUrl: http://host.docker.internal:${RAG_HOST_PORT:?Run python tools/setup_env.py}
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         networks:
             - default
-            - ai-services
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/health/ready"]
@@ -199,18 +144,21 @@ services:
             DatabaseService__BaseUrl: http://student-3-database:8080
             SharedService__BaseUrl: http://shared-backend:8080
             AiGateway__Enabled: ${AI_MODE_ENABLED:?Run python tools/setup_env.py}
-            AiGateway__BaseUrl: http://ai-mode:8080
+            AiGateway__BaseUrl: http://host.docker.internal:${AI_MODE_HOST_PORT:?Run python tools/setup_env.py}
             NotificationService__BaseUrl: http://student-1-backend:8080
             McpServer__Enabled: ${MCP_ENABLED:?Run python tools/setup_env.py}
-            McpServer__BaseUrl: http://mcp-server:8080/mcp
+            McpServer__BaseUrl: http://host.docker.internal:${MCP_HOST_PORT:?Run python tools/setup_env.py}/mcp
             RagServer__Enabled: ${RAG_ENABLED:?Run python tools/setup_env.py}
-            RagServer__BaseUrl: http://rag-server:8080
+            RagServer__BaseUrl: http://host.docker.internal:${RAG_HOST_PORT:?Run python tools/setup_env.py}
             DueSoonReminder__IntervalMinutes: "15"
+            MultiAgentServer__Enabled: ${MULTI_AGENT_ENABLED:?Run python tools/setup_env.py}
+            MultiAgentServer__BaseUrl: http://host.docker.internal:${MULTI_AGENT_HOST_PORT:-5004}
             DueSoonReminder__HoursBeforeDue: "24"
             DueSoonReminder__FinalHoursBeforeDue: "3"
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         networks:
             - default
-            - ai-services
             - student-3-data
         restart: unless-stopped
         healthcheck:
@@ -251,15 +199,16 @@ services:
             ASPNETCORE_ENVIRONMENT: Development
             DatabaseService__BaseUrl: http://student-4-database:8080
             SharedService__BaseUrl: http://shared-backend:8080
-            AiGateway__BaseUrl: http://ai-mode:8080
+            AiGateway__BaseUrl: http://host.docker.internal:${AI_MODE_HOST_PORT:?Run python tools/setup_env.py}
             McpServer__Enabled: ${MCP_ENABLED:?Run python tools/setup_env.py}
-            McpServer__BaseUrl: http://mcp-server:8080/mcp
+            McpServer__BaseUrl: http://host.docker.internal:${MCP_HOST_PORT:?Run python tools/setup_env.py}/mcp
             RagServer__Enabled: ${RAG_ENABLED:?Run python tools/setup_env.py}
-            RagServer__BaseUrl: http://rag-server:8080
+            RagServer__BaseUrl: http://host.docker.internal:${RAG_HOST_PORT:?Run python tools/setup_env.py}
             NotificationService__BaseUrl: http://student-1-backend:8080
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         networks:
             - default
-            - ai-services
             - student-4-data
         restart: unless-stopped
         healthcheck:
@@ -336,15 +285,16 @@ services:
         environment:
             ASPNETCORE_ENVIRONMENT: Development
             DatabaseService__BaseUrl: http://student-5-database:8080
-            AiGateway__BaseUrl: http://ai-mode:8080
+            AiGateway__BaseUrl: http://host.docker.internal:${AI_MODE_HOST_PORT:?Run python tools/setup_env.py}
             NotificationService__BaseUrl: http://student-1-backend:8080
             McpServer__Enabled: ${MCP_ENABLED:?Run python tools/setup_env.py}
-            McpServer__BaseUrl: http://mcp-server:8080/mcp
+            McpServer__BaseUrl: http://host.docker.internal:${MCP_HOST_PORT:?Run python tools/setup_env.py}/mcp
             RagServer__Enabled: ${RAG_ENABLED:?Run python tools/setup_env.py}
-            RagServer__BaseUrl: http://rag-server:8080
+            RagServer__BaseUrl: http://host.docker.internal:${RAG_HOST_PORT:?Run python tools/setup_env.py}
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         networks:
             - default
-            - ai-services
             - student-5-data
         restart: unless-stopped
         healthcheck:
@@ -430,7 +380,6 @@ volumes:
 
 networks:
     default:
-    ai-services:
     student-3-data:
         internal: true
     student-4-data:

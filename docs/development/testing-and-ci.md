@@ -67,14 +67,14 @@ The repository enforces CI checks on all pull requests targeting `main` and all 
 
 | Workflow File | Trigger Paths | Key Jobs Executed |
 |---|---|---|
-| **`docker-ci.yml`** | `ai-services/**`, `shared/**`, `student-*/**`, `docker-compose.yml`, `package.json`, `package-lock.json`, `.env.example` | Compose contract validation, dynamically discovered parallel image builds, and a Student 3 Compose integration smoke test |
+| **`docker-ci.yml`** | `ai-services/**`, `shared/**`, `student-*/**`, `docker-compose.yml`, `package.json`, `package-lock.json`, `.env.example`, launcher/setup scripts and launcher tests | Host-service Compose contract, core and optional cloud AI image builds, launcher regression checks, and a Student 3 integration smoke test against host-run AI services |
 | **`shared-ci.yml`** | `shared/backend/**`, `shared/frontend/**`, `shared/ui-kit/**` | Frontend build, .NET build/format check, EF migrations drift check, NuGet vulnerability audit |
 | **`student-1.yml`** | `student-1/**`, `shared/ui-kit/**` | Notifications frontend build + Playwright E2E, .NET build/test/format check, post-commit endpoint smoke tests, EF migration drift check, NuGet audit |
 | **`student-2.yml`** | `student-2/**`, `shared/ui-kit/**` | Automations frontend build, .NET build/format check, EF migration drift check, NuGet audit |
 | **`student-3.yml`** | `student-3/**`, `shared/ui-kit/**` | Deadlines frontend build, .NET build/format check, API contract & browser CORS smoke test, EF migration drift check, NuGet audit |
 | **`student-4.yml`** | `student-4/**`, `shared/ui-kit/**` | Account & Auth frontend build, .NET build/format check, EF migration drift check, NuGet audit |
 | **`student-5.yml`** | `student-5/**`, `shared/ui-kit/**` | Grades frontend build, .NET build/format check, API contract smoke test, EF migration drift check, NuGet audit |
-| **`cloud-deployment.yml`** | `infra/azure/**`, `docker-compose.yml`, `shared/**`, `student-*/**`, `ai-services/**` | Azure Bicep IaC dry-run validation, baseline AI-disabled container smoke test, and Azure Container Apps deployment |
+| **`cloud-deployment.yml`** | Main pushes matching `infra/azure/**`, `docker-compose.yml`, `shared/**`, `student-*/**`, `ai-services/**`; manual dispatch | Azure Bicep IaC and bonus coordinator configuration validation, a combined Student 1 and Student 3 AI-disabled baseline smoke-test job, and manually gated Azure Container Apps deployment; no PR trigger |
 
 Docker image targets are discovered from the rendered Compose configuration
 rather than maintained as a second service list. Each image builds in a

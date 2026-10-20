@@ -39,7 +39,7 @@ flowchart TD
 
     subgraph SharedInfra["Shared Gateways & Services"]
         SB["shared-backend (:5110)<br>Canvas Gateway"]
-        AIM["ai-mode (:8080, internal)<br>OpenRouter Gateway"]
+        AIM["Host ai-mode (:5001)<br>OpenRouter Gateway"]
         MailHog["mailhog (:1025 / :8025)<br>Mock SMTP"]
     end
 
@@ -88,7 +88,7 @@ flowchart TD
 | **`shared/frontend`** | Shared | Vue 3 + TypeScript + Nginx | Shared dashboard shell, Nginx reverse proxy at `http://localhost:8080` |
 | **`shared/ui-kit`** | Shared | SCSS + Vue 3 components | `@better-canvas/ui-kit` design system library |
 | **`ai-services/ai-mode`** | Shared | ASP.NET Core (.NET 10) | OpenRouter LLM gateway (`/v1/chat/completions`) |
-| **`ai-services/mcp-server`** | Shared | ASP.NET Core (.NET 10) | Shared MCP tools accessed through `http://mcp-server:8080/mcp` |
+| **`ai-services/mcp-server`** | Shared | ASP.NET Core (.NET 10) | Host-run MCP tools (`http://host.docker.internal:5002/mcp` from Docker) |
 | **`ai-services/rag-server`** | Shared | ASP.NET Core (.NET 10) | Grounded project-documentation retrieval and generation |
 | **`student-1`** | Bryan Lee | ASP.NET Core + PostgreSQL 16 + Vue 3 | Notifications, delivery preferences, SSE stream, AI digests & chat assistant |
 | **`student-2`** | Isaac Thomas | ASP.NET Core + SQLite + Vue 3 | Automations, scheduled Canvas posts, AI quiz filling, execution runner |
@@ -163,6 +163,15 @@ Access services via the shared shell at [http://localhost:8080](http://localhost
 ```
 
 ## Service communication
+
+AI Mode, MCP, RAG and Multi-Agent run locally outside Docker. Start the core
+application with `docker compose up --build`, then run
+`python tools/run_ai_services.py` in another terminal. The required host
+ports are supplied by `.env.example`; add them to an existing `.env`
+without replacing its secrets. Docker backends use `host.docker.internal`
+and the host services call published backend ports. The launcher listens
+on all host interfaces for Docker access: restrict these development ports
+with the host firewall. AI Dockerfiles remain for optional cloud deployment.
 
 Microservices communicate over HTTP and own strictly isolated databases.
 They must not query another service's database directly. The shared backend

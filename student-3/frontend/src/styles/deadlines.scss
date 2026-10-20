@@ -881,6 +881,41 @@
   }
 }
 
+.nb-breakdown-task {
+  margin: var(--nb-space-4) 0;
+  border: var(--nb-border-width-md) solid var(--nb-color-ink);
+  padding: var(--nb-space-3);
+
+  legend {
+    font-family: var(--nb-font-mono);
+  }
+}
+
+.nb-breakdown-markdown {
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+
+  > :first-child {
+    margin-top: 0;
+  }
+
+  > :last-child {
+    margin-bottom: 0;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-size: 1rem;
+  }
+
+  pre {
+    overflow-x: auto;
+  }
+
+  pre, code {
+    font-family: var(--nb-font-mono);
+  }
+}
+
 .nb-assistant-json {
   max-height: 240px;
   overflow: auto;

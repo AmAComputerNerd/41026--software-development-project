@@ -26,7 +26,7 @@ flowchart TD
 
     subgraph ExternalServices["Connected Services"]
         SB["shared-backend (:5110)<br>Canvas Conversations & Quizzes"]
-        AIM["ai-mode (:8080, internal)<br>Quiz Answering LLM"]
+        AIM["Host ai-mode (:5001)<br>Quiz Answering LLM"]
         S1["student-1-backend (:5101)<br>Push Notifications"]
     end
 
@@ -64,11 +64,12 @@ Quiz filling additionally requires the `ai-mode` gateway. Set
 `AiGateway:BaseUrl` to its address; student-2 never receives or stores the
 OpenRouter key.
 
-MCP and RAG run in Docker Compose alongside AI Mode.
+MCP and RAG run as host processes alongside AI Mode via
+`python tools/run_ai_services.py`.
 The Automations dashboard invokes both services through the Student 2 backend;
 the browser never calls either service directly. Compose supplies
-`http://mcp-server:8080/mcp` and `http://rag-server:8080` on the dedicated
-`ai-services` network; neither service publishes a host port.
+`http://host.docker.internal:5002/mcp` and `http://host.docker.internal:5003`
+using the configured host ports, with a Linux host-gateway mapping.
 
 ## API
 

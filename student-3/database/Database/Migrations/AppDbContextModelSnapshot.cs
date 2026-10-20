@@ -17,7 +17,28 @@ namespace Database.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
 
-            modelBuilder.Entity("Api.Models.Course", b =>
+            modelBuilder.Entity("Database.Models.BreakdownApplication", b =>
+                {
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ParentTaskId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ResultJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("WorkflowId");
+
+                    b.ToTable("BreakdownApplications");
+                });
+
+            modelBuilder.Entity("Database.Models.Course", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -51,7 +72,7 @@ namespace Database.Migrations
                     b.ToTable("Courses");
                 });
 
-            modelBuilder.Entity("Api.Models.TaskEntity", b =>
+            modelBuilder.Entity("Database.Models.TaskEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -117,14 +138,14 @@ namespace Database.Migrations
                     b.ToTable("Tasks");
                 });
 
-            modelBuilder.Entity("Api.Models.TaskEntity", b =>
+            modelBuilder.Entity("Database.Models.TaskEntity", b =>
                 {
-                    b.HasOne("Api.Models.Course", "Course")
+                    b.HasOne("Database.Models.Course", "Course")
                         .WithMany("Tasks")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("Api.Models.TaskEntity", "ParentTask")
+                    b.HasOne("Database.Models.TaskEntity", "ParentTask")
                         .WithMany("ChildrenTasks")
                         .HasForeignKey("ParentTaskId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -134,12 +155,12 @@ namespace Database.Migrations
                     b.Navigation("ParentTask");
                 });
 
-            modelBuilder.Entity("Api.Models.Course", b =>
+            modelBuilder.Entity("Database.Models.Course", b =>
                 {
                     b.Navigation("Tasks");
                 });
 
-            modelBuilder.Entity("Api.Models.TaskEntity", b =>
+            modelBuilder.Entity("Database.Models.TaskEntity", b =>
                 {
                     b.Navigation("ChildrenTasks");
                 });

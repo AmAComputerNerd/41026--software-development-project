@@ -6,7 +6,7 @@ import { useTasks } from '@/composables/useTasks'
 import { dueLabel, formatDueDate } from '@/utils/dates'
 import type { CanvasSyncResult, TaskItem } from '@/types/task'
 
-const { tasks, courses, loading, error, load, sync, aiModeEnabled } = useTasks()
+const { tasks, courses, loading, error, load, sync, aiBreakdownEnabled } = useTasks()
 const selectedAssignment = ref<TaskItem | null>(null)
 const selectedCourseId = ref<string | 'All'>('All')
 const breakdownOpen = ref(false)
@@ -52,8 +52,8 @@ function progressFor(assignment: TaskItem) {
 onMounted(() => load().catch(() => undefined))
 
 function openBreakdown(assignment: TaskItem) {
-  if (!aiModeEnabled.value) {
-    actionError.value = 'AI Mode is unavailable.'
+  if (!aiBreakdownEnabled.value) {
+    actionError.value = 'AI Mode or Multi-Agent is unavailable.'
     return
   }
 
@@ -156,8 +156,8 @@ async function syncAssignments() {
           <button
             class="nb-btn nb-btn--accent nb-ai-breakdown-btn"
             type="button"
-            :disabled="!aiModeEnabled"
-            :title="!aiModeEnabled ? 'AI Mode is unavailable' : undefined"
+            :disabled="!aiBreakdownEnabled"
+            :title="!aiBreakdownEnabled ? 'AI Mode or Multi-Agent is unavailable' : undefined"
             @click="openBreakdown(assignment)"
           >
             AI breakdown

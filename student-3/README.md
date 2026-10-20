@@ -7,10 +7,11 @@ the shared Better Canvas UI kit. Persisted timestamps use `DateTime` normalized
 to UTC. Due dates can be changed or removed explicitly; completing a parent
 task also completes all of its descendants.
 
-AI planning calls the internal `ai-mode` gateway through the task-tracker
-backend. Assignment prompt templates remain editable, but trusted assignment
-and course context is loaded from the tracker database. Generated plans are
-validated and saved as one operation. Task descriptions can also be drafted
+AI Breakdown calls the existing shared Multi-Agent Server through the
+task-tracker backend. Planner, Worker and Reviewer generate a proposal,
+which the student reviews before any subtasks are created. Assignment prompt
+templates remain editable; assignment and course context comes from the
+private persistence API. Task descriptions still call `ai-mode` and can be drafted
 from a title and the selected course or parent assessment, then edited before
 saving.
 
@@ -21,7 +22,9 @@ them. For standalone execution, set `AiGateway__Enabled=false`.
 The frontend reads `aiModeEnabled` from `GET /api/integrations/capabilities`
 and disables/grays out both AI controls when unavailable. Direct calls to the
 generation endpoints return HTTP 503 when disabled; manual task editing,
-CRUD, MCP, and RAG are unaffected. Reload the frontend after changing the flag.
+CRUD, MCP, and RAG are unaffected. Breakdown additionally requires
+`MULTI_AGENT_ENABLED=true`; description generation does not.
+Reload the frontend after changing the flag.
 
 The **AI ASSIST** button below the page navigation opens a centered dialog.
 Its **MCP** mode checks upcoming deadlines; **RAG**
@@ -31,7 +34,66 @@ MCP displays the returned tool name and structured JSON alongside readable
 results; **OPEN TASK** opens the existing task editor. RAG provides sample
 questions and retrieves this feature's sources, including
 [Deadline Tracker Help](../docs/features/student-3/deadline-help.md), plus explicitly shared sources.
-Run `docker compose up --build -d rag-server` after changing corpus documentation.
+Restart `python tools/run_ai_services.py` after changing corpus documentation.
+
+### Multi-Agent AI Breakdown
+
+Use the existing **AI BREAKDOWN** button on an assignment. Generate a
+proposal and inspect the Planner/Reviewer outputs and audit in the same dialog.
+There is no separate Multi-Agent tab. The four explicit decisions are:
+
+- **Accept** creates every proposed subtask unchanged.
+- **Partially Accept** enables editing and exclusion. The buttons become
+  **Accept** and **Cancel**; Cancel discards edits and restores the four decisions.
+- **Correct** opens a feedback box. **Send feedback** reruns Planner, Worker and
+  Reviewer on the same workflow, retaining previous outputs, feedback and audit.
+  The revised proposal requires a new human decision and creates no tasks.
+- **Reject** records rejection and closes the dialog without creating tasks.
+
+The reviewer name is optional in the dialog and defaults to `Student Reviewer`.
+Accept and Partially Accept record `Approve` and `PartialAccept`, respectively.
+Accepted tasks are
+created atomically through `student-3-database`. A durable workflow receipt
+makes repeated saves return the original result instead of duplicating tasks.
+Assignment changes require a new proposal. A recorded decision can only be
+retried with the same reviewed output, reviewer and comments.
+
+Workflows are scoped to `student-3` and the existing demo student identity;
+this is not per-user authentication. Only assignment-bound workflows can be
+applied to that assignment.
+
+Set `MULTI_AGENT_ENABLED=true` in the root `.env` and recreate
+`student-3-backend`. Compose uses the existing host-server model at
+`http://host.docker.internal:${MULTI_AGENT_HOST_PORT:-5004}` and maps that
+hostname to the host gateway on Linux. The host launcher listens on all
+interfaces for Docker access; restrict these development ports with the host
+firewall. A standalone backend uses
+`MultiAgentServer__BaseUrl=http://127.0.0.1:5004`.
+Set `MultiAgentServer__Enabled=true` or `false` explicitly for standalone
+backend runs. Changing the shared server's deployment is deferred.
+
+The server executes synchronously and does not expose live stage
+progress. The dialog displays a waiting message, not simulated agent states.
+The Worker is asked for compact task JSON; malformed/truncated output and
+canned prose are rejected with no task writes. Reviewer text and confidence
+can still be canned on the initial run, so the dialog explicitly requires human
+checking. Corrections require successful AI responses rather than canned fallback
+output. Real progress events and stronger output contracts remain deferred.
+Workflow writes are not automatically retried; correction retries reuse their
+request ID so they cannot create duplicate revisions.
+
+`POST /api/tasks/{id}/ai-breakdown` now returns a workflow and proposed tasks,
+not created tasks. `POST /api/tasks/{id}/ai-breakdown/review` takes the
+workflow ID/current revision, explicit decision, selected task indices/edits,
+reviewer name/comments and a reject flag. It returns the human-reviewed workflow
+and any created tasks. `POST /api/tasks/{id}/ai-breakdown/revise` takes the
+workflow ID/current revision, a request ID, reviewer name and feedback; it
+returns the revised proposal without writing subtasks. Superseded proposals
+cannot be accepted or used to overwrite a newer revision.
+`GET /api/integrations/capabilities` exposes `aiBreakdownEnabled` separately
+from `aiModeEnabled`. Disabled breakdown operations return 503; invalid
+structured output/upstream failures return 502; stale/conflicting reviews
+return 409.
 
 ```mermaid
 flowchart TD
@@ -50,20 +112,23 @@ flowchart TD
 
     subgraph ExternalIntegrations["External Gateways & Services"]
         SB["shared-backend (:5110)<br>Canvas API Gateway"]
-        AIM["ai-mode (:8080, internal)<br>AI Breakdown Planning"]
+        AIM["Host ai-mode (:5001)<br>AI Description"]
+        MA["Existing Multi-Agent Server (:5004)<br>Reviewed AI Breakdown"]
         S1["student-1-backend (:5101)<br>Due-Soon Push Reminders"]
-        MCP["mcp-server (:8080, internal)<br>Upcoming Deadlines Tool"]
-        RAG["rag-server (:8080, internal)<br>Curated Q&A Corpus"]
+        MCP["Host mcp-server (:5002)<br>Upcoming Deadlines Tool"]
+        RAG["Host rag-server (:5003)<br>Curated Q&A Corpus"]
     end
 
     Shell -- "Proxy /deadlines/" --> FE
     Shell -- "Proxy /api/deadlines/" --> BE
 
     BE -- "Canvas Sync" --> SB
-    BE -- "AI Subtasks" --> AIM
+    BE -- "AI Description" --> AIM
     BE -- "POST /notifications/push" --> S1
-    BE -. "mcp-server:8080/mcp" .-> MCP
-    BE -. "rag-server:8080" .-> RAG
+    BE -. "host.docker.internal:5002/mcp" .-> MCP
+    BE -. "host.docker.internal:5003" .-> RAG
+    BE -. "host coordinator / HTTP" .-> MA
+    MA -- "Planner / Worker / Reviewer" --> AIM
 ```
 
 ## Standalone development

@@ -2,6 +2,8 @@ import { computed, ref } from 'vue'
 import * as taskApi from '@/api/tasks'
 import type {
   CanvasSyncResult,
+  BreakdownReviewInput,
+  BreakdownRevisionInput,
   Course,
   CreateTaskInput,
   GenerateTaskBreakdownInput,
@@ -15,19 +17,22 @@ const courses = ref<Course[]>([])
 const loading = ref(false)
 const error = ref('')
 const aiModeEnabled = ref(false)
+const aiBreakdownEnabled = ref(false)
 const aiModeError = ref('')
 let loaded = false
 
 export function useTasks() {
   async function loadAiMode() {
     aiModeEnabled.value = false
+    aiBreakdownEnabled.value = false
     aiModeError.value = ''
     try {
       const capabilities = await taskApi.getAiModeCapabilities()
-      if (typeof capabilities.aiModeEnabled !== 'boolean') {
+      if (typeof capabilities.aiModeEnabled !== 'boolean' || typeof capabilities.aiBreakdownEnabled !== 'boolean') {
         throw new Error('The Deadline Tracker API returned invalid AI Mode capabilities.')
       }
       aiModeEnabled.value = capabilities.aiModeEnabled
+      aiBreakdownEnabled.value = capabilities.aiBreakdownEnabled
     } catch (reason) {
       aiModeError.value =
         reason instanceof Error ? reason.message : 'Unable to load AI Mode availability.'
@@ -127,9 +132,18 @@ export function useTasks() {
   }
 
   async function generateBreakdown(id: string, input: GenerateTaskBreakdownInput) {
-    const created = await taskApi.generateTaskBreakdown(id, input)
-    tasks.value.push(...created)
-    return created
+    return taskApi.generateTaskBreakdown(id, input)
+  }
+
+  async function reviewBreakdown(id: string, input: BreakdownReviewInput) {
+    const result = await taskApi.reviewTaskBreakdown(id, input)
+    const existingIds = new Set(tasks.value.map((task) => task.id))
+    tasks.value.push(...result.tasks.filter((task) => !existingIds.has(task.id)))
+    return result
+  }
+
+  async function reviseBreakdown(id: string, input: BreakdownRevisionInput) {
+    return taskApi.reviseTaskBreakdown(id, input)
   }
 
   async function generateDescription(input: GenerateTaskDescriptionInput) {
@@ -144,6 +158,7 @@ export function useTasks() {
     loading,
     error,
     aiModeEnabled,
+    aiBreakdownEnabled,
     aiModeError,
     loadAiMode,
     load,
@@ -152,6 +167,8 @@ export function useTasks() {
     remove,
     sync,
     generateBreakdown,
+    reviewBreakdown,
+    reviseBreakdown,
     generateDescription,
   }
 }

@@ -14,6 +14,7 @@ public static class WorkflowEndpoints
         group.MapGet("/{id:guid}", GetWorkflowById);
         group.MapPost("/run", RunWorkflow);
         group.MapPost("/{id:guid}/human-review", SubmitHumanReview);
+        group.MapPost("/{id:guid}/revise", ReviseWorkflow);
 
         return endpoints;
     }
@@ -72,6 +73,38 @@ public static class WorkflowEndpoints
         catch (KeyNotFoundException)
         {
             return Results.NotFound(new { error = $"Workflow {id} not found." });
+        }
+        catch (WorkflowConflictException exception)
+        {
+            return Results.Conflict(new { error = exception.Message });
+        }
+    }
+
+    private static async Task<IResult> ReviseWorkflow(
+        Guid id, ReviseWorkflowRequest request, MultiAgentCoordinator coordinator,
+        CancellationToken cancellationToken)
+    {
+        if (request.RequestId == Guid.Empty || request.ExpectedRevision < 0 ||
+            string.IsNullOrWhiteSpace(request.ReviewerName) || request.ReviewerName.Length > 100 ||
+            string.IsNullOrWhiteSpace(request.Feedback) || request.Feedback.Length > 2000)
+        {
+            return Results.BadRequest(new { error = "Supply a request ID, current revision, reviewer name (1-100 characters) and feedback (1-2000 characters)." });
+        }
+        try
+        {
+            return Results.Ok(await coordinator.ReviseWorkflowAsync(id, request, cancellationToken));
+        }
+        catch (KeyNotFoundException)
+        {
+            return Results.NotFound(new { error = $"Workflow {id} not found." });
+        }
+        catch (WorkflowConflictException exception)
+        {
+            return Results.Conflict(new { error = exception.Message });
+        }
+        catch (WorkflowExecutionException exception)
+        {
+            return Results.Problem(statusCode: StatusCodes.Status502BadGateway, title: exception.Message);
         }
     }
 }

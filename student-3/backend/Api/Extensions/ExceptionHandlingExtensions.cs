@@ -24,7 +24,8 @@ public static class ExceptionHandlingExtensions
                 }
                 else if (exception is AiGatewayConfigurationException or
                     McpIntegrationDisabledException or
-                    RagIntegrationDisabledException)
+                    RagIntegrationDisabledException or
+                    MultiAgentIntegrationDisabledException)
                 {
                     context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
 
@@ -32,6 +33,28 @@ public static class ExceptionHandlingExtensions
                         statusCode: StatusCodes.Status503ServiceUnavailable,
                         title: "AI assistant unavailable",
                         detail: "This AI feature is disabled in the current environment."
+                    ).ExecuteAsync(context);
+                }
+                else if (exception is BreakdownValidationException)
+                {
+                    await Results.Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: exception.Message
+                    ).ExecuteAsync(context);
+                }
+                else if (exception is BreakdownConflictException)
+                {
+                    await Results.Problem(
+                        statusCode: StatusCodes.Status409Conflict,
+                        title: exception.Message
+                    ).ExecuteAsync(context);
+                }
+                else if (exception is MultiAgentServiceException multiAgentException)
+                {
+                    await Results.Problem(
+                        statusCode: StatusCodes.Status502BadGateway,
+                        title: "Multi-Agent assistant unavailable",
+                        detail: multiAgentException.Message
                     ).ExecuteAsync(context);
                 }
                 else if (exception is AiGatewayException or

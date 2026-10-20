@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Student3.Contracts;
 using TaskStatus = Database.Models.TaskStatus;
+using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace Database.Endpoints;
 
@@ -247,12 +249,32 @@ public static class PersistenceEndpoints
                 "`priority` could not be correlated with a valid TaskPriority.");
         }
 
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var fingerprint = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(command)));
+        if (command.WorkflowId is Guid workflowId)
+        {
+            var existing = await db.BreakdownApplications.FindAsync([workflowId], cancellationToken);
+            if (existing is not null)
+            {
+                if (existing.ParentTaskId != id || existing.Fingerprint != fingerprint)
+                {
+                    return Results.Conflict("This workflow was already applied with different tasks.");
+                }
+                var saved = JsonSerializer.Deserialize<List<TaskRecord>>(existing.ResultJson)
+                    ?? throw new InvalidDataException("The saved breakdown result is unreadable.");
+                return Results.Ok(saved);
+            }
+        }
         var parent = await db.Tasks
             .Include(task => task.Course)
             .FirstOrDefaultAsync(task => task.Id == id, cancellationToken);
         if (parent is null)
         {
             return Results.NotFound();
+        }
+        if (command.WorkflowId.HasValue && (parent.CanvasIsActive is false || parent.Status == TaskStatus.Completed))
+        {
+            return Results.Conflict("This assignment is inactive or completed.");
         }
 
         var now = DateTime.UtcNow;
@@ -272,10 +294,22 @@ public static class PersistenceEndpoints
         }).ToList();
 
         db.Tasks.AddRange(tasks);
+        var records = tasks.Select(task => task.ToRecord()).ToList();
+        if (command.WorkflowId is Guid appliedWorkflowId)
+        {
+            db.BreakdownApplications.Add(new BreakdownApplication
+            {
+                WorkflowId = appliedWorkflowId,
+                ParentTaskId = id,
+                Fingerprint = fingerprint,
+                ResultJson = JsonSerializer.Serialize(records)
+            });
+        }
         await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return Results.Created(
             $"/internal/tasks/{parent.Id}",
-            tasks.Select(task => task.ToRecord()).ToList());
+            records);
     }
 
     private static async Task<IResult> ApplyCanvasSnapshot(

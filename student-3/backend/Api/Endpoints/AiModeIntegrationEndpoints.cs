@@ -16,9 +16,14 @@ public static class AiModeIntegrationEndpoints
 
     private static IResult GetAiModeCapabilities(
         IOptions<AiGatewayOptions> aiGatewayOptions,
+        IOptions<MultiAgentServerOptions> multiAgentOptions,
         HttpResponse response)
     {
         response.Headers.CacheControl = "no-store";
-        return Results.Ok(new { AiModeEnabled = aiGatewayOptions.Value.Enabled });
+        return Results.Ok(new
+        {
+            AiModeEnabled = aiGatewayOptions.Value.Enabled,
+            AiBreakdownEnabled = aiGatewayOptions.Value.Enabled is true && multiAgentOptions.Value.Enabled is true
+        });
     }
 }

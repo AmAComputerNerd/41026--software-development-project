@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@better-canvas/ui-kit": "*",
+    "dompurify": "^3.4.14",
+    "marked": "^18.0.11",
     "vue": "^3.5.41",
     "vue-router": "^5.2.0"
   },

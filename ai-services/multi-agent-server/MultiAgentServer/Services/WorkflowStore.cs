@@ -59,18 +59,35 @@ public sealed class WorkflowStore
     {
         lock (_syncRoot)
         {
-            var existingIndex = _records.FindIndex(r => r.Id == record.Id);
+            var records = _records.ToList();
+            var existingIndex = records.FindIndex(r => r.Id == record.Id);
             if (existingIndex >= 0)
             {
-                _records[existingIndex] = record;
+                records[existingIndex] = record;
             }
             else
             {
-                _records.Add(record);
+                records.Add(record);
             }
 
-            PersistToDisk();
+            PersistToDisk(records);
+            _records.Clear();
+            _records.AddRange(records);
             return record;
+        }
+    }
+
+    public MultiAgentWorkflowRecord Update(
+        MultiAgentWorkflowRecord expected, MultiAgentWorkflowRecord updated)
+    {
+        lock (_syncRoot)
+        {
+            var current = _records.FirstOrDefault(record => record.Id == expected.Id);
+            if (!ReferenceEquals(current, expected))
+            {
+                throw new WorkflowConflictException("The workflow changed while this request was running. Reload the current proposal.");
+            }
+            return Save(updated);
         }
     }
 
@@ -102,7 +119,7 @@ public sealed class WorkflowStore
         }
     }
 
-    private void PersistToDisk()
+    private void PersistToDisk(IReadOnlyList<MultiAgentWorkflowRecord> records)
     {
         var directory = Path.GetDirectoryName(_filePath);
         if (!string.IsNullOrWhiteSpace(directory))
@@ -110,7 +127,16 @@ public sealed class WorkflowStore
             Directory.CreateDirectory(directory);
         }
 
-        var json = JsonSerializer.Serialize(_records, JsonOptions);
-        File.WriteAllText(_filePath, json);
+        var json = JsonSerializer.Serialize(records, JsonOptions);
+        var temporaryPath = $"{_filePath}.{Guid.NewGuid():N}.tmp";
+        try
+        {
+            File.WriteAllText(temporaryPath, json);
+            File.Move(temporaryPath, _filePath, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+        }
     }
 }

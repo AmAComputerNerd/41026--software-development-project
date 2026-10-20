@@ -54,8 +54,24 @@ task and course lists rather than deleted.
 
 On 03 ASSIGNMENTS, choose AI breakdown for an assignment. Review or edit the
 planning prompt and select the priority for the generated sub-tasks. The
-backend loads the saved assignment and course context and calls the local
-AI Mode gateway. Validated generated sub-tasks are saved together.
+backend loads the saved assignment and course context and calls the existing
+Multi-Agent Server's Planner, Worker and Reviewer. Generating a proposal
+does not create tasks. **Accept** creates all proposed subtasks.
+**Partially Accept** enables edits and exclusion; its **Accept** saves your
+selected tasks and **Cancel** discards edits and restores the four decisions.
+**Correct** opens a follow-up feedback box. Sending feedback returns the same
+workflow to Planner, Worker and Reviewer with the assignment context and prior
+feedback; the revised proposal still requires human acceptance.
+The latest feedback takes precedence over conflicting earlier feedback.
+Task titles must remain unique; the agents should adapt conflicting requests
+as closely as possible and explain the adaptation in the review.
+**Reject** records rejection and closes the dialog without creating tasks.
+Reviewer name is optional and defaults to `Student Reviewer`.
+Previous proposals, correction feedback and coordination audit remain in the
+workflow history. A stale proposal cannot overwrite a newer revision.
+Repeated saves of the same reviewed workflow do not duplicate tasks.
+Breakdown requires both AI Mode and Multi-Agent to be enabled. The existing
+server does not expose live stage progress; invalid task output is rejected.
 
 For a non-Canvas task, Generate description with AI drafts a description from
 the title and selected course or parent assessment. The draft can be edited
@@ -97,11 +113,12 @@ unrelated subjects may therefore have insufficient context.
 
 ## Unavailable AI services
 
-MCP and RAG are Docker services reached through the feature backend.
+MCP and RAG are local host services reached through the feature backend.
 They are optional: ordinary task, calendar and assignment views do not
 depend on them. If an AI feature is disabled or a required service is
 unavailable, the assistant displays an error rather than a grounded answer.
 
-From the repository root, `docker compose up --build` starts the application,
-including AI Mode, MCP and RAG. After updating corpus documentation, run
-`docker compose up --build -d rag-server` to refresh its startup index.
+From the repository root, `docker compose up --build` starts the core
+application. Run `python tools/run_ai_services.py` in another terminal for
+AI Mode, MCP, RAG and Multi-Agent. Restart the launcher after updating corpus
+documentation to refresh the temporary corpus and startup index.

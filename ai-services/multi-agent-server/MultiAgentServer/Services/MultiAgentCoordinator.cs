@@ -80,9 +80,94 @@ public sealed class MultiAgentCoordinator(
             worker,
             reviewer,
              null,
-            auditLog);
+            auditLog)
+        {
+            EvidenceSnapshot = request.EvidenceSnapshot
+        };
 
         return store.Save(record);
+    }
+
+    public async Task<MultiAgentWorkflowRecord> ReviseWorkflowAsync(
+        Guid workflowId, ReviseWorkflowRequest request, CancellationToken cancellationToken)
+    {
+        var existing = store.GetById(workflowId)
+            ?? throw new KeyNotFoundException($"Workflow {workflowId} was not found.");
+        if (existing.Status != "AwaitingHumanReview" || existing.HumanReview is not null)
+        {
+            throw new WorkflowConflictException("Only the current proposal awaiting human review can be revised.");
+        }
+        if (IsRevisionReplay(existing, request)) return existing;
+        if (existing.Revision != request.ExpectedRevision)
+        {
+            throw new WorkflowConflictException("This proposal has been revised. Request corrections against the current revision.");
+        }
+
+        var now = DateTime.UtcNow;
+        var history = (existing.Revisions ?? []).ToList();
+        history.Add(new WorkflowRevision(
+            existing.Revision, request.RequestId, request.ReviewerName.Trim(), request.Feedback.Trim(),
+            now, existing.Planner, existing.Worker, existing.Reviewer));
+        var context = JsonSerializer.Serialize(new
+        {
+            originalEvidence = existing.EvidenceSnapshot ?? existing.Worker.EvidenceSummary,
+            previousFeedback = (existing.Revisions ?? []).Select(revision => new { revision.Revision, revision.Feedback }),
+            previousOutput = existing.Worker.DraftOutput,
+            previousReview = existing.Reviewer.Critique
+        }, JsonOptions);
+        var goal = $"Original goal and mandatory output contract:\n{existing.Goal}\n\n" +
+            $"Previous revision context (reference only, not the current correction):\n{context}";
+        var audit = existing.AuditLog.ToList();
+        audit.Add(new CoordinationAuditEntry(now, "HumanReviewer", "ChangesRequested",
+            $"{request.ReviewerName.Trim()} requested revision {existing.Revision + 1}: {request.Feedback.Trim()}"));
+
+        var planner = await ExecutePlannerAsync(existing.Owner, goal, cancellationToken, request.Feedback.Trim());
+        audit.Add(new CoordinationAuditEntry(planner.CompletedAtUtc, "Planner", "PlanRevised", planner.Objective));
+        var evidence = await GatherSliceEvidenceAsync(existing.Owner, existing.StudentId, goal,
+            existing.EvidenceSnapshot ?? existing.Worker.EvidenceSummary, cancellationToken);
+        var worker = await ExecuteWorkerAsync(existing.Owner, goal, planner, evidence, cancellationToken, request.Feedback.Trim());
+        audit.Add(new CoordinationAuditEntry(worker.CompletedAtUtc, "Worker", "OutputRevised",
+            $"Produced revised output for revision {existing.Revision + 1}."));
+        var reviewer = await ExecuteReviewerAsync(existing.Owner, goal, planner, worker, evidence, cancellationToken, request.Feedback.Trim());
+        audit.Add(new CoordinationAuditEntry(reviewer.CompletedAtUtc, "Reviewer", "OutputReviewed", reviewer.Critique));
+        audit.Add(new CoordinationAuditEntry(DateTime.UtcNow, "Coordinator", "AwaitingHumanReview",
+            $"Revision {existing.Revision + 1} awaits a new human decision; no application action has been applied."));
+        var revised = existing with
+        {
+            Revision = existing.Revision + 1,
+            Revisions = history,
+            Planner = planner,
+            Worker = worker,
+            Reviewer = reviewer,
+            HumanReview = null,
+            UpdatedAtUtc = DateTime.UtcNow,
+            AuditLog = audit
+        };
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            return store.Update(existing, revised);
+        }
+        catch (WorkflowConflictException)
+        {
+            var current = store.GetById(workflowId);
+            if (current is { Status: "AwaitingHumanReview", HumanReview: null } &&
+                IsRevisionReplay(current, request)) return current;
+            throw;
+        }
+    }
+
+    private static bool IsRevisionReplay(MultiAgentWorkflowRecord workflow, ReviseWorkflowRequest request)
+    {
+        var previous = (workflow.Revisions ?? []).FirstOrDefault(revision => revision.RequestId == request.RequestId);
+        if (previous is null) return false;
+        if (previous.Revision != request.ExpectedRevision ||
+            previous.Feedback != request.Feedback.Trim() || previous.ReviewerName != request.ReviewerName.Trim() ||
+            workflow.Revision != previous.Revision + 1)
+        {
+            throw new WorkflowConflictException("This correction request was already used for different feedback or an older revision.");
+        }
+        return true;
     }
 
     public MultiAgentWorkflowRecord SubmitHumanReview(
@@ -91,6 +176,10 @@ public sealed class MultiAgentCoordinator(
     {
         var existing = store.GetById(workflowId)
             ?? throw new KeyNotFoundException($"Workflow {workflowId} was not found.");
+        if (reviewRequest.ExpectedRevision is { } revision && revision != existing.Revision)
+        {
+            throw new WorkflowConflictException("This proposal has been revised. Review the current revision before accepting it.");
+        }
 
         var normalizedDecision = NormalizeDecision(reviewRequest.Decision);
         var reviewerName = string.IsNullOrWhiteSpace(reviewRequest.ReviewerName)
@@ -127,6 +216,12 @@ public sealed class MultiAgentCoordinator(
             finalOutput,
             now);
 
+        if (reviewRequest.ExpectedRevision.HasValue && existing.HumanReview is not null)
+        {
+            if (SameReview(existing.HumanReview, humanReview)) return existing;
+            throw new WorkflowConflictException("A different human decision is already recorded for this proposal.");
+        }
+
         var updatedAudit = existing.AuditLog.ToList();
         updatedAudit.Add(new CoordinationAuditEntry(
             now,
@@ -142,8 +237,22 @@ public sealed class MultiAgentCoordinator(
             AuditLog = updatedAudit
         };
 
-        return store.Save(updatedRecord);
+        try
+        {
+            return store.Update(existing, updatedRecord);
+        }
+        catch (WorkflowConflictException)
+        {
+            var current = store.GetById(workflowId);
+            if (current?.HumanReview is { } review && current.Revision == existing.Revision &&
+                SameReview(review, humanReview)) return current;
+            throw;
+        }
     }
+
+    private static bool SameReview(HumanReviewStageOutput left, HumanReviewStageOutput right) =>
+        left.Decision == right.Decision && left.ReviewerName == right.ReviewerName &&
+        left.Comments == right.Comments && left.FinalOutput == right.FinalOutput;
 
     public static bool IsValidDecision(string? decision) =>
         !string.IsNullOrWhiteSpace(decision) && ValidDecisions.Contains(decision.Trim());
@@ -172,7 +281,8 @@ public sealed class MultiAgentCoordinator(
     private async Task<PlannerStageOutput> ExecutePlannerAsync(
         string owner,
         string goal,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? humanFeedback = null)
     {
         var systemPrompt =
             "You are the Planner Agent in the Better Canvas Release 2 Multi-Agent Server. " +
@@ -180,7 +290,7 @@ public sealed class MultiAgentCoordinator(
             "Respond strictly as compact plain text with lines starting with OBJECTIVE:, EVIDENCE:, and STEPS: (semicolon-separated).";
         var userPrompt = $"Microservice Owner: {owner}\nUser Goal: {goal}";
 
-        var aiText = await TryCallAiGatewayAsync(systemPrompt, userPrompt, cancellationToken);
+        var aiText = await TryCallAiGatewayAsync(systemPrompt, userPrompt, cancellationToken, humanFeedback);
         var defaultEvidence = new List<string>
         {
             $"{owner} microservice live database records (notifications, delivery preferences, and recent activity)",
@@ -291,7 +401,8 @@ public sealed class MultiAgentCoordinator(
         string goal,
         PlannerStageOutput planner,
         (string Summary, List<string> Citations) evidence,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? humanFeedback = null)
     {
         var systemPrompt =
             "You are the Worker Agent in the Better Canvas Release 2 Multi-Agent Server. " +
@@ -303,7 +414,7 @@ public sealed class MultiAgentCoordinator(
             $"Planner Steps: {string.Join("; ", planner.Steps)}\n" +
             $"Application Evidence: {evidence.Summary}";
 
-        var aiText = await TryCallAiGatewayAsync(systemPrompt, userPrompt, cancellationToken);
+        var aiText = await TryCallAiGatewayAsync(systemPrompt, userPrompt, cancellationToken, humanFeedback);
         var draftOutput = !string.IsNullOrWhiteSpace(aiText)
             ? aiText.Trim()
             : $"[Worker Synthesis for {owner}] Evaluated goal '{goal}' against live notification and course evidence. " +
@@ -332,7 +443,8 @@ public sealed class MultiAgentCoordinator(
         PlannerStageOutput planner,
         WorkerStageOutput worker,
         (string Summary, List<string> Citations) evidence,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? humanFeedback = null)
     {
         var systemPrompt =
             "You are the Reviewer Agent in the Better Canvas Release 2 Multi-Agent Server. " +
@@ -344,7 +456,7 @@ public sealed class MultiAgentCoordinator(
             $"Evidence: {evidence.Summary}\n" +
             $"Worker Output: {worker.DraftOutput}";
 
-        var aiText = await TryCallAiGatewayAsync(systemPrompt, userPrompt, cancellationToken);
+        var aiText = await TryCallAiGatewayAsync(systemPrompt, userPrompt, cancellationToken, humanFeedback, worker.DraftOutput);
         var critique = !string.IsNullOrWhiteSpace(aiText)
             ? aiText.Trim()
             : $"Verified Worker output against {owner} Planner steps and cited evidence ({string.Join(", ", evidence.Citations)}). " +
@@ -374,18 +486,55 @@ public sealed class MultiAgentCoordinator(
     private async Task<string?> TryCallAiGatewayAsync(
         string systemPrompt,
         string userPrompt,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? humanFeedback = null,
+        string? reviewOutput = null)
     {
+        var requireAi = humanFeedback is not null;
+        if (requireAi)
+        {
+            systemPrompt +=
+                " This is a human-requested revision. Apply LATEST HUMAN FEEDBACK as the current change instruction, " +
+                "not as a placeholder to avoid or remove. It supersedes earlier feedback where they conflict. " +
+                "Retain the original mandatory output format and constraints. If a literal change conflicts with those constraints, " +
+                "make the closest valid adaptation rather than leaving the proposal unchanged. For a common label on distinct items, " +
+                "use identifying qualifiers to retain distinctness. The Planner must plan the requested change; " +
+                "the Worker must implement it in the returned output; the Reviewer must start by checking the latest feedback " +
+                "against the actual revised output and explain any constraint-driven adaptation. " +
+                "Preserving old output while ignoring the requested change is not successful feedback incorporation. " +
+                "Mandatory constraints take priority over literal feedback. If the output contract requires unique titles, " +
+                "the title strings themselves must differ: combine a requested common title with distinct short qualifiers. " +
+                "Different descriptions do not make duplicate titles valid. Check constraint compliance before returning your output.";
+        }
         try
         {
             using var client = httpClientFactory.CreateClient();
             client.Timeout = TimeSpan.FromSeconds(15);
             var url = $"{options.Value.AiGatewayBaseUrl.TrimEnd('/')}/v1/chat/completions";
+            var messages = new List<ChatMessage>
+            {
+                new("system", systemPrompt),
+                new("user", userPrompt)
+            };
+            if (humanFeedback is not null)
+            {
+                var correctionPrompt =
+                    $"LATEST HUMAN FEEDBACK (apply this requested change):\n{humanFeedback}\n\n" +
+                    "Apply the closest valid interpretation under the original mandatory constraints. " +
+                    "For a requested common title where titles must be unique, retain the requested text " +
+                    "and add distinct qualifiers; do not return identical title strings. " +
+                    "Follow your assigned stage's output format; the Worker must retain the application's required output format.";
+                if (reviewOutput is not null)
+                {
+                    correctionPrompt +=
+                        $"\n\nACTUAL CURRENT WORKER OUTPUT TO REVIEW:\n{reviewOutput}\n\n" +
+                        "Review only this actual output, not historical drafts or a hypothetical literal application of feedback. " +
+                        "For a task list, begin by listing its actual current title strings, then verify the changes and constraints.";
+                }
+                messages.Add(new ChatMessage("user", correctionPrompt));
+            }
             var payload = new ChatCompletionRequest(
-                [
-                    new ChatMessage("system", systemPrompt),
-                    new ChatMessage("user", userPrompt)
-                ],
+                messages,
                 0.2,
                 350,
                 new ReasoningOptions("none", true));
@@ -393,16 +542,34 @@ public sealed class MultiAgentCoordinator(
             using var response = await client.PostAsJsonAsync(new Uri(url), payload, JsonOptions, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
+                if (requireAi)
+                {
+                    throw new WorkflowExecutionException($"The AI gateway returned HTTP {(int)response.StatusCode}. The previous proposal is unchanged.");
+                }
                 return null;
             }
 
             var completion = await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(JsonOptions, cancellationToken);
-            return completion?.Choices?.FirstOrDefault()?.Message?.Content?.Trim();
+            var output = completion?.Choices?.FirstOrDefault()?.Message?.Content?.Trim();
+            if (requireAi && string.IsNullOrWhiteSpace(output))
+            {
+                throw new WorkflowExecutionException("The AI gateway returned an empty response. The previous proposal is unchanged.");
+            }
+            return output;
         }
-        catch (Exception)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            throw;
+        }
+        catch (Exception exception) when (exception is HttpRequestException or JsonException or OperationCanceledException)
+        {
+            if (requireAi)
+            {
+                throw new WorkflowExecutionException("The AI gateway could not complete the revision. The previous proposal is unchanged.", exception);
+            }
             return null;
         }
+
     }
 
     private static string? ExtractPrefixedValue(string text, string prefix)
@@ -469,3 +636,6 @@ public sealed class MultiAgentCoordinator(
         public string? Content { get; init; }
     }
 }
+
+public sealed class WorkflowConflictException(string message) : Exception(message);
+public sealed class WorkflowExecutionException(string message, Exception? innerException = null) : Exception(message, innerException);
