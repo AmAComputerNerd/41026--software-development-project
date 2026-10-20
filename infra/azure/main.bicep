@@ -541,6 +541,10 @@ resource student3Backend 'Microsoft.App/containerApps@2023-05-01' = {
             { name: 'MULTI_AGENT_ENABLED', value: aiEnabledString }
             { name: 'AiGateway__Enabled', value: aiEnabledString }
             { name: 'AiGateway__BaseUrl', value: aiModeInternalUrl }
+            { name: 'McpServer__Enabled', value: aiEnabledString }
+            { name: 'McpServer__BaseUrl', value: '${mcpInternalUrl}/mcp' }
+            { name: 'RagServer__Enabled', value: aiEnabledString }
+            { name: 'RagServer__BaseUrl', value: ragInternalUrl }
             { name: 'MultiAgentServer__Enabled', value: aiEnabledString }
             { name: 'MultiAgentServer__BaseUrl', value: multiAgentInternalUrl }
           ]
@@ -998,9 +1002,10 @@ resource multiAgentServerApp 'Microsoft.App/containerApps@2023-05-01' = if (enab
           resources: { cpu: json('0.25'), memory: '0.5Gi' }
           env: [
             { name: 'ASPNETCORE_HTTP_PORTS', value: '5004' }
-            { name: 'MultiAgent__AiModeBaseUrl', value: 'http://ai-mode' }
-            { name: 'MultiAgent__McpEndpointUrl', value: 'http://mcp-server/mcp' }
+            { name: 'MultiAgent__AiGatewayBaseUrl', value: 'http://ai-mode' }
+            { name: 'MultiAgent__McpBaseUrl', value: 'http://mcp-server' }
             { name: 'MultiAgent__RagBaseUrl', value: 'http://rag-server' }
+            { name: 'MultiAgent__Student1BaseUrl', value: 'http://student-1-backend' }
           ]
         }
       ]
