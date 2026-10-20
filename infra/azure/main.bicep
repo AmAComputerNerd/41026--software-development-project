@@ -339,7 +339,7 @@ resource student1Backend 'Microsoft.App/containerApps@2023-05-01' = {
             { name: 'AiGateway__Enabled', value: aiEnabledString }
             { name: 'AiGateway__BaseUrl', value: aiModeInternalUrl }
             { name: 'McpServer__Enabled', value: aiEnabledString }
-            { name: 'McpServer__EndpointUrl', value: '${mcpInternalUrl}/mcp' }
+            { name: 'McpServer__BaseUrl', value: '${mcpInternalUrl}/mcp' }
             { name: 'RagServer__Enabled', value: aiEnabledString }
             { name: 'RagServer__BaseUrl', value: ragInternalUrl }
             { name: 'MultiAgentServer__Enabled', value: aiEnabledString }
@@ -428,6 +428,10 @@ resource student2Backend 'Microsoft.App/containerApps@2023-05-01' = {
             { name: 'MULTI_AGENT_ENABLED', value: aiEnabledString }
             { name: 'AiGateway__Enabled', value: aiEnabledString }
             { name: 'AiGateway__BaseUrl', value: aiModeInternalUrl }
+            { name: 'McpServer__Enabled', value: aiEnabledString }
+            { name: 'McpServer__BaseUrl', value: '${mcpInternalUrl}/mcp' }
+            { name: 'RagServer__Enabled', value: aiEnabledString }
+            { name: 'RagServer__BaseUrl', value: ragInternalUrl }
             { name: 'MultiAgentServer__Enabled', value: aiEnabledString }
             { name: 'MultiAgentServer__BaseUrl', value: multiAgentInternalUrl }
           ]
@@ -650,6 +654,7 @@ resource student4Backend 'Microsoft.App/containerApps@2023-05-01' = {
           env: [
             { name: 'ASPNETCORE_ENVIRONMENT', value: 'Production' }
             { name: 'DatabaseService__BaseUrl', value: 'http://student-4-database' }
+            { name: 'SharedService__BaseUrl', value: 'http://shared-backend' }
             { name: 'NotificationService__BaseUrl', value: 'http://student-1-backend' }
             { name: 'AI_MODE_ENABLED', value: aiEnabledString }
             { name: 'MCP_ENABLED', value: aiEnabledString }
@@ -657,6 +662,10 @@ resource student4Backend 'Microsoft.App/containerApps@2023-05-01' = {
             { name: 'MULTI_AGENT_ENABLED', value: aiEnabledString }
             { name: 'AiGateway__Enabled', value: aiEnabledString }
             { name: 'AiGateway__BaseUrl', value: aiModeInternalUrl }
+            { name: 'McpServer__Enabled', value: aiEnabledString }
+            { name: 'McpServer__BaseUrl', value: '${mcpInternalUrl}/mcp' }
+            { name: 'RagServer__Enabled', value: aiEnabledString }
+            { name: 'RagServer__BaseUrl', value: ragInternalUrl }
             { name: 'MultiAgentServer__Enabled', value: aiEnabledString }
             { name: 'MultiAgentServer__BaseUrl', value: multiAgentInternalUrl }
           ]
@@ -807,6 +816,10 @@ resource student5Backend 'Microsoft.App/containerApps@2023-05-01' = {
             { name: 'MULTI_AGENT_ENABLED', value: aiEnabledString }
             { name: 'AiGateway__Enabled', value: aiEnabledString }
             { name: 'AiGateway__BaseUrl', value: aiModeInternalUrl }
+            { name: 'McpServer__Enabled', value: aiEnabledString }
+            { name: 'McpServer__BaseUrl', value: '${mcpInternalUrl}/mcp' }
+            { name: 'RagServer__Enabled', value: aiEnabledString }
+            { name: 'RagServer__BaseUrl', value: ragInternalUrl }
             { name: 'MultiAgentServer__Enabled', value: aiEnabledString }
             { name: 'MultiAgentServer__BaseUrl', value: multiAgentInternalUrl }
           ]
@@ -927,6 +940,11 @@ resource mcpServerApp 'Microsoft.App/containerApps@2023-05-01' = if (enableBonus
           resources: { cpu: json('0.25'), memory: '0.5Gi' }
           env: [
             { name: 'ASPNETCORE_HTTP_PORTS', value: '5002' }
+            { name: 'Student1__BaseUrl', value: 'http://student-1-backend' }
+            { name: 'Student2__BaseUrl', value: 'http://student-2-backend' }
+            { name: 'Student3__BaseUrl', value: 'http://student-3-backend' }
+            { name: 'Student4__BaseUrl', value: 'http://student-4-backend' }
+            { name: 'Student5__BaseUrl', value: 'http://student-5-backend' }
           ]
         }
       ]
