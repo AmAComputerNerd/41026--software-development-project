@@ -235,6 +235,7 @@ jobs:
           AZURE_ACR_NAME: ${{ vars.AZURE_ACR_NAME || 'acrbettercanvasr2' }}
           IMAGE_TAG: ${{ github.sha }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL || 'nvidia/nemotron-3.5-lightning:free' }}
           CANVAS_API_TOKEN: ${{ secrets.CANVAS_API_TOKEN }}
         run: |
           chmod +x infra/azure/deploy.sh

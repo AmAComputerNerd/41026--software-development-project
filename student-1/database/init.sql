@@ -9,7 +9,9 @@ CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
 );
 
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260908024635_InitialCreate', '10.0.0')
+VALUES 
+    ('20260908024635_InitialCreate', '10.0.0'),
+    ('20260927074559_AddChatSessionsAndMessages', '10.0.0')
 ON CONFLICT ("MigrationId") DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -71,6 +73,40 @@ CREATE TABLE IF NOT EXISTS "CanvasAssignmentWatermarks" (
 
 CREATE UNIQUE INDEX IF NOT EXISTS "IX_CanvasAssignmentWatermarks_CanvasAssignmentId"
     ON "CanvasAssignmentWatermarks" ("CanvasAssignmentId");
+
+-- -----------------------------------------------------------------------------
+-- 5. Table: ChatSessions
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "ChatSessions" (
+    "Id" uuid NOT NULL,
+    "StudentId" uuid NOT NULL,
+    "Title" text NOT NULL,
+    "CreatedAtUtc" timestamp with time zone NOT NULL,
+    "UpdatedAtUtc" timestamp with time zone NOT NULL,
+    CONSTRAINT "PK_ChatSessions" PRIMARY KEY ("Id")
+);
+
+CREATE INDEX IF NOT EXISTS "IX_ChatSessions_StudentId_UpdatedAtUtc"
+    ON "ChatSessions" ("StudentId", "UpdatedAtUtc");
+
+-- -----------------------------------------------------------------------------
+-- 6. Table: ChatMessages
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "ChatMessages" (
+    "Id" uuid NOT NULL,
+    "ChatSessionId" uuid NOT NULL,
+    "Role" text NOT NULL,
+    "Content" text NOT NULL,
+    "CreatedAtUtc" timestamp with time zone NOT NULL,
+    "CitationsJson" text,
+    "Confidence" text,
+    CONSTRAINT "PK_ChatMessages" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_ChatMessages_ChatSessions_ChatSessionId" FOREIGN KEY ("ChatSessionId")
+        REFERENCES "ChatSessions" ("Id") ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS "IX_ChatMessages_ChatSessionId_CreatedAtUtc"
+    ON "ChatMessages" ("ChatSessionId", "CreatedAtUtc");
 
 -- -----------------------------------------------------------------------------
 -- Seed Data (Minimum 10 records per table)
@@ -137,3 +173,18 @@ VALUES
     ('d0000001-0000-0000-0000-000000000009', 101009, NOW() - INTERVAL '2 days', 'published', 'graded', NOW()),
     ('d0000001-0000-0000-0000-000000000010', 101010, NOW() + INTERVAL '21 days', 'published', 'unsubmitted', NOW())
 ON CONFLICT ("CanvasAssignmentId") DO NOTHING;
+
+-- ChatSessions (2 records)
+INSERT INTO "ChatSessions" ("Id", "StudentId", "Title", "CreatedAtUtc", "UpdatedAtUtc")
+VALUES
+    ('e0000001-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Study Plan & Assessment 1 Priority', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days' + INTERVAL '15 minutes'),
+    ('e0000001-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 'Course Policy Inquiry', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day' + INTERVAL '10 minutes')
+ON CONFLICT ("Id") DO NOTHING;
+
+-- ChatMessages (3 records)
+INSERT INTO "ChatMessages" ("Id", "ChatSessionId", "Role", "Content", "CreatedAtUtc", "CitationsJson", "Confidence")
+VALUES
+    ('f0000001-0000-0000-0000-000000000001', 'e0000001-0000-0000-0000-000000000001', 'assistant', 'Hello! Here is your quick notification digest: You have approaching deadlines and unread grades. How can I assist you with your tasks today?', NOW() - INTERVAL '2 days', NULL, 'HIGH'),
+    ('f0000001-0000-0000-0000-000000000002', 'e0000001-0000-0000-0000-000000000001', 'user', 'What is the penalty if I submit 1 day late?', NOW() - INTERVAL '2 days' + INTERVAL '5 minutes', NULL, NULL),
+    ('f0000001-0000-0000-0000-000000000003', 'e0000001-0000-0000-0000-000000000001', 'assistant', 'According to course policies, a **5% penalty per 24-hour period** applies to late submissions.', NOW() - INTERVAL '2 days' + INTERVAL '6 minutes', '["course_policies.md"]', 'HIGH')
+ON CONFLICT ("Id") DO NOTHING;

@@ -4,7 +4,7 @@ using MultiAgentServer.Services;
 
 namespace MultiAgentServer.Endpoints;
 
-public static class WorkflowEndpoints
+public static partial class WorkflowEndpoints
 {
     public static IEndpointRouteBuilder MapWorkflowEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -41,6 +41,7 @@ public static class WorkflowEndpoints
     private static async Task<IResult> RunWorkflow(
         [FromBody] RunWorkflowRequest request,
         MultiAgentCoordinator coordinator,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Goal) || request.Goal.Trim().Length < 5)
@@ -48,8 +49,20 @@ public static class WorkflowEndpoints
             return Results.BadRequest(new { error = "Goal must be at least 5 characters." });
         }
 
-        var record = await coordinator.RunWorkflowAsync(request, cancellationToken);
-        return Results.Ok(record);
+        try
+        {
+            var record = await coordinator.RunWorkflowAsync(request, cancellationToken);
+            return Results.Ok(record);
+        }
+        catch (Exception ex)
+        {
+            var logger = loggerFactory.CreateLogger("WorkflowEndpoints");
+            LogRunWorkflowFailed(logger, ex, request.Goal);
+            return Results.Problem(
+                title: "Multi-Agent Coordination Failed",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
     }
 
     private static IResult SubmitHumanReview(
@@ -107,4 +120,12 @@ public static class WorkflowEndpoints
             return Results.Problem(statusCode: StatusCodes.Status502BadGateway, title: exception.Message);
         }
     }
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "RunWorkflow failed for goal: {Goal}")]
+    private static partial void LogRunWorkflowFailed(
+        ILogger logger,
+        Exception ex,
+        string goal);
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { CURRENT_STUDENT_ID } from '@/config'
+import MarkdownContent from './MarkdownContent.vue'
 import {
   listMultiAgentWorkflows,
   runMultiAgentWorkflow,
@@ -198,7 +199,7 @@ onMounted(loadHistory)
         </p>
         <div class="nb-ma-draft-box">
           <strong>Worker Output:</strong>
-          <p>{{ currentWorkflow.worker.draftOutput }}</p>
+          <MarkdownContent :source="currentWorkflow.worker.draftOutput" />
         </div>
         <div class="nb-ma-section">
           <span class="nb-mono nb-ma-sublabel">RECOMMENDED ACTIONS:</span>
@@ -225,7 +226,10 @@ onMounted(loadHistory)
             CONFIDENCE: {{ currentWorkflow.reviewer.confidence.toUpperCase() }}
           </span>
         </header>
-        <p class="nb-ma-critique"><strong>Critique:</strong> {{ currentWorkflow.reviewer.critique }}</p>
+        <div class="nb-ma-critique-box">
+          <strong>Critique:</strong>
+          <MarkdownContent :source="currentWorkflow.reviewer.critique" />
+        </div>
         <div class="nb-ma-section">
           <span class="nb-mono nb-ma-sublabel">IDENTIFIED RISKS:</span>
           <ul class="nb-ma-list">
@@ -255,7 +259,7 @@ onMounted(loadHistory)
           <p><strong>Comments:</strong> {{ currentWorkflow.humanReview.comments }}</p>
           <div class="nb-ma-final-output">
             <span class="nb-mono nb-ma-sublabel">FINAL APPROVED / CORRECTED OUTPUT:</span>
-            <p>{{ currentWorkflow.humanReview.finalOutput }}</p>
+            <MarkdownContent :source="currentWorkflow.humanReview.finalOutput" />
           </div>
         </div>
 

@@ -96,34 +96,37 @@ public static class DbSeeder
             tasks.AddRange(
                 new TaskEntity
                 {
+                    Id = Guid.Parse("33333333-3333-3333-3333-333333333331"),
                     Title = "Release 0",
                     Description = "Finish work on Release 0",
                     CourseId = courses.FirstOrDefault(c => c.Code == "41026")?.Id,
                     Priority = TaskPriority.High,
                     Status = TaskStatus.InProgress,
-                    DueDate = DateTime.UtcNow,
+                    DueDate = DateTime.UtcNow.AddDays(2),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 },
                 new TaskEntity
                 {
+                    Id = Guid.Parse("33333333-3333-3333-3333-333333333332"),
                     Title = "Release 1",
                     Description = "Finish work on Release 1",
                     CourseId = courses.FirstOrDefault(c => c.Code == "41026")?.Id,
                     Priority = TaskPriority.Medium,
                     Status = TaskStatus.Todo,
-                    DueDate = DateTime.UtcNow,
+                    DueDate = DateTime.UtcNow.AddDays(4),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 },
                 new TaskEntity
                 {
+                    Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
                     Title = "Release 2",
                     Description = "Finish work on Release 2",
                     CourseId = courses.FirstOrDefault(c => c.Code == "41026")?.Id,
                     Priority = TaskPriority.Low,
                     Status = TaskStatus.InProgress,
-                    DueDate = DateTime.UtcNow,
+                    DueDate = DateTime.UtcNow.AddDays(7),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 },

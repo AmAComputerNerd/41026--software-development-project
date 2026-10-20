@@ -15,15 +15,19 @@ LOCATION="${AZURE_LOCATION:-australiaeast}"
 ACR_NAME="${AZURE_ACR_NAME:-acrbettercanvasr2}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-}"
+OPENROUTER_MODEL="${OPENROUTER_MODEL:-}"
 CANVAS_API_TOKEN="${CANVAS_API_TOKEN:-}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# If running locally and .env exists, load OPENROUTER_API_KEY and CANVAS_API_TOKEN if not already set
+# If running locally and .env exists, load OPENROUTER_API_KEY, OPENROUTER_MODEL and CANVAS_API_TOKEN if not already set
 if [[ -f "$REPO_ROOT/.env" ]]; then
   if [[ -z "$OPENROUTER_API_KEY" ]]; then
     OPENROUTER_API_KEY="$(grep -E '^OPENROUTER_API_KEY=' "$REPO_ROOT/.env" | cut -d '=' -f2- | tr -d '\"' | tr -d "'" || true)"
+  fi
+  if [[ -z "$OPENROUTER_MODEL" ]]; then
+    OPENROUTER_MODEL="$(grep -E '^OPENROUTER_MODEL=' "$REPO_ROOT/.env" | cut -d '=' -f2- | tr -d '\"' | tr -d "'" || true)"
   fi
   if [[ -z "$CANVAS_API_TOKEN" ]]; then
     CANVAS_API_TOKEN="$(grep -E '^CANVAS_API_TOKEN=' "$REPO_ROOT/.env" | cut -d '=' -f2- | tr -d '\"' | tr -d "'" || true)"
@@ -46,6 +50,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --openrouter-key)
       OPENROUTER_API_KEY="$2"
+      shift 2
+      ;;
+    --openrouter-model)
+      OPENROUTER_MODEL="$2"
       shift 2
       ;;
     --canvas-token)
@@ -84,6 +92,7 @@ echo "MCP_ENABLED         : $ENABLE_BONUS_AI"
 echo "RAG_ENABLED         : $ENABLE_BONUS_AI"
 echo "MULTI_AGENT_ENABLED : $ENABLE_BONUS_AI"
 echo "OPENROUTER_KEY      : $(if [[ -n "$OPENROUTER_API_KEY" ]]; then echo "[CONFIGURED]"; else echo "[NOT CONFIGURED]"; fi)"
+echo "OPENROUTER_MODEL    : ${OPENROUTER_MODEL:-nvidia/nemotron-3.5-lightning:free}"
 echo "CANVAS_TOKEN        : $(if [[ -n "$CANVAS_API_TOKEN" ]]; then echo "[CONFIGURED]"; else echo "[NOT CONFIGURED]"; fi)"
 echo "Skip Build          : $SKIP_BUILD"
 echo "Dry Run             : $DRY_RUN"
@@ -164,6 +173,7 @@ if ! FQDN=$(az deployment group create \
     enableBonusAi="$ENABLE_BONUS_AI" \
     enableBonusSecurity="$ENABLE_BONUS_SECURITY" \
     openRouterApiKey="$OPENROUTER_API_KEY" \
+    openRouterModel="${OPENROUTER_MODEL:-nvidia/nemotron-3.5-lightning:free}" \
     canvasApiToken="$CANVAS_API_TOKEN" \
   --query "properties.outputs.publicGatewayFqdn.value" \
   --output tsv); then

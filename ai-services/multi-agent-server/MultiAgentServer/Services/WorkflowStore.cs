@@ -121,22 +121,30 @@ public sealed class WorkflowStore
 
     private void PersistToDisk(IReadOnlyList<MultiAgentWorkflowRecord> records)
     {
-        var directory = Path.GetDirectoryName(_filePath);
-        if (!string.IsNullOrWhiteSpace(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        var json = JsonSerializer.Serialize(records, JsonOptions);
-        var temporaryPath = $"{_filePath}.{Guid.NewGuid():N}.tmp";
         try
         {
-            File.WriteAllText(temporaryPath, json);
-            File.Move(temporaryPath, _filePath, overwrite: true);
+            var directory = Path.GetDirectoryName(_filePath);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            var json = JsonSerializer.Serialize(records, JsonOptions);
+            var temporaryPath = $"{_filePath}.{Guid.NewGuid():N}.tmp";
+            try
+            {
+                File.WriteAllText(temporaryPath, json);
+                File.Move(temporaryPath, _filePath, overwrite: true);
+            }
+            finally
+            {
+                if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+            }
         }
-        finally
+        catch (Exception ex)
         {
-            if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+            // Disk persistence error should not fail workflow execution; state remains in-memory.
+            System.Diagnostics.Trace.TraceWarning($"WorkflowStore: Failed to persist workflows to disk: {ex.Message}");
         }
     }
 }
