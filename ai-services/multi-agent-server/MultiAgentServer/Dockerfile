@@ -12,5 +12,6 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/publish .
+RUN mkdir -p /app/data && chown -R $APP_UID:$APP_UID /app/data
 USER $APP_UID
 ENTRYPOINT ["dotnet", "MultiAgentServer.dll"]

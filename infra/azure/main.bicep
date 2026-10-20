@@ -38,6 +38,9 @@ param enableBonusSecurity bool = true
 @description('OpenRouter API Key (only injected into ai-mode when enableBonusAi is true)')
 param openRouterApiKey string = ''
 
+@description('OpenRouter Model (only injected into ai-mode when enableBonusAi is true)')
+param openRouterModel string = 'nvidia/nemotron-3.5-lightning:free'
+
 @secure()
 @description('Canvas LMS API Token (injected into shared-backend only)')
 param canvasApiToken string = ''
@@ -902,7 +905,7 @@ resource aiModeApp 'Microsoft.App/containerApps@2023-05-01' = if (enableBonusAi)
           env: [
             { name: 'ASPNETCORE_HTTP_PORTS', value: '5001' }
             { name: 'OPENROUTER_API_KEY', secretRef: 'openrouter-api-key' } // pragma: allowlist secret
-            { name: 'OPENROUTER_MODEL', value: 'openrouter/free' }
+            { name: 'OPENROUTER_MODEL', value: empty(openRouterModel) ? 'nvidia/nemotron-3.5-lightning:free' : openRouterModel }
           ]
         }
       ]

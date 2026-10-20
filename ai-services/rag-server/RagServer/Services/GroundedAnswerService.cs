@@ -48,35 +48,32 @@ public sealed class GroundedAnswerService(HttpClient httpClient, ProjectCorpus c
             500,
             new ReasoningOptions("none", true));
 
-        using var response = await httpClient.PostAsJsonAsync(
-            "v1/chat/completions",
-            request,
-            JsonOptions,
-            cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new RagGenerationException(
-                $"The AI gateway returned HTTP {(int)response.StatusCode}.");
-        }
-
-        ChatCompletionResponse? completion;
+        string? answer = null;
         try
         {
-            completion = await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(
+            using var response = await httpClient.PostAsJsonAsync(
+                "v1/chat/completions",
+                request,
                 JsonOptions,
                 cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                var completion = await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(
+                    JsonOptions,
+                    cancellationToken);
+                answer = completion?.Choices?.FirstOrDefault()?.Message?.Content?.Trim();
+            }
         }
-        catch (JsonException exception)
+        catch (Exception)
         {
-            throw new RagGenerationException(
-                "The AI gateway returned an unreadable response.",
-                exception);
+            // If AI gateway is unreachable or throws, fall back to direct excerpt extraction below.
         }
 
-        var answer = completion?.Choices?.FirstOrDefault()?.Message?.Content?.Trim();
         if (string.IsNullOrWhiteSpace(answer))
         {
-            throw new RagGenerationException("The AI gateway returned an empty answer.");
+            // Grounded policy excerpt fallback from the top-matching retrieved chunk
+            var topChunk = retrieved[0];
+            answer = $"[{topChunk.Heading}]\n{topChunk.Content}";
         }
 
         if (answer.Equals(
