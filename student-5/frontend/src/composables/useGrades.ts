@@ -7,6 +7,7 @@ import {
   type StudentAssignment,
   type McpResponse,
   type RagAnswerResponse,
+  type MultiAgentWorkflow,
 } from '@/api/grades'
 import { CONFIGURED_STUDENT_ID } from '@/config'
 
@@ -168,6 +169,10 @@ export function useGrades() {
     return gradesApi.getRagAnswer(question)
   }
 
+  async function runMultiAgentWorkflow() {
+    return gradesApi.runMultiAgentWorkflow()
+  }
+
   return {
     student,
     courses,
@@ -185,6 +190,7 @@ export function useGrades() {
     generateRecommendation,
     getMcpWeightings,
     getRagAnswer,
+    runMultiAgentWorkflow,
     markFor,
     calculateCourseMark,
     courseStats,

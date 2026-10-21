@@ -40,6 +40,7 @@ app.MapStudentEndpoints();
 app.MapAssignmentEndpoints();
 app.MapStudentAssignmentEndpoints();
 app.MapStudentCourseEndpoints();
+app.MapMultiAgentWorkflowEndpoints();
 
 // Health checks
 app.MapHealthChecks("/health/live");

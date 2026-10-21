@@ -11,6 +11,7 @@ namespace GradesManager.Data
         public DbSet<Student> Students { get; set; } = null!;
         public DbSet<StudentCourse> StudentCourses { get; set; } = null!;
         public DbSet<StudentAssignment> StudentAssignments { get; set; } = null!;
+        public DbSet<MultiAgentWorkflow> MultiAgentWorkflows { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //primary keys
@@ -24,6 +25,8 @@ namespace GradesManager.Data
                 .HasKey(a => a.AssignmentId);
             modelBuilder.Entity<StudentAssignment>()
                 .HasKey(sa => new { sa.StudentId, sa.AssignmentId });
+            modelBuilder.Entity<MultiAgentWorkflow>()
+                .HasKey(w => w.WorkflowId);
 
             //foreign keys
             modelBuilder.Entity<StudentCourse>()

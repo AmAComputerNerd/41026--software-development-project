@@ -370,4 +370,81 @@ public sealed class HttpDatabaseClient : IDatabaseClient
         response.EnsureSuccessStatusCode();
         return true;
     }
+
+    // Multi-Agent Workflows
+    public async Task<MultiAgentWorkflowRecord?> GetMultiAgentWorkflowByStudentAsync(
+        Guid studentId,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync($"/internal/multi-agent-workflows/student/{studentId}", cancellationToken);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            return null;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<MultiAgentWorkflowRecord>(_jsonOptions, cancellationToken);
+    }
+
+    public async Task<MultiAgentWorkflowRecord?> GetMultiAgentWorkflowAsync(
+        Guid workflowId,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync($"/internal/multi-agent-workflows/{workflowId}", cancellationToken);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            return null;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<MultiAgentWorkflowRecord>(_jsonOptions, cancellationToken);
+    }
+
+    public async Task<MultiAgentWorkflowRecord?> CreateMultiAgentWorkflowAsync(
+        CreateMultiAgentWorkflowCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.PostAsJsonAsync("/internal/multi-agent-workflows", command, _jsonOptions, cancellationToken);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            return null;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<MultiAgentWorkflowRecord>(_jsonOptions, cancellationToken);
+    }
+
+    public async Task<MultiAgentWorkflowRecord?> UpdateMultiAgentWorkflowAsync(
+        Guid workflowId,
+        UpdateMultiAgentWorkflowCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.PutAsJsonAsync($"/internal/multi-agent-workflows/{workflowId}", command, _jsonOptions, cancellationToken);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            return null;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<MultiAgentWorkflowRecord>(_jsonOptions, cancellationToken);
+    }
 }

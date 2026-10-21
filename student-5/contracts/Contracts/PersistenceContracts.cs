@@ -127,3 +127,40 @@ public record BulkOperationResult(
     int AffectedCount,
     string? ErrorMessage = null
 );
+
+public record MultiAgentWorkflowRecord(
+    Guid WorkflowId,
+    Guid StudentId,
+    string Goal,
+    string ResultJson,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    int Revision
+);
+
+public record CreateMultiAgentWorkflowCommand(
+    [Required] Guid WorkflowId,
+    [Required] Guid StudentId,
+    [Required] string Goal,
+    [Required] string ResultJson,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    int Revision
+);
+
+public record UpdateMultiAgentWorkflowCommand(
+    [Required] Guid WorkflowId,
+    [Required] Guid StudentId,
+    [Required] string Goal,
+    [Required] string ResultJson,
+    DateTime UpdatedAt,
+    int Revision
+);
+
+public record GetMultiAgentWorkflowByStudentQuery(
+    [Required] Guid StudentId
+);
+
+public record GetMultiAgentWorkflowQuery(
+    [Required] Guid WorkflowId
+);
