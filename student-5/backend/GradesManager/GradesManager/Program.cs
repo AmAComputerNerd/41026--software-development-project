@@ -50,6 +50,16 @@ builder.Services
         options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
         "RagServer:BaseUrl must be an absolute HTTP or HTTPS URL when RAG is enabled.")
     .ValidateOnStart();
+builder.Services
+    .AddOptions<MultiAgentServerOptions>()
+    .Bind(builder.Configuration.GetSection(MultiAgentServerOptions.SectionName))
+    .Validate(
+        options => options.Enabled.HasValue,
+        "MultiAgentServer:Enabled must be configured.")
+    .Validate(
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
+        "MultiAgentServer:BaseUrl must be an absolute HTTP or HTTPS URL when Multi-Agent is enabled.")
+    .ValidateOnStart();
 
 // Notification client
 builder.Services
@@ -108,6 +118,13 @@ builder.Services
         options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(200);
         options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(100);
     });
+builder.Services.AddHttpClient<IMultiAgentClient, MultiAgentClient>((services, client) =>
+{
+    var options = services.GetRequiredService<IOptions<MultiAgentServerOptions>>().Value;
+    if (options.Enabled is true) ConfigureClient(client, options.BaseUrl);
+    // The existing server executes all stages synchronously; never retry workflow writes.
+    client.Timeout = TimeSpan.FromSeconds(60);
+});
 
 var app = builder.Build();
 
@@ -126,6 +143,7 @@ app.MapAssignmentEndpoints();
 app.MapAiEndpoints();
 app.MapMcpIntegrationEndpoints();
 app.MapRagIntegrationEndpoints();
+app.MapMultiAgentIntegrationEndpoints();
 
 app.UseHttpsRedirection();
 
