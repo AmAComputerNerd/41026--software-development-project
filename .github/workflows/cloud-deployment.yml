@@ -307,7 +307,7 @@ jobs:
 
           echo "── Integrations capabilities"
           caps_json=$(curl --fail --silent http://127.0.0.1:5105/api/integrations/capabilities) || fail "GET /api/integrations/capabilities failed"
-          echo "$caps_json" | jq --exit-status '.AiModeEnabled == false and .MultiAgentEnabled == false' || fail "Capabilities contract failed: $caps_json"
+          echo "$caps_json" | jq --exit-status '.aiModeEnabled == false and .multiAgentEnabled == false' || fail "Capabilities contract failed: $caps_json"
 
           echo "Student 5 Cloud Baseline CRUD + AI-Disabled verification passed."
 
