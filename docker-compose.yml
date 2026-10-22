@@ -199,7 +199,8 @@ services:
             ASPNETCORE_ENVIRONMENT: Development
             DatabaseService__BaseUrl: http://student-4-database:8080
             SharedService__BaseUrl: http://shared-backend:8080
-            AiGateway__BaseUrl: http://host.docker.internal:${AI_MODE_HOST_PORT:?Run python tools/setup_env.py}
+            MultiAgentServer__Enabled: ${MULTI_AGENT_ENABLED:?Run python tools/setup_env.py}
+            MultiAgentServer__BaseUrl: http://host.docker.internal:${MULTI_AGENT_HOST_PORT:-5004}
             McpServer__Enabled: ${MCP_ENABLED:?Run python tools/setup_env.py}
             McpServer__BaseUrl: http://host.docker.internal:${MCP_HOST_PORT:?Run python tools/setup_env.py}/mcp
             RagServer__Enabled: ${RAG_ENABLED:?Run python tools/setup_env.py}

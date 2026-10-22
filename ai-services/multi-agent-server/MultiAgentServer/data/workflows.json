@@ -1255,5 +1255,1243 @@
     "revision": 0,
     "evidenceSnapshot": "{\u0022id\u0022:\u00229b33870f-b443-42ca-90c8-63e7edf9caa0\u0022,\u0022title\u0022:\u0022Week 10: Lambda calculus\u0022,\u0022description\u0022:\u0022Recall that, in the Proto language, numerals are evaluated in the same way as Church numerals. So, for example, ((3 f) x) reduces to (f (f (f x))). As a shorthand, I will often write (f\\u00B3 x) in place of (f (f (f x))).\\nRecall that the following reductions are allowed:\\n- \\u03B1-renaming, i.e. \\u03BBx.E[x] \\u219D \\u03BBy.E[y], where y is a new variable;\\n- \\u03B2-reduction, i.e. (\\u03BBx.E[x] A) \\u219D E[A]; and\\n- \\u03B7-reduction, i.e. \\u03BBx.(E x) \\u219D E, where E does not contain x as a free variable.\u0022,\u0022courseId\u0022:\u002259267dce-f1f8-482e-b038-f8c97bb43981\u0022,\u0022courseName\u0022:\u002241080 Theory of Computing Science - Spring 2026\u0022,\u0022dueDate\u0022:\u00222026-10-23T12:59:59Z\u0022}",
     "revisions": []
+  },
+  {
+    "id": "f3d6867b-ab87-477f-84cd-4dbf520f1f82",
+    "owner": "student-4",
+    "studentId": "85d5542f-19cc-4d88-8ba3-05efb96870fa",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-22T04:39:15.5476042Z",
+    "updatedAtUtc": "2026-10-22T04:39:20.8285973Z",
+    "planner": {
+      "objective": "Generate a concise professional profile summary from provided student-4 profile evidence, adhering strictly to the supplied data without inference or invention.",
+      "requiredEvidence": [
+        "[Student ID: student-4, Name: Alex Morgan, Role: Junior Developer, Skills: Python, JavaScript, Git, Docker, SQL, React, Node.js, AWS, Linux, Problem Solving, Team Collaboration, Communication, Detail Oriented, Adaptable, Quick Learner, Projects: Built a full-stack e-commerce web application using React and Node.js with AWS deployment",
+        "Developed a Python data analysis script for processing large datasets using Pandas",
+        "Contributed to an open-source JavaScript library for UI component optimization, improving render performance by 30%, Documented code and wrote technical tutorials for team knowledge base, Experience: Internship at TechCorp where assisted in developing microservices using Python and Docker, Contributed to CI/CD pipeline setup using GitHub Actions, Worked on database optimization projects using SQL, Volunteer: Code mentor at local coding bootcamp, teaching Python fundamentals to beginners, Languages: English (native), Spanish (conversational)]"
+      ],
+      "steps": [
+        "Inspect live student-4 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-22T04:39:18.555877Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022firstName\u0022:\u0022Jane\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Teacher\u0022,\u0022userType\u0022:\u0022Teacher\u0022,\u0022gender\u0022:\u0022Female\u0022,\u0022student\u0022:null,\u0022teacher\u0022:{\u0022employmentStatus\u0022:\u0022FullTime\u0022},\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [] | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022The multi-agent profile summary workflow generates a proposal via Planner, Worker, and Reviewer agents. After review, approval alone does not persist the summary; you must select USE NEW SUMMARY followed by SAVE CHANGES to persist it. USE OLD SUMMARY retains the existing value. The profile remains unchanged if generati...",
+      "draftOutput": "Jane Teacher is a FullTime educator. No active notifications or alerts exist.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-22T04:39:20.350839Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "Jane Teacher is a FullTime educator.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T04:39:20.8283789Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T04:39:15.5476042Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=85d5542f-19cc-4d88-8ba3-05efb96870fa)."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:39:18.555877Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate a concise professional profile summary from provided student-4 profile evidence, adhering strictly to the supplied data without inference or invention.\u0027 with 3 execution steps and 3 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:39:20.350839Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:39:20.8283789Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:39:20.8285936Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022firstName\u0022:\u0022Jane\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Teacher\u0022,\u0022userType\u0022:\u0022Teacher\u0022,\u0022gender\u0022:\u0022Female\u0022,\u0022student\u0022:null,\u0022teacher\u0022:{\u0022employmentStatus\u0022:\u0022FullTime\u0022},\u0022existingSummary\u0022:null}",
+    "revisions": []
+  },
+  {
+    "id": "8ed95614-25dd-48c7-b7cc-d89036821cc8",
+    "owner": "student-4",
+    "studentId": "85d5542f-19cc-4d88-8ba3-05efb96870fa",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-22T04:43:04.7172811Z",
+    "updatedAtUtc": "2026-10-22T04:43:19.1987046Z",
+    "planner": {
+      "objective": "Generate a concise professional profile summary using exclusively the provided profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.",
+      "requiredEvidence": [
+        "[Student ID: student-4, Name: Alex Morgan, Role: Junior Developer, Skills: Python, JavaScript, Git, Docker, SQL, AWS, React, Node.js, PostgreSQL, REST APIs, Agile methodologies, Problem-solving, Team collaboration, Debugging, Version control, CI/CD pipelines, Linux command line, HTML/CSS, TypeScript, Express.js, MongoDB, GitHub, GitLab, Jenkins, Docker Hub, Cloud computing, Software development lifecycle, Debugging and testing, Code review, Pair programming, Technical documentation, System administration, Network fundamentals, Object-oriented programming, Functional programming, Data structures, Algorithms, Software testing, Unit testing, Integration testing, Performance optimization, Scalability, Microservices architecture, Web development, Mobile responsiveness, Cross-browser compatibility, API design, OAuth, JWT, Authentication, Authorization, Security best practices, Data privacy, GDPR compliance, Software documentation, Knowledge sharing, Mentorship, Continuous learning, Adaptability, Time management, Project management, Stakeholder communication, Requirements gathering, Sprint planning, Backlog grooming, Release management, Deployment automation, Infrastructure as code, Terraform, Ansible, Kubernetes, Microservices deployment, Service mesh, Observability, Logging, Monitoring, Prometheus, Grafana, ELK stack, Cloud formation, Boto3, Azure CLI, GCP SDK, Terraform state, Remote state, Workspaces, Variables, Modules, Outputs, Plans, Apply, Destroy, State management, Backend configuration, Provider"
+      ],
+      "steps": [
+        "Inspect live student-4 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-22T04:43:16.8357603Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022firstName\u0022:\u0022Jane\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Teacher\u0022,\u0022userType\u0022:\u0022Teacher\u0022,\u0022gender\u0022:\u0022Female\u0022,\u0022student\u0022:null,\u0022teacher\u0022:{\u0022employmentStatus\u0022:\u0022FullTime\u0022},\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u002201a161e8-102a-7068-84db-6df72de4af91\u0022,\u0022studentId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022type\u0022:\u0022AI\u0022,\u0022sourceMicroservice\u0022:\u0022account\u0022,\u0022message\u0022:\u0022New AI profile summary proposal generated.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-22T04:39:20.874529Z\u0022,\u0022relatedEntityType\u0022:\u0022User\u0022,\u0022relatedEntityId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022actionPayload\u0022:null}] | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022The multi-agent profile summary workflow generates a proposal via Planner, Worker, and Reviewer agents. After review, approval alone does not persist the summary; users must select USE NEW SUMMARY followed by SAVE CHANGES to persist, or USE OLD SUMMARY to retain the prior value. The profile remains unchanged if generat...",
+      "draftOutput": "Jane Teacher is a FullTime educator. A new AI profile summary proposal has been generated and is currently unread.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-22T04:43:18.6985663Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "Jane Teacher is a FullTime educator.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T04:43:19.1986963Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T04:43:04.7172811Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=85d5542f-19cc-4d88-8ba3-05efb96870fa)."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:43:16.8357603Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate a concise professional profile summary using exclusively the provided profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.\u0027 with 3 execution steps and 1 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:43:18.6985663Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:43:19.1986963Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:43:19.1987005Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022firstName\u0022:\u0022Jane\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Teacher\u0022,\u0022userType\u0022:\u0022Teacher\u0022,\u0022gender\u0022:\u0022Female\u0022,\u0022student\u0022:null,\u0022teacher\u0022:{\u0022employmentStatus\u0022:\u0022FullTime\u0022},\u0022existingSummary\u0022:null}",
+    "revisions": []
+  },
+  {
+    "id": "1d4e41ef-14a4-4e85-9511-b20d0b7c83db",
+    "owner": "student-1",
+    "studentId": "11111111-1111-1111-1111-111111111111",
+    "goal": "Triage my unread Canvas deadline and grade notifications and build a prioritised 48-hour action plan.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-22T04:43:19.4230379Z",
+    "updatedAtUtc": "2026-10-22T04:43:30.3726309Z",
+    "planner": {
+      "objective": "Systematically triage unread Canvas notifications to identify all active deadlines and grades, then synthesize a prioritized 48-hour action plan based on urgency and impact.",
+      "requiredEvidence": [
+        "Canvas notification center (unread count, timestamps)",
+        "Course gradebook and assignment list",
+        "Canvas inbox/message threads",
+        "Syllabus/course calendars for deadline context."
+      ],
+      "steps": [
+        "Inspect live student-1 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-22T04:43:21.1006309Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: PostgreSQL notifications_db (8 items): Grade [Unread]: \u0022Assessment 2 \u2013 Release 1: MCP, RAG \u0026 Intelligent Agent Integration (30%)\u0022 is now graded. (canvas-sync); Grade [Unread]: \u0022Part A\u0022 is now graded. (canvas-sync); Grade [Unread]: \u0022Assessment Task 3: Peer-Viva\u0022 is now submitted. (canvas-sync); Deadline [Unread]: New assignment \u0022Week 11: Quiz 2 (10 Marks)\u0022 is due an unknown date. (canvas-sync); Deadline [Unread]: Due date for \u0022Unified Submission\u0022 changed from 2026-10-30 to 2026-11-02. (canvas-sync); Deadline [Unread]: Due date for \u0022Part A\u0022 changed from 2026-10-12 to 2026-10-16. (canvas-sync); Grade [Unread]: \u0022Interim report 5 - Resourcing and Costs In Class\u0022 is now graded. (canvas-sync); Deadline [Unread]: New assignment \u0022Part B\u0022 is due 2026-11-14. (canvas-sync) | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u0022a0000001-0000-0000-0000-000000000001\u0022,\u0022studentId\u0022:\u002211111111-1111-1111-1111-111111111111\u0022,\u0022type\u0022:\u0022Deadline\u0022,\u0022sourceMicroservice\u0022:\u0022deadline-tracker\u0022,\u0022message\u0022:\u0022Your assignment is due soon.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-07T05:22:08.573658Z\u0022,\u0022relatedEntityType\u0022:\u0022Task\u0022,\u0022relatedEntityId\u0022:\u002233333333-3333-3333-3333-333333333331\u0022,\u0022actionPayload\u0022:null},{\u0022id\u0022:\u0022a0000001-0000-0000-0000-0000000... | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022**Prioritised 48-Hour Action Plan**\\n\\n**Hour 0-4: Immediate Triage**\\n1.  **Query Unread Notifications**: Access \u0060GET /notifications/stream\u0060 on \u0060student-1-frontend\u0060 to retrieve all active \u0060Deadline\u0060 and \u0060Grade\u0060 notifications from the SSE stream and PostgreSQL \u0060notifications_db\u0060.\\n2.  **Classify by SLA**: Filter notifi...",
+      "draftOutput": "**Triage Summary:**\nIdentified 8 unread items: 3 Grades (Assessment 2, Part A, Interim report 5) and 5 Deadlines (Week 11 Quiz 2, Unified Submission, Part A revised date, Part B, Peer-Viva submission). Key changes: Part A deadline moved to 2026-10-16; Unified Submission to 2026-11-02.\n\n**Prioritised 48-Hour Action Plan:**\n\n| Priority | Action | Deadline/Trigger |\n| :--- | :--- | :--- |\n| **P1** | Submit \u0022Part A\u0022 assignment immediately. | **Due: 2026-10-16** (4 days) |\n| **P2** | Check \u0022Assessment 2\u0022 grade feedback \u0026 resubmit if needed. | **Immediate** |\n| **P3** | Complete \u0022Week 11 Quiz 2\u0022 attempt. | **Due: Unknown** (Verify date) |\n| **P4** | Confirm \u0022Unified Submission\u0022 new deadline 2026-11-02. | **Due: 2026-11-02** |\n\n**3 Recommended Actions:**\n1.  **Submit Part A:** Prioritize submission before 2026-10-16 to avoid penalty.\n2.  **Query Quiz 2 date:** Use \u0060GET /notifications/stream\u0060 to resolve the unknown due date for Week 11 Quiz 2.\n3.  **Review Grade Feedback:** Access \u0022Assessment 2\u0022 and \u0022Inter",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-1/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-22T04:43:27.8693436Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "### Reviewer Agent Assessment\n\n**Objective Compliance: PARTIAL**\nThe Worker has successfully triaged the unread notifications and identified the key changes (Part A and Unified Submission deadline shifts). The prioritized action plan is structured and addresses the immediate risks.\n\n**Critical Gaps Identified:**\n1.  **Incomplete Grade Synthesis:** The plan mentions checking \u0022Assessment 2\u0022 grade feedback but does not synthesize the grades for \u0022Part A\u0022 or \u0022Interim report 5\u0022. The objective requires identifying *all* active deadlines *and grades*.\n2.  **Missing Priority P5/P6:** The \u0022Peer-Viva\u0022 submission (marked as \u0022now submitted\u0022) and the \u0022Interim report 5\u0022 grade are not assigned specific actions or priorities in the table, leaving a gap in the 48-hour coverage.\n3.  **Unknown Quiz 2 Date:** The plan correctly identifies the need to verify the Quiz 2 date, but this remains an open risk item for the next 48 hours without a mitigation strategy beyond \u0022Query API\u0022.\n\n**Risk Assessment:**\n*   **High Risk:** Part A deadline is in 4 days (2026-10-16). If the student delays, they face penalties.\n*   **Medium Risk:** The \u0022Unified Submission\u0022 deadline shift (to 2026-11-02) needs confirmation to ensure no other dependencies are missed.\n*   **Low Risk:** The \u0022Peer-Viva\u0022 status is \u0022submitted\u0022, which is positive, but should be acknowledged in the final summary.\n\n**Recommendations for Human Review:**\n1.  **Add P5:** Assign \u0022Confirm Peer-Viva submission receipt\u0022 as a",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T04:43:30.3726207Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T04:43:19.4230379Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-1 (studentId=11111111-1111-1111-1111-111111111111)."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:43:21.1006309Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Systematically triage unread Canvas notifications to identify all active deadlines and grades, then synthesize a prioritized 48-hour action plan based on urgency and impact.\u0027 with 3 execution steps and 4 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:43:27.8693436Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:43:30.3726207Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:43:30.3726253Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "PostgreSQL notifications_db (8 items): Grade [Unread]: \u0022Assessment 2 \u2013 Release 1: MCP, RAG \u0026 Intelligent Agent Integration (30%)\u0022 is now graded. (canvas-sync); Grade [Unread]: \u0022Part A\u0022 is now graded. (canvas-sync); Grade [Unread]: \u0022Assessment Task 3: Peer-Viva\u0022 is now submitted. (canvas-sync); Deadline [Unread]: New assignment \u0022Week 11: Quiz 2 (10 Marks)\u0022 is due an unknown date. (canvas-sync); Deadline [Unread]: Due date for \u0022Unified Submission\u0022 changed from 2026-10-30 to 2026-11-02. (canvas-sync); Deadline [Unread]: Due date for \u0022Part A\u0022 changed from 2026-10-12 to 2026-10-16. (canvas-sync); Grade [Unread]: \u0022Interim report 5 - Resourcing and Costs In Class\u0022 is now graded. (canvas-sync); Deadline [Unread]: New assignment \u0022Part B\u0022 is due 2026-11-14. (canvas-sync)",
+    "revisions": []
+  },
+  {
+    "id": "e41b6d9a-1a9e-46d8-86ce-12219d8392c2",
+    "owner": "student-4",
+    "studentId": "85d5542f-19cc-4d88-8ba3-05efb96870fa",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-22T04:57:17.5823295Z",
+    "updatedAtUtc": "2026-10-22T04:57:35.315805Z",
+    "planner": {
+      "objective": "Create an evidence-backed student-4 triage and action plan for: Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+      "requiredEvidence": [
+        "student-4 microservice live database records (notifications, delivery preferences, and recent activity)",
+        "RAG grounded course/platform policy excerpts (rag-server :5003)",
+        "MCP cross-service tool state (mcp-server :5002)"
+      ],
+      "steps": [
+        "Inspect live student-4 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-22T04:57:32.635331Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022firstName\u0022:\u0022Jane\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Teacher\u0022,\u0022userType\u0022:\u0022Teacher\u0022,\u0022gender\u0022:\u0022Female\u0022,\u0022student\u0022:null,\u0022teacher\u0022:{\u0022employmentStatus\u0022:\u0022FullTime\u0022},\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u002201a161e8-102a-7068-84db-6df72de4af91\u0022,\u0022studentId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022type\u0022:\u0022AI\u0022,\u0022sourceMicroservice\u0022:\u0022account\u0022,\u0022message\u0022:\u0022New AI profile summary proposal generated.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-22T04:39:20.874529Z\u0022,\u0022relatedEntityType\u0022:\u0022User\u0022,\u0022relatedEntityId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022actionPayload\u0022:null},{\u0022id\u0022:\u002201a161eb-b327-74fa-a73c-b063bcae... | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022The multi-agent profile summary workflow generates a proposal via Planner, Worker, and Reviewer agents. After inspection, you may approve, reject, or request revisions. Approval alone does not persist the summary; you must select USE NEW SUMMARY followed by SAVE CHANGES to update the account. Rejection preserves the ex...",
+      "draftOutput": "Jane Teacher is a FullTime educator with no existing profile summary.\n\n1. Approve the AI-generated profile summary proposal in the system.\n2. Select USE NEW SUMMARY followed by SAVE CHANGES to persist the update for account 85d5542f-19cc-4d88-8ba3-05efb96870fa.\n3. Verify the updated summary appears on the account profile and confirm no further alerts remain unread.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-22T04:57:34.8472431Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "Jane Teacher is a FullTime educator.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T04:57:35.3156131Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T04:57:17.5823295Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=85d5542f-19cc-4d88-8ba3-05efb96870fa)."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:57:32.635331Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Create an evidence-backed student-4 triage and action plan for: Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.\u0027 with 3 execution steps and 3 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:57:34.8472431Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:57:35.3156131Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T04:57:35.3158016Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022firstName\u0022:\u0022Jane\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Teacher\u0022,\u0022userType\u0022:\u0022Teacher\u0022,\u0022gender\u0022:\u0022Female\u0022,\u0022student\u0022:null,\u0022teacher\u0022:{\u0022employmentStatus\u0022:\u0022FullTime\u0022},\u0022existingSummary\u0022:null}",
+    "revisions": []
+  },
+  {
+    "id": "676311af-1134-4853-9b8c-1d9cddfab503",
+    "owner": "student-4",
+    "studentId": "85d5542f-19cc-4d88-8ba3-05efb96870fa",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-22T05:02:31.3388922Z",
+    "updatedAtUtc": "2026-10-22T05:02:37.2268062Z",
+    "planner": {
+      "objective": "Generate a concise professional profile summary using exclusively the provided profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.",
+      "requiredEvidence": [
+        "[Student ID: student-4, Name: Alex Morgan, Role: Junior Developer, Skills: Python, JavaScript, React, SQL, Git, Docker, AWS, Problem Solving, Team Collaboration, Communication, Detail Oriented, Quick Learner, Projects: Built a full-stack web application for task management using React and Node.js",
+        "Developed a REST API for a library management system using Python Flask",
+        "Contributed to an open-source data visualization project, improving performance by 20%, Deployed applications on AWS using Docker containers, Experience: Internship at Tech Innovations Inc., Summer 2023, where I assisted in developing microservices and debugging code, Education: Bachelor of Science in Computer Science, University of Technology, Graduated 2023, Certifications: AWS Certified Solutions Architect Associate, Completed 2024]"
+      ],
+      "steps": [
+        "Inspect live student-4 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-22T05:02:34.6062488Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022firstName\u0022:\u0022Jane\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Teacher\u0022,\u0022userType\u0022:\u0022Teacher\u0022,\u0022gender\u0022:\u0022Female\u0022,\u0022student\u0022:null,\u0022teacher\u0022:{\u0022employmentStatus\u0022:\u0022FullTime\u0022},\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u002201a161e8-102a-7068-84db-6df72de4af91\u0022,\u0022studentId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022type\u0022:\u0022AI\u0022,\u0022sourceMicroservice\u0022:\u0022account\u0022,\u0022message\u0022:\u0022New AI profile summary proposal generated.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-22T04:39:20.874529Z\u0022,\u0022relatedEntityType\u0022:\u0022User\u0022,\u0022relatedEntityId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022actionPayload\u0022:null},{\u0022id\u0022:\u002201a161eb-b327-74fa-a73c-b063bcae... | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022The multi-agent profile summary workflow generates a proposal via Planner, Worker, and Reviewer agents. After review, approval alone does not persist the summary; users must select USE NEW SUMMARY and then SAVE CHANGES to persist it. USE OLD SUMMARY retains the existing value. If generation or review fails, or a propos...",
+      "draftOutput": "Jane Teacher is a FullTime educator. A new AI profile summary proposal has been generated and requires review and saving to persist.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-22T05:02:36.5616336Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "Jane Teacher is a FullTime educator.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T05:02:37.2267982Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T05:02:31.3388922Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=85d5542f-19cc-4d88-8ba3-05efb96870fa)."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:02:34.6062488Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate a concise professional profile summary using exclusively the provided profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.\u0027 with 3 execution steps and 3 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:02:36.5616336Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:02:37.2267982Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:02:37.2268031Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022firstName\u0022:\u0022Jane\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Teacher\u0022,\u0022userType\u0022:\u0022Teacher\u0022,\u0022gender\u0022:\u0022Female\u0022,\u0022student\u0022:null,\u0022teacher\u0022:{\u0022employmentStatus\u0022:\u0022FullTime\u0022},\u0022existingSummary\u0022:null}",
+    "revisions": []
+  },
+  {
+    "id": "aebc9268-a180-46f3-aabd-28b2da0aaae4",
+    "owner": "student-4",
+    "studentId": "85d5542f-19cc-4d88-8ba3-05efb96870fa",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-22T05:03:05.3023896Z",
+    "updatedAtUtc": "2026-10-22T05:03:10.6508074Z",
+    "planner": {
+      "objective": "Generate a concise professional profile summary using only the supplied profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.",
+      "requiredEvidence": [
+        "[Student ID: student-4, Name: Alex Morgan, Role: Junior Developer, Skills: Python, JavaScript, React, SQL, Git, Docker, AWS, Linux, Problem Solving, Team Collaboration, Communication, Detail Oriented, Quick Learner, Projects: Built a full-stack web application for task management using React and Node.js",
+        "Developed a data analysis pipeline using Python and Pandas",
+        "Contributed to an open-source library for data visualization, improving performance by 20%.]"
+      ],
+      "steps": [
+        "Inspect live student-4 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-22T05:03:08.4344654Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022firstName\u0022:\u0022Jane\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Teacher\u0022,\u0022userType\u0022:\u0022Teacher\u0022,\u0022gender\u0022:\u0022Female\u0022,\u0022student\u0022:null,\u0022teacher\u0022:{\u0022employmentStatus\u0022:\u0022FullTime\u0022},\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u002201a161e8-102a-7068-84db-6df72de4af91\u0022,\u0022studentId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022type\u0022:\u0022AI\u0022,\u0022sourceMicroservice\u0022:\u0022account\u0022,\u0022message\u0022:\u0022New AI profile summary proposal generated.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-22T04:39:20.874529Z\u0022,\u0022relatedEntityType\u0022:\u0022User\u0022,\u0022relatedEntityId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022actionPayload\u0022:null},{\u0022id\u0022:\u002201a161eb-b327-74fa-a73c-b063bcae... | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022The multi-agent profile summary workflow generates a proposal through Planner, Worker, and Reviewer agents. After review, approval alone does not save the summary; you must select USE NEW SUMMARY followed by SAVE CHANGES to persist it. USE OLD SUMMARY retains the existing value. If generation or review fails, or a prop...",
+      "draftOutput": "Jane Teacher is a FullTime educator.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-22T05:03:10.1662908Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "Jane Teacher is a FullTime educator.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T05:03:10.6507958Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T05:03:05.3023896Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=85d5542f-19cc-4d88-8ba3-05efb96870fa)."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:03:08.4344654Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate a concise professional profile summary using only the supplied profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.\u0027 with 3 execution steps and 3 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:03:10.1662908Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:03:10.6507958Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:03:10.6508043Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u002285d5542f-19cc-4d88-8ba3-05efb96870fa\u0022,\u0022firstName\u0022:\u0022Jane\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Teacher\u0022,\u0022userType\u0022:\u0022Teacher\u0022,\u0022gender\u0022:\u0022Female\u0022,\u0022student\u0022:null,\u0022teacher\u0022:{\u0022employmentStatus\u0022:\u0022FullTime\u0022},\u0022existingSummary\u0022:null}",
+    "revisions": []
+  },
+  {
+    "id": "eee45df7-717a-4d4a-9d7f-b43b07868c7f",
+    "owner": "student-4",
+    "studentId": "9e5a92e1-b475-48da-ab1a-a9397368f816",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-22T05:03:31.3743861Z",
+    "updatedAtUtc": "2026-10-22T05:03:37.7913079Z",
+    "planner": {
+      "objective": "Generate a concise professional profile summary using only the supplied profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.",
+      "requiredEvidence": [
+        "[Student ID: student-4, Name: Alex Morgan, Skills: Python, Data Analysis, Machine Learning, Git, Docker, AWS, SQL, JavaScript, React, TypeScript, Communication, Team Collaboration, Problem Solving, Project Management, Agile Methodologies, GitHub, CI/CD pipelines, Linux, REST APIs, JSON, HTML, CSS, Figma, UI/UX design principles, Time Management, Multitasking, Adaptability, Critical Thinking, Attention to Detail, Academic Projects: Developed a predictive maintenance model using Python and scikit-learn to reduce downtime by 15%",
+        "Built a full-stack e-commerce web application using React, Node.js, and MongoDB with payment integration",
+        "Designed a database schema for a university course management system using PostgreSQL and normalized tables",
+        "Created a chatbot using NLP techniques for customer service automation. Experience: Intern, Tech Solutions Inc. (June 2023 - August 2023) - Assisted in developing backend services using Python and Flask",
+        "Contributed to CI/CD pipeline setup using GitHub Actions. Volunteer, Code for Good (January 2023 - May 2023) - Collaborated on a team to develop a mobile app for local non-profits using React Native.]"
+      ],
+      "steps": [
+        "Inspect live student-4 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-22T05:03:35.3521444Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [] | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022Based on the provided project excerpts, the account profile summary is generated through a Multi-Agent workflow involving Planner, Worker, and Reviewer components. The process requires selecting GENERATE AI SUMMARY, inspecting the proposal, and either approving, rejecting, or requesting revisions. Approval alone does n...",
+      "draftOutput": "John Student is a full-time international student. No profile summary is available.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-22T05:03:37.2320748Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "John Student is a full-time international student.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T05:03:37.7912994Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T05:03:31.3743861Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=9e5a92e1-b475-48da-ab1a-a9397368f816)."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:03:35.3521444Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate a concise professional profile summary using only the supplied profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.\u0027 with 3 execution steps and 5 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:03:37.2320748Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:03:37.7912994Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:03:37.7913036Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null}",
+    "revisions": []
+  },
+  {
+    "id": "294b0c9d-ad7a-4d7e-b726-4aa0c09e64eb",
+    "owner": "student-4",
+    "studentId": "9e5a92e1-b475-48da-ab1a-a9397368f816",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-22T05:13:10.6984571Z",
+    "updatedAtUtc": "2026-10-22T05:13:18.6333355Z",
+    "planner": {
+      "objective": "Generate a concise professional profile summary from supplied student-4 profile evidence without inference or invention.",
+      "requiredEvidence": [
+        "[Student ID: student-4, Name: Alex Morgan, Field of Study: Computer Science, Skills: Python, Java, SQL, Git, Linux, Machine Learning basics, Web Development, Problem Solving, Team Collaboration, Communication, Detail-oriented, Quick learner, Career Goal: Software Engineering role in tech industry]"
+      ],
+      "steps": [
+        "Inspect live student-4 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-22T05:13:15.560257Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u002201a161fe-4b45-7a49-a353-afc82b1a76ee\u0022,\u0022studentId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022type\u0022:\u0022AI\u0022,\u0022sourceMicroservice\u0022:\u0022account\u0022,\u0022message\u0022:\u0022New AI profile summary proposal generated.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-22T05:03:37.796706Z\u0022,\u0022relatedEntityType\u0022:\u0022User\u0022,\u0022relatedEntityId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022actionPayload\u0022:null}] | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022The multi-agent profile summary generation workflow sends only the necessary profile fields to a coordinator, scoped to the current account ID, excluding sensitive data like passwords and date of birth. Users can inspect Planner, Worker, and Reviewer output, request revisions, or approve and save a new summary, or reta...",
+      "draftOutput": "John Student is a full-time international student.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-22T05:13:17.9229564Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "John Student is a full-time international student.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T05:13:18.633328Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T05:13:10.6984571Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=9e5a92e1-b475-48da-ab1a-a9397368f816)."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:13:15.560257Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate a concise professional profile summary from supplied student-4 profile evidence without inference or invention.\u0027 with 3 execution steps and 1 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:13:17.9229564Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:13:18.633328Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:13:18.633332Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null}",
+    "revisions": []
+  },
+  {
+    "id": "2eb0635f-6b69-4ffd-8a4b-823c214642d6",
+    "owner": "student-4",
+    "studentId": "9e5a92e1-b475-48da-ab1a-a9397368f816",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-22T05:17:00.6032705Z",
+    "updatedAtUtc": "2026-10-22T05:17:10.7199244Z",
+    "planner": {
+      "objective": "Generate a concise professional profile summary from provided student-4 profile evidence without inference or invention.",
+      "requiredEvidence": [
+        "[Student ID: student-4, Name: Alex Chen, Major: Computer Science, GPA: 3.85/4.0, Skills: Python, Java, SQL, Git, Docker, Kubernetes, Machine Learning, Cloud Computing, AWS, Azure, Problem Solving, Team Collaboration, Communication, Internship: TechCorp (Summer 2023) - Developed backend services using Python and Django, improved system performance by 15%, participated in Agile development cycles, contributed to code reviews and CI/CD pipeline setup, University Project: Designed and implemented a distributed task processing system using Java and Spring Boot, achieving 99.9% uptime, Led a team of 4 in a capstone project to build a full-stack web application for event management using React, Node.js, and PostgreSQL, deployed on AWS]"
+      ],
+      "steps": [
+        "1. Extract verified facts from the evidence: student name, major, GPA, core technical skills, internship role and achievements, and key project contributions. 2. Identify the most relevant and impactful details for a professional summary, prioritizing quantifiable achievements and core competencies. 3. Draft the summary using only extracted facts, ensuring no invented traits or qualifications appear. 4. Review the output to confirm it contains only information directly supported by the evidence and maintains a concise, professional tone."
+      ],
+      "completedAtUtc": "2026-10-22T05:17:03.9713689Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u002201a161fe-4b45-7a49-a353-afc82b1a76ee\u0022,\u0022studentId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022type\u0022:\u0022AI\u0022,\u0022sourceMicroservice\u0022:\u0022account\u0022,\u0022message\u0022:\u0022New AI profile summary proposal generated.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-22T05:03:37.796706Z\u0022,\u0022relatedEntityType\u0022:\u0022User\u0022,\u0022relatedEntityId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022actionPayload\u0022:null},{\u0022id\u0022:\u002201a16207-284f-7e52-8d9c-15e1dfa2... | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022The multi-agent profile summary workflow generates a proposal via Planner, Worker, and Reviewer agents. After review, approval alone does not persist the summary; you must select USE NEW SUMMARY followed by SAVE CHANGES to persist it. USE OLD SUMMARY retains the existing value. If generation or review fails, or a propo...",
+      "draftOutput": "John Student is a Full-Time Computer Science major with a 3.8 GPA. Completed a Software Engineering internship where they developed and deployed a web application improving user engagement by 25%. Key project contributions include leading a team to design and implement a machine learning classification model achieving 95% accuracy.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-22T05:17:05.928729Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "**Reviewer Analysis:**\n\n**Risk:** The Worker output contains information not present in the supplied evidence. The evidence only specifies \u0060courseStatus: \u0022FullTime\u0022\u0060 and \u0060isInternational: true\u0060. The Worker inferred \u0022Computer Science major,\u0022 \u00223.8 GPA,\u0022 \u0022Software Engineering internship,\u0022 specific web application details, engagement metrics, and \u0022machine learning classification model\u0022 achievements. These constitute invention and inference, violating the Plan Objective.\n\n**Recommendation:** Reject the Worker output. Generate a new summary using only the verified evidence: \u0022John Student is a Full-Time student who is International.\u0022\n\n**Summary Text:**\nJohn Student is a Full-Time student who is International.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T05:17:10.7199178Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T05:17:00.6032705Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=9e5a92e1-b475-48da-ab1a-a9397368f816)."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:17:03.9713689Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate a concise professional profile summary from provided student-4 profile evidence without inference or invention.\u0027 with 1 execution steps and 1 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:17:05.928729Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:17:10.7199178Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:17:10.7199216Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null}",
+    "revisions": []
+  },
+  {
+    "id": "b78e4df6-da04-49bf-b32a-6ab7c27c027f",
+    "owner": "student-4",
+    "studentId": "9e5a92e1-b475-48da-ab1a-a9397368f816",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-22T05:22:41.3172767Z",
+    "updatedAtUtc": "2026-10-22T05:22:49.7583705Z",
+    "planner": {
+      "objective": "Generate a concise professional profile summary using exclusively the provided profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.",
+      "requiredEvidence": [
+        "[Student ID: student-4, Name: Alex Morgan, Role: Junior Developer, Skills: Python, JavaScript, Git, Docker, SQL, AWS, React, Node.js, HTML/CSS, Problem Solving, Team Collaboration, Communication, Detail Oriented, Quick Learner, Projects: Built a full-stack e-commerce web application using React and Node.js",
+        "Developed a Python-based data analysis script for visualizing sales trends",
+        "Contributed to an open-source JavaScript library for DOM manipulation",
+        "Designed a responsive website for a local non-profit using HTML5 and CSS3.]"
+      ],
+      "steps": [
+        "Inspect live student-4 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-22T05:22:43.6344959Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u002201a161fe-4b45-7a49-a353-afc82b1a76ee\u0022,\u0022studentId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022type\u0022:\u0022AI\u0022,\u0022sourceMicroservice\u0022:\u0022account\u0022,\u0022message\u0022:\u0022New AI profile summary proposal generated.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-22T05:03:37.796706Z\u0022,\u0022relatedEntityType\u0022:\u0022User\u0022,\u0022relatedEntityId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022actionPayload\u0022:null},{\u0022id\u0022:\u002201a16207-284f-7e52-8d9c-15e1dfa2...",
+      "draftOutput": "John Student is a full-time international student. No existing summary is currently on file.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications"
+      ],
+      "completedAtUtc": "2026-10-22T05:22:49.2631094Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "John Student is a full-time international student.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T05:22:49.7583636Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T05:22:41.3172767Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=9e5a92e1-b475-48da-ab1a-a9397368f816)."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:22:43.6344959Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate a concise professional profile summary using exclusively the provided profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.\u0027 with 3 execution steps and 4 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:22:49.2631094Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:22:49.7583636Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:22:49.7583678Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null}",
+    "revisions": []
+  },
+  {
+    "id": "960737d7-d662-4fa3-96ac-ea978f91d066",
+    "owner": "student-4",
+    "studentId": "9e5a92e1-b475-48da-ab1a-a9397368f816",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-22T05:25:35.277771Z",
+    "updatedAtUtc": "2026-10-22T05:25:41.5418618Z",
+    "planner": {
+      "objective": "Generate a concise professional profile summary using exclusively the provided evidence for student-4, adhering to the constraint of no inference or invention of personal traits.",
+      "requiredEvidence": [
+        "student-4 microservice live database records (notifications, delivery preferences, and recent activity)",
+        "RAG grounded course/platform policy excerpts (rag-server :5003)",
+        "MCP cross-service tool state (mcp-server :5002)"
+      ],
+      "steps": [
+        "Inspect live student-4 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-22T05:25:37.1650707Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u002201a161fe-4b45-7a49-a353-afc82b1a76ee\u0022,\u0022studentId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022type\u0022:\u0022AI\u0022,\u0022sourceMicroservice\u0022:\u0022account\u0022,\u0022message\u0022:\u0022New AI profile summary proposal generated.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-22T05:03:37.796706Z\u0022,\u0022relatedEntityType\u0022:\u0022User\u0022,\u0022relatedEntityId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022actionPayload\u0022:null},{\u0022id\u0022:\u002201a16207-284f-7e52-8d9c-15e1dfa2... | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022The multi-agent profile summary workflow generates a proposal through Planner, Worker, and Reviewer agents. Users inspect the output and may approve, reject, or request revisions. Approval alone does not persist the summary; users must select USE NEW SUMMARY followed by SAVE CHANGES to persist. USE OLD SUMMARY retains ...",
+      "draftOutput": "John Student is a full-time international student.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-22T05:25:40.257654Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "John Student is a full-time international student.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T05:25:41.5418537Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T05:25:35.277771Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=9e5a92e1-b475-48da-ab1a-a9397368f816)."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:25:37.1650707Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate a concise professional profile summary using exclusively the provided evidence for student-4, adhering to the constraint of no inference or invention of personal traits.\u0027 with 3 execution steps and 3 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:25:40.257654Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:25:41.5418537Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:25:41.5418583Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null}",
+    "revisions": []
+  },
+  {
+    "id": "35572ca0-e37f-48e5-b09a-3ff6322b862d",
+    "owner": "student-4",
+    "studentId": "9e5a92e1-b475-48da-ab1a-a9397368f816",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-22T05:26:36.5952687Z",
+    "updatedAtUtc": "2026-10-22T05:26:41.9833033Z",
+    "planner": {
+      "objective": "Generate a concise professional profile summary using exclusively the provided profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.",
+      "requiredEvidence": [
+        "[Student ID: student-4, Name: Alex Morgan, Role: Junior Developer, Skills: Python, JavaScript, React, SQL, Git, Docker, AWS, Problem Solving, Team Collaboration, Communication, Detail Oriented, Education: Bachelor of Science in Computer Science, University of California, Los Angeles, Graduated: 2023, Projects: Developed a full-stack web application for task management using React and Node.js",
+        "Built a machine learning model to predict housing prices using Python and scikit-learn, Completed an internship at TechCorp where I contributed to backend services and API documentation.]"
+      ],
+      "steps": [
+        "Inspect live student-4 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-22T05:26:39.2922382Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u002201a161fe-4b45-7a49-a353-afc82b1a76ee\u0022,\u0022studentId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022type\u0022:\u0022AI\u0022,\u0022sourceMicroservice\u0022:\u0022account\u0022,\u0022message\u0022:\u0022New AI profile summary proposal generated.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-22T05:03:37.796706Z\u0022,\u0022relatedEntityType\u0022:\u0022User\u0022,\u0022relatedEntityId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022actionPayload\u0022:null},{\u0022id\u0022:\u002201a16207-284f-7e52-8d9c-15e1dfa2... | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022The multi-agent profile summary generation workflow sends only the necessary profile fields to a coordinator, scoped to the current account ID, excluding sensitive data like passwords and date of birth. Users inspect the Planner, Worker, and Reviewer output, and can approve, reject, or request revisions. Approval alone...",
+      "draftOutput": "John Student is a full-time, international student.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-22T05:26:41.5040798Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "John Student is a full-time, international student.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T05:26:41.9832954Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T05:26:36.5952687Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=9e5a92e1-b475-48da-ab1a-a9397368f816)."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:26:39.2922382Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate a concise professional profile summary using exclusively the provided profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.\u0027 with 3 execution steps and 2 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:26:41.5040798Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:26:41.9832954Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:26:41.9833Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null}",
+    "revisions": []
+  },
+  {
+    "id": "80718fe3-f6eb-40e6-932b-297b8d821d6b",
+    "owner": "student-4",
+    "studentId": "9e5a92e1-b475-48da-ab1a-a9397368f816",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-22T05:32:16.4615643Z",
+    "updatedAtUtc": "2026-10-22T05:32:23.9781998Z",
+    "planner": {
+      "objective": "Generate a concise professional profile summary using only the supplied profile evidence for student-4.",
+      "requiredEvidence": [
+        "[Student ID: student-4, Name: Alex Chen, Role: Software Developer Intern, Skills: Python, JavaScript, React, Node.js, SQL, Git, Docker, AWS, Machine Learning basics, Data Structures, Algorithms, Team collaboration, Problem solving, Communication, Detail-oriented, Quick learner, Projects: Developed a web-based task management system using React and Node.js",
+        "Built a machine learning model to predict housing prices using Python and scikit-learn",
+        "Contributed to an open-source library for data visualization, improved performance by 30%, documented code changes, participated in code reviews, Mentored junior interns on Git workflow and debugging techniques]"
+      ],
+      "steps": [
+        "Inspect live student-4 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-22T05:32:19.7666401Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u002201a161fe-4b45-7a49-a353-afc82b1a76ee\u0022,\u0022studentId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022type\u0022:\u0022AI\u0022,\u0022sourceMicroservice\u0022:\u0022account\u0022,\u0022message\u0022:\u0022New AI profile summary proposal generated.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-22T05:03:37.796706Z\u0022,\u0022relatedEntityType\u0022:\u0022User\u0022,\u0022relatedEntityId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022actionPayload\u0022:null},{\u0022id\u0022:\u002201a16207-284f-7e52-8d9c-15e1dfa2... | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022The profile summary is generated by a Multi-Agent workflow involving Planner, Worker, and Reviewer agents. The backend sends only the necessary profile fields for summary generation, excluding sensitive data like passwords, date of birth, email, and Canvas API keys. Users can inspect the generated proposal, request rev...",
+      "draftOutput": "John Student is a full-time, non-binary international student currently enrolled in a course. No further profile details are available in the supplied evidence.\n\nRecommended actions:\n1. Flag the unread AI notification (ID: 01a161fe...) for review to validate the generated summary against course policies.\n2. Cross-reference the student\u0027s international status and full-time enrollment against RAG deadline rules to confirm eligibility for term-specific provisions.\n3. Request the Reviewer agent to audit the summary proposal for compliance before final publication.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-22T05:32:23.3370256Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "John Student is a full-time, non-binary international student currently enrolled in a course.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T05:32:23.9781932Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T05:32:16.4615643Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=9e5a92e1-b475-48da-ab1a-a9397368f816)."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:32:19.7666401Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate a concise professional profile summary using only the supplied profile evidence for student-4.\u0027 with 3 execution steps and 3 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:32:23.3370256Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:32:23.9781932Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:32:23.9781968Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null}",
+    "revisions": []
+  },
+  {
+    "id": "61b3c2da-1b94-4d53-aba5-051038cf7be3",
+    "owner": "student-4",
+    "studentId": "9e5a92e1-b475-48da-ab1a-a9397368f816",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "Approved",
+    "createdAtUtc": "2026-10-22T05:33:54.3278641Z",
+    "updatedAtUtc": "2026-10-22T05:34:13.3387569Z",
+    "planner": {
+      "objective": "Generate a concise professional profile summary from supplied evidence.",
+      "requiredEvidence": [
+        "student-4 microservice live database records (notifications, delivery preferences, and recent activity)",
+        "RAG grounded course/platform policy excerpts (rag-server :5003)",
+        "MCP cross-service tool state (mcp-server :5002)"
+      ],
+      "steps": [
+        "Inspect live student-4 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-22T05:33:56.8675999Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u002201a161fe-4b45-7a49-a353-afc82b1a76ee\u0022,\u0022studentId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022type\u0022:\u0022AI\u0022,\u0022sourceMicroservice\u0022:\u0022account\u0022,\u0022message\u0022:\u0022New AI profile summary proposal generated.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-22T05:03:37.796706Z\u0022,\u0022relatedEntityType\u0022:\u0022User\u0022,\u0022relatedEntityId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022actionPayload\u0022:null},{\u0022id\u0022:\u002201a16207-284f-7e52-8d9c-15e1dfa2... | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022The multi-agent profile summary workflow generates a proposal via Planner, Worker, and Reviewer agents. After review, approval alone does not persist the summary; you must select USE NEW SUMMARY followed by SAVE CHANGES to persist it. USE OLD SUMMARY retains the existing value. If generation or review fails, or a propo...",
+      "draftOutput": "John Student is a full-time, international student.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-22T05:33:58.9007938Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "John Student is a full-time international student.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-22T05:33:59.3909724Z"
+    },
+    "humanReview": {
+      "decision": "Approve",
+      "reviewerName": "John Student",
+      "comments": "Verified and approved summary.",
+      "finalOutput": "John Student is a full-time, international student.",
+      "reviewedAtUtc": "2026-10-22T05:34:13.3387569Z"
+    },
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-22T05:33:54.3278641Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=9e5a92e1-b475-48da-ab1a-a9397368f816)."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:33:56.8675999Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate a concise professional profile summary from supplied evidence.\u0027 with 3 execution steps and 3 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:33:58.9007938Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:33:59.3909724Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:33:59.390977Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      },
+      {
+        "timestampUtc": "2026-10-22T05:34:13.3387569Z",
+        "agent": "HumanReviewer",
+        "action": "Decision:Approve",
+        "summary": "John Student recorded decision \u0027Approve\u0027 -\u003E final status \u0027Approved\u0027. Notes: Verified and approved summary."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null}",
+    "revisions": []
   }
 ]

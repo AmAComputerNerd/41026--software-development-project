@@ -93,7 +93,7 @@ flowchart TD
 | **`student-1`** | Bryan Lee | ASP.NET Core + PostgreSQL 16 + Vue 3 | Notifications, delivery preferences, SSE stream, AI digests & chat assistant |
 | **`student-2`** | Isaac Thomas | ASP.NET Core + SQLite + Vue 3 | Automations, scheduled Canvas posts, AI quiz filling, execution runner |
 | **`student-3`** | Jonathon Thomson | ASP.NET Core + SQLite + Vue 3 | Deadlines & task tracking, Canvas sync, AI subtasks, push notifications |
-| **`student-4`** | Tristan Huang | ASP.NET Core + SQLite + Vue 3 | User/role profiles, auth/login, MailHog password reset, AI profile summary |
+| **`student-4`** | Tristan Huang | ASP.NET Core + SQLite + Vue 3 | User/role profiles, auth/login, MailHog password reset, human-reviewed Multi-Agent profile summary |
 | **`student-5`** | William Hannah | ASP.NET Core + SQLite + Vue 3 | Grades calculation, What-If simulator, marks update endpoints |
 | **`mailhog`** | Infrastructure | Go SMTP test container | Local SMTP mock (`1025`) & web mailbox UI (`8025`) for email verification |
 
