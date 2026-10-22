@@ -7,14 +7,16 @@ repos:
     hooks:
       - id: ruff-security
         name: Ruff security rules
-        entry: ruff check --config ruff.toml
+        entry: python tools/run_security_scan.py ruff-security check --config ruff.toml
+        verbose: true
         language: python
         additional_dependencies: [ruff==0.17.0]
         types: [python]
 
       - id: detect-secrets
         name: Detect secrets
-        entry: detect-secrets-hook
+        entry: python tools/run_security_scan.py detect-secrets
+        verbose: true
         language: python
         additional_dependencies: [detect-secrets==1.5.0]
         args:
@@ -25,7 +27,8 @@ repos:
 
       - id: pip-audit
         name: Audit Python dependencies
-        entry: pip-audit --requirement tools/agentic_loop/requirements.txt
+        entry: python tools/run_security_scan.py pip-audit --requirement tools/agentic_loop/requirements.txt
+        verbose: true
         language: python
         additional_dependencies: [pip-audit==2.10.1]
         pass_filenames: false

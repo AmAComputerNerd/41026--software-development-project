@@ -135,6 +135,14 @@ agentic loop's declared Python requirements and their resolved dependencies.
 pip-audit runs on every commit, including commits without Python changes.
 The checks do not modify source files and failures block the commit.
 
+Each scanner that runs automatically saves a timestamped log under
+`.local/security-scans/`, for both commit-time and manual pre-commit runs.
+The terminal prints its log path. Each file includes the scanner name, UTC
+start/end times, combined stdout/stderr, and exit code. Skipped scanners do not
+produce logs. `.local/` is Git-ignored; logs are local-only and are not uploaded.
+Scanner failures retain their exit status, and a logging failure also blocks
+the check rather than silently discarding evidence.
+
 The first installation downloads isolated scanner environments. Dependency
 auditing requires network access to the package index and PyPI vulnerability
 service; it sends package metadata, not application source or credentials.
