@@ -54,3 +54,15 @@ npm run dev --workspace=shared-frontend
 # Build for production (embedded in Nginx container)
 npm run build --workspace=shared-frontend
 ```
+
+### Windows Docker startup
+
+Shell scripts must use LF line endings, enforced by the root `.gitattributes`.
+With CRLF, Linux interprets the `#!/bin/sh` shebang as `/bin/sh\r` and reports
+`40-dynamic-resolver.sh: not found` even though the script exists in the image.
+For an existing checkout, save `40-dynamic-resolver.sh` with LF line endings,
+then rebuild and recreate only the shell from the repository root:
+
+```bash
+docker compose up -d --build --no-deps shared-shell
+```
