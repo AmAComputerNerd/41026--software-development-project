@@ -1,1 +1,4 @@
 graphify-out/graph.json merge=graphify
+
+# Linux shell entrypoints must retain LF on Windows checkouts.
+*.sh text eol=lf
