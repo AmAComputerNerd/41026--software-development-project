@@ -28,8 +28,8 @@ public static partial class AuthEndpoints
         var group = endpoints.MapGroup("/api/auth");
 
         group.MapPost("/login", Login);
-        group.MapPost("/logout", Logout);
-        group.MapGet("/me", GetCurrentUser);
+        group.MapPost("/logout", (Delegate)Logout);
+        group.MapGet("/me", (Delegate)GetCurrentUser);
         group.MapPost("/change-password", ChangePassword);
         group.MapDelete("/delete-account", DeleteAccount);
 
