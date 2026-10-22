@@ -11,6 +11,7 @@ namespace GradesManager.Endpoints
         {
             var group = endpoints.MapGroup("/api/ai");
             group.MapPost("/generate-recommendation", GenerateRecommendation);
+            group.MapPost("/multi-agent", RunMultiAgentWorkflow);
             return endpoints;
         }
 
@@ -46,11 +47,50 @@ namespace GradesManager.Endpoints
 
             return Results.Ok(new GeneratedRecommendationDto(recommendation));
         }
+
+        private static async Task<IResult> RunMultiAgentWorkflow(
+            IDatabaseClient databaseClient,
+            IMultiAgentClient multiAgentClient,
+            ILoggerFactory loggerFactory,
+            CancellationToken cancellationToken)
+        {
+            if (!multiAgentClient.IsEnabled)
+            {
+                return Results.Problem("Multi-Agent integration is disabled.", statusCode: 503);
+            }
+
+            var assignments = await databaseClient.GetAssignmentsAsync(cancellationToken);
+
+            try
+            {
+                var workflow = await multiAgentClient.RunAsync(
+                    (assignments ?? new List<AssignmentRecord>()).ToList(),
+                    cancellationToken);
+                return Results.Ok(workflow);
+            }
+            catch (MultiAgentIntegrationDisabledException)
+            {
+                return Results.Problem("Multi-Agent integration is disabled.", statusCode: 503);
+            }
+            catch (MultiAgentServiceException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Results.NotFound();
+            }
+            catch (Exception ex)
+            {
+                var logger = loggerFactory.CreateLogger("GradesManager.Endpoints.AiEndpoints");
+                AiEndpointsLog.MultiAgentFailed(logger, ex);
+                return Results.Problem("The Multi-Agent service returned an error.", statusCode: 502);
+            }
+        }
     }
 
     internal static partial class AiEndpointsLog
     {
         [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to push notification for AI grade recommendation.")]
         public static partial void PushNotificationFailed(ILogger logger, Exception ex);
+
+        [LoggerMessage(Level = LogLevel.Error, Message = "Multi-Agent workflow execution failed.")]
+        public static partial void MultiAgentFailed(ILogger logger, Exception ex);
     }
 }

@@ -70,6 +70,88 @@ export interface RagAnswerResponse {
   retrieval: RagRetrievalSummary
 }
 
+export interface MultiAgentPlanner {
+  objective: string
+  requiredEvidence: string[]
+  steps: string[]
+  completedAtUtc: string
+}
+
+export interface MultiAgentWorker {
+  evidenceSummary: string
+  draftOutput: string
+  recommendedActions: string[]
+  citations: string[]
+  completedAtUtc: string
+}
+
+export interface MultiAgentReviewer {
+  verdict: string
+  confidence: string
+  critique: string
+  identifiedRisks: string[]
+  recommendations: string[]
+  completedAtUtc: string
+}
+
+export interface MultiAgentHumanReview {
+  decision: string
+  reviewerName: string
+  comments: string
+  finalOutput: string
+  reviewedAtUtc: string
+}
+
+export interface MultiAgentAuditEntry {
+  timestampUtc: string
+  agent: string
+  action: string
+  summary: string
+}
+
+export interface MultiAgentRevision {
+  revision: number
+  requestId: string
+  reviewerName: string
+  feedback: string
+  requestedAtUtc: string
+  planner: MultiAgentPlanner
+  worker: MultiAgentWorker
+  reviewer: MultiAgentReviewer
+}
+
+export interface MultiAgentWorkflow {
+  id: string
+  owner: string
+  studentId: string
+  goal: string
+  status: string
+  createdAtUtc: string
+  updatedAtUtc: string
+  planner: MultiAgentPlanner
+  worker: MultiAgentWorker
+  reviewer: MultiAgentReviewer
+  humanReview: MultiAgentHumanReview | null
+  auditLog: MultiAgentAuditEntry[]
+  revision: number
+  revisions: MultiAgentRevision[] | null
+}
+
+export interface MultiAgentReviewRequest {
+  decision: string
+  reviewerName: string
+  comments: string
+  correctedOutput?: string
+  expectedRevision?: number
+}
+
+export interface MultiAgentRevisionRequest {
+  requestId: string
+  expectedRevision: number
+  reviewerName: string
+  feedback: string
+}
+
 const API_BASE = (import.meta.env.VITE_GRADES_API_BASE_URL || '/api/grades').replace(/\/$/, '')
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -136,5 +218,9 @@ export const gradesApi = {
     request<RagAnswerResponse>('/api/integrations/rag/answers', {
       method: 'POST',
       body: JSON.stringify({ question }),
+    }),
+  runMultiAgentWorkflow: () =>
+    request<MultiAgentWorkflow>('/api/ai/multi-agent', {
+      method: 'POST',
     }),
 }

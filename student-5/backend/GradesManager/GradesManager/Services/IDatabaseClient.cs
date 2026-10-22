@@ -93,4 +93,22 @@ public interface IDatabaseClient
         Guid studentId,
         Guid assignmentId,
         CancellationToken cancellationToken = default);
+
+    // Multi-Agent Workflows
+    Task<MultiAgentWorkflowRecord?> GetMultiAgentWorkflowByStudentAsync(
+        Guid studentId,
+        CancellationToken cancellationToken = default);
+
+    Task<MultiAgentWorkflowRecord?> GetMultiAgentWorkflowAsync(
+        Guid workflowId,
+        CancellationToken cancellationToken = default);
+
+    Task<MultiAgentWorkflowRecord?> CreateMultiAgentWorkflowAsync(
+        CreateMultiAgentWorkflowCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<MultiAgentWorkflowRecord?> UpdateMultiAgentWorkflowAsync(
+        Guid workflowId,
+        UpdateMultiAgentWorkflowCommand command,
+        CancellationToken cancellationToken = default);
 }

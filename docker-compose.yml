@@ -291,6 +291,8 @@ services:
             McpServer__BaseUrl: http://host.docker.internal:${MCP_HOST_PORT:?Run python tools/setup_env.py}/mcp
             RagServer__Enabled: ${RAG_ENABLED:?Run python tools/setup_env.py}
             RagServer__BaseUrl: http://host.docker.internal:${RAG_HOST_PORT:?Run python tools/setup_env.py}
+            MultiAgentServer__Enabled: ${MULTI_AGENT_ENABLED:-false}
+            MultiAgentServer__BaseUrl: http://host.docker.internal:${MULTI_AGENT_HOST_PORT:-5004}
         extra_hosts:
             - "host.docker.internal:host-gateway"
         networks:
