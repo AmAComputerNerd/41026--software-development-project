@@ -240,7 +240,7 @@ jobs:
           DATABASE_PID=$!
           (
             cd student-5/backend/GradesManager/GradesManager
-            exec dotnet bin/Release/net10.0/Api.dll
+            exec dotnet bin/Release/net10.0/GradesManager.dll
           ) > "$RUNNER_TEMP/student-5-cloud-api.log" 2>&1 &
           API_PID=$!
           trap 'kill "$API_PID" "$DATABASE_PID" 2>/dev/null || true; wait "$API_PID" "$DATABASE_PID" 2>/dev/null || true' EXIT
@@ -259,13 +259,13 @@ jobs:
           fi
 
           curl -fsS http://127.0.0.1:5105/health/ready | grep -q "Healthy"
-          curl -fsS http://127.0.0.1:5105/api/marks/ | grep -q '\['
-          curl -fsS -X POST http://127.0.0.1:5105/api/marks/ \
+          curl -fsS http://127.0.0.1:5105/api/assignment/marks/ | grep -q '\['
+          curl -fsS -X POST http://127.0.0.1:5105/api/assignment/marks/ \
             -H "Content-Type: application/json" \
-            -d '{"title":"Cloud baseline task","description":"CRUD works with AI disabled","priority":"Medium"}' \
-            | grep -q '"title":"Cloud baseline task"'
+            -d '{"studentId":"00000000-0000-0000-0000-000000000001","assignmentId":"00000000-0000-0000-0000-000000000001","tempMark":85}' \
+            | grep -q '"tempMark":85'
           curl -fsS http://127.0.0.1:5105/api/integrations/capabilities \
-            | grep -q '"aiModeEnabled":false,"aiBreakdownEnabled":false'
+            | grep -q '"AiModeEnabled":false,"MultiAgentEnabled":false'
           echo "Student 5 Cloud Baseline CRUD + AI-Disabled verification passed."
 
   # ---------------------------------------------------------------------------
