@@ -1,6 +1,8 @@
 using GradesManager.Configuration;
 using GradesManager.Endpoints;
 using GradesManager.Services;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 
@@ -126,6 +128,26 @@ builder.Services.AddHttpClient<IMultiAgentClient, MultiAgentClient>((services, c
     client.Timeout = TimeSpan.FromSeconds(60);
 });
 
+// Health check services
+builder.Services.AddHttpClient(
+    RemoteServiceHealthCheck.DatabaseServiceClientName,
+    (services, client) =>
+    {
+        ConfigureClient(
+            client,
+            services.GetRequiredService<IOptions<DatabaseServiceOptions>>().Value.BaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(3);
+    });
+builder.Services
+    .AddHealthChecks()
+    .AddCheck(
+        "self",
+        () => HealthCheckResult.Healthy(),
+        tags: ["live"])
+    .AddCheck<DatabaseServiceHealthCheck>(
+        "database-service",
+        tags: ["ready"]);
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -144,6 +166,19 @@ app.MapAiEndpoints();
 app.MapMcpIntegrationEndpoints();
 app.MapRagIntegrationEndpoints();
 app.MapMultiAgentIntegrationEndpoints();
+
+app.MapHealthChecks(
+    "/health/live",
+    new HealthCheckOptions
+    {
+        Predicate = registration => registration.Tags.Contains("live")
+    });
+app.MapHealthChecks(
+    "/health/ready",
+    new HealthCheckOptions
+    {
+        Predicate = registration => registration.Tags.Contains("ready")
+    });
 
 app.UseHttpsRedirection();
 
