@@ -19,7 +19,7 @@ on:
       deployment_profile:
         description: 'Cloud deployment profile (bonus-full enables AI Mode; baseline disables AI)'
         required: true
-        default: 'bonus-full'
+        default: 'baseline'
         type: choice
         options:
           - bonus-full
@@ -208,7 +208,7 @@ jobs:
             -d '{"title":"Cloud baseline task","description":"CRUD works with AI disabled","priority":"Medium"}' \
             | grep -q '"title":"Cloud baseline task"'
           curl -fsS http://127.0.0.1:5103/api/integrations/capabilities \
-            | grep -q '"aiModeEnabled":false,"aiBreakdownEnabled":false'
+            | grep -q '"aiModeEnabled":false,"multiAgentEnabled":false'
           echo "Student 3 Cloud Baseline CRUD + AI-Disabled verification passed."
 
       - name: Build Student 5 Backend and Database
