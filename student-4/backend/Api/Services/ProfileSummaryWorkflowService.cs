@@ -4,7 +4,9 @@ using Student4.Contracts;
 
 namespace Api.Services;
 
-public sealed class ProfileSummaryWorkflowService(IMultiAgentClient client)
+public sealed class ProfileSummaryWorkflowService(
+    IMultiAgentClient multiAgentClient,
+    IAiProfileSummaryService aiProfileSummaryService)
 {
     private const string Owner = "student-4";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -15,32 +17,64 @@ public sealed class ProfileSummaryWorkflowService(IMultiAgentClient client)
         TeacherRecord? teacher,
         CancellationToken cancellationToken)
     {
-        var goal = "Create a concise professional profile summary for the account. " +
-            "Use only the supplied profile evidence. Do not infer or invent personal traits, " +
-            "qualifications, or interests. Return only the summary text, with no labels or commentary.";
-        var evidence = JsonSerializer.Serialize(new
+        // Try Multi-Agent first
+        if (multiAgentClient.IsEnabled)
         {
-            accountId = user.Id,
-            user.FirstName,
-            user.MiddleNames,
-            user.LastName,
-            user.UserType,
-            user.Gender,
-            student = student is null ? null : new
+            try
             {
-                student.CourseStatus,
-                student.IsInternational
-            },
-            teacher = teacher is null ? null : new
-            {
-                teacher.EmploymentStatus
-            },
-            existingSummary = user.UserProfile
-        }, JsonOptions);
+                var goal = "Create a concise professional profile summary for the account. " +
+                    "Use only the supplied profile evidence. Do not infer or invent personal traits, " +
+                    "qualifications, or interests. Return only the summary text, with no labels or commentary.";
+                var evidence = JsonSerializer.Serialize(new
+                {
+                    accountId = user.Id,
+                    user.FirstName,
+                    user.MiddleNames,
+                    user.LastName,
+                    user.UserType,
+                    user.Gender,
+                    student = student is null ? null : new
+                    {
+                        student.CourseStatus,
+                        student.IsInternational
+                    },
+                    teacher = teacher is null ? null : new
+                    {
+                        teacher.EmploymentStatus
+                    },
+                    existingSummary = user.UserProfile
+                }, JsonOptions);
 
-        var workflow = await client.RunAsync(user.Id, goal, evidence, cancellationToken);
-        EnsureWorkflow(workflow, user.Id, "AwaitingHumanReview");
-        return new ProfileSummaryProposalDto(workflow, GetDraftSummary(workflow));
+                var workflow = await multiAgentClient.RunAsync(user.Id, goal, evidence, cancellationToken);
+                EnsureWorkflow(workflow, user.Id, "AwaitingHumanReview");
+                return new ProfileSummaryProposalDto(workflow, GetDraftSummary(workflow));
+            }
+            catch (MultiAgentServiceException)
+            {
+                // Fall through to AI Mode fallback
+            }
+        }
+
+        // Fallback to old AI Mode
+        var summary = await aiProfileSummaryService.GenerateSummaryAsync(user, student, teacher, cancellationToken);
+        // Create a minimal workflow-like response for compatibility
+        var fallbackWorkflow = new MultiAgentWorkflowDto(
+            Id: Guid.NewGuid(),
+            Owner: Owner,
+            StudentId: user.Id,
+            Goal: "Create a concise professional profile summary for the account.",
+            Status: "Completed",
+            CreatedAtUtc: DateTime.UtcNow,
+            UpdatedAtUtc: DateTime.UtcNow,
+            Planner: new MultiAgentPlannerDto("Create profile summary", [], [], DateTime.UtcNow),
+            Worker: new MultiAgentWorkerDto(summary, summary, [], [], DateTime.UtcNow),
+            Reviewer: new MultiAgentReviewerDto("Approved", "High", "Fallback to AI Mode", [], [], DateTime.UtcNow),
+            HumanReview: null,
+            AuditLog: [],
+            Revision: 0,
+            Revisions: null
+        );
+        return new ProfileSummaryProposalDto(fallbackWorkflow, summary);
     }
 
     public async Task<ProfileSummaryReviewResultDto?> ReviewAsync(
@@ -58,7 +92,7 @@ public sealed class ProfileSummaryWorkflowService(IMultiAgentClient client)
                 statusCode: System.Net.HttpStatusCode.Conflict);
         }
 
-        var reviewed = await client.ReviewAsync(workflowId, request, cancellationToken);
+        var reviewed = await multiAgentClient.ReviewAsync(workflowId, request, cancellationToken);
         EnsureWorkflow(reviewed, userId, request.Decision == "Approve" ? "Approved" : "Rejected");
         if (reviewed.HumanReview is null || reviewed.HumanReview.Decision != request.Decision)
         {
@@ -86,7 +120,7 @@ public sealed class ProfileSummaryWorkflowService(IMultiAgentClient client)
                 statusCode: System.Net.HttpStatusCode.Conflict);
         }
 
-        var revised = await client.ReviseAsync(workflowId, request, cancellationToken);
+        var revised = await multiAgentClient.ReviseAsync(workflowId, request, cancellationToken);
         EnsureWorkflow(revised, userId, "AwaitingHumanReview");
         if (revised.Revision != request.ExpectedRevision + 1 || revised.HumanReview is not null)
         {
@@ -98,7 +132,7 @@ public sealed class ProfileSummaryWorkflowService(IMultiAgentClient client)
     private async Task<MultiAgentWorkflowDto?> GetOwnedWorkflowAsync(
         Guid userId, Guid workflowId, CancellationToken cancellationToken)
     {
-        var workflow = await client.GetAsync(workflowId, cancellationToken);
+        var workflow = await multiAgentClient.GetAsync(workflowId, cancellationToken);
         return workflow is not null && workflow.Owner == Owner && workflow.StudentId == userId
             ? workflow
             : null;

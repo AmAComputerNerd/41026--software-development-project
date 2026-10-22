@@ -21,19 +21,10 @@ public static class ProfileSummaryEndpoints
         Guid userId,
         IAccountDatabaseClient db,
         ProfileSummaryWorkflowService workflowService,
-        IMultiAgentClient multiAgent,
         INotificationClient notificationClient,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
-        if (!multiAgent.IsEnabled)
-        {
-            return Results.Problem(
-                title: "Multi-Agent Service Disabled",
-                detail: "Multi-Agent profile review is disabled for this environment.",
-                statusCode: StatusCodes.Status503ServiceUnavailable);
-        }
-
         try
         {
             var user = await db.GetUserAsync(userId, cancellationToken);

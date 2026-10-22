@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
+using Polly;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,13 @@ builder.Services
     .Validate(
         options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
         "MultiAgentServer:BaseUrl must be an absolute HTTP or HTTPS URL when Multi-Agent is enabled.")
+    .ValidateOnStart();
+builder.Services
+    .AddOptions<AiGatewayOptions>()
+    .Bind(builder.Configuration.GetSection(AiGatewayOptions.SectionName))
+    .Validate(
+        options => IsAbsoluteHttpUrl(options.BaseUrl),
+        "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL.")
     .ValidateOnStart();
 builder.Services
     .AddOptions<McpServerOptions>()
@@ -129,6 +137,23 @@ builder.Services.AddHttpClient<IMultiAgentClient, MultiAgentClient>((services, c
     if (options.Enabled is true) ConfigureClient(client, options.BaseUrl);
     client.Timeout = TimeSpan.FromSeconds(100);
 });
+
+builder.Services
+    .AddHttpClient<IAiProfileSummaryService, OpenRouterProfileSummaryService>((services, client) =>
+    {
+        var options = services.GetRequiredService<IOptions<AiGatewayOptions>>().Value;
+        ConfigureClient(client, options.BaseUrl);
+    })
+    .AddStandardResilienceHandler(options =>
+    {
+        options.Retry.ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+            .Handle<HttpRequestException>()
+            .HandleResult(r => (int)r.StatusCode >= 500);
+        options.Retry.MaxRetryAttempts = 2;
+        options.Retry.Delay = TimeSpan.FromMilliseconds(500);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(15);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
+    });
 
 builder.Services.AddScoped<ProfileSummaryWorkflowService>();
 
