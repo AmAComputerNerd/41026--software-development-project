@@ -17,22 +17,24 @@ const courses = ref<Course[]>([])
 const loading = ref(false)
 const error = ref('')
 const aiModeEnabled = ref(false)
-const aiBreakdownEnabled = ref(false)
+const multiAgentEnabled = ref(false)
+const aiBreakdownEnabled = computed(() => multiAgentEnabled.value || aiModeEnabled.value)
 const aiModeError = ref('')
 let loaded = false
 
 export function useTasks() {
   async function loadAiMode() {
     aiModeEnabled.value = false
-    aiBreakdownEnabled.value = false
+    multiAgentEnabled.value = false
     aiModeError.value = ''
     try {
       const capabilities = await taskApi.getAiModeCapabilities()
-      if (typeof capabilities.aiModeEnabled !== 'boolean' || typeof capabilities.aiBreakdownEnabled !== 'boolean') {
+      if (typeof capabilities.aiModeEnabled !== 'boolean' ||
+          typeof capabilities.multiAgentEnabled !== 'boolean') {
         throw new Error('The Deadline Tracker API returned invalid AI Mode capabilities.')
       }
       aiModeEnabled.value = capabilities.aiModeEnabled
-      aiBreakdownEnabled.value = capabilities.aiBreakdownEnabled
+      multiAgentEnabled.value = capabilities.multiAgentEnabled
     } catch (reason) {
       aiModeError.value =
         reason instanceof Error ? reason.message : 'Unable to load AI Mode availability.'
@@ -132,7 +134,9 @@ export function useTasks() {
   }
 
   async function generateBreakdown(id: string, input: GenerateTaskBreakdownInput) {
-    return taskApi.generateTaskBreakdown(id, input)
+    const result = await taskApi.generateTaskBreakdown(id, input)
+    if (Array.isArray(result)) tasks.value.push(...result)
+    return result
   }
 
   async function reviewBreakdown(id: string, input: BreakdownReviewInput) {
@@ -159,6 +163,7 @@ export function useTasks() {
     error,
     aiModeEnabled,
     aiBreakdownEnabled,
+    multiAgentEnabled,
     aiModeError,
     loadAiMode,
     load,

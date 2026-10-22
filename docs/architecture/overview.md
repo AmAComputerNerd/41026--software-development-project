@@ -169,6 +169,11 @@ flowchart TD
 - **`student-1` (Notifications)**: Notification management, delivery preferences, SSE stream broker, AI digest generation and conversational assistant (`student-1-database` PostgreSQL 16 on port 5432).
 - **`student-2` (Automations)**: Assignment extension requests, scheduled Canvas posts, AI quiz answering with `ai-mode`, and periodic execution runner.
 - **`student-3` (Deadlines & Tasks)**: Coursework deadlines, subtask hierarchies, Canvas synchronization, AI breakdown planning, and push notifications to `student-1-backend` (`student-3-database` internal SQLite service on `student-3-data`).
+
+  Assignment breakdown prefers Multi-Agent for a proposal with human review.
+  With Multi-Agent disabled and AI Mode enabled it uses `ai-mode` directly and
+  creates subtasks immediately. With both disabled, breakdown is unavailable.
+  An enabled but failing Multi-Agent service does not trigger direct creation.
 - **`student-4` (Account & Authentication)**: User registration, login authentication, MailHog password reset workflows, profile AI summaries (`student-4-database` internal SQLite service on `student-4-data`).
 - **`student-5` (Grades & Progress)**: Marks calculation, target GPA simulation ("what-if" marks), and progress tracking (`student-5-database` internal SQLite service on `student-5-data`).
 

@@ -53,7 +53,7 @@ onMounted(() => load().catch(() => undefined))
 
 function openBreakdown(assignment: TaskItem) {
   if (!aiBreakdownEnabled.value) {
-    actionError.value = 'AI Mode or Multi-Agent is unavailable.'
+    actionError.value = 'AI Mode and Multi-Agent are unavailable.'
     return
   }
 
@@ -157,7 +157,7 @@ async function syncAssignments() {
             class="nb-btn nb-btn--accent nb-ai-breakdown-btn"
             type="button"
             :disabled="!aiBreakdownEnabled"
-            :title="!aiBreakdownEnabled ? 'AI Mode or Multi-Agent is unavailable' : undefined"
+            :title="!aiBreakdownEnabled ? 'AI Mode and Multi-Agent are unavailable' : undefined"
             @click="openBreakdown(assignment)"
           >
             AI breakdown

@@ -17,7 +17,7 @@ import type {
 export const getTasks = () => request<TaskItem[]>('/tasks/')
 export const getCourses = () => request<Course[]>('/courses/')
 export const getAiModeCapabilities = () =>
-  request<{ aiModeEnabled: boolean; aiBreakdownEnabled: boolean }>('/integrations/capabilities', { cache: 'no-store' })
+  request<{ aiModeEnabled: boolean; multiAgentEnabled: boolean }>('/integrations/capabilities', { cache: 'no-store' })
 
 export const createTask = (input: CreateTaskInput) =>
   request<TaskItem>('/tasks/', {
@@ -35,7 +35,7 @@ export const deleteTask = (id: string) =>
   request<void>(`/tasks/${id}`, { method: 'DELETE' })
 
 export const generateTaskBreakdown = (id: string, input: GenerateTaskBreakdownInput) =>
-  request<BreakdownProposal>(`/tasks/${id}/ai-breakdown`, {
+  request<BreakdownProposal | TaskItem[]>(`/tasks/${id}/ai-breakdown`, {
     method: 'POST',
     body: JSON.stringify(input),
   })

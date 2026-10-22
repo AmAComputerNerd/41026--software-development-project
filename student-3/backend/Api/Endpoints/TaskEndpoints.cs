@@ -121,16 +121,18 @@ public static class TaskEndpoints
         IOptions<AiGatewayOptions> options,
         AssignmentBreakdownService breakdown,
         IMultiAgentClient multiAgent,
+        IDatabaseClient database,
+        IAiTaskService aiTaskService,
+        INotificationClient notificationClient,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
-        if (options.Value.Enabled is false)
+        if (!multiAgent.IsEnabled && options.Value.Enabled is not true)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status503ServiceUnavailable,
-                title: "AI Mode is disabled.");
+                title: "AI Mode and Multi-Agent are disabled.");
         }
-        if (!multiAgent.IsEnabled) throw new MultiAgentIntegrationDisabledException();
-
         var prompt = request.Prompt?.Trim();
         if (string.IsNullOrWhiteSpace(prompt) || prompt.Length > 2000)
         {
@@ -143,19 +145,68 @@ public static class TaskEndpoints
                 "`priority` could not be correlated with a valid TaskPriority.");
         }
 
-        var proposal = await breakdown.GenerateAsync(id, request with { Prompt = prompt }, cancellationToken);
-        return proposal is null ? Results.NotFound() : Results.Ok(proposal);
+        if (multiAgent.IsEnabled)
+        {
+            var proposal = await breakdown.GenerateAsync(id, request with { Prompt = prompt }, cancellationToken);
+            return proposal is null ? Results.NotFound() : Results.Ok(proposal);
+        }
+
+        var assignment = await database.GetTaskAsync(id, cancellationToken);
+        if (assignment is null) return Results.NotFound();
+        if (assignment.CanvasIsActive is false || assignment.Status == "Completed")
+        {
+            throw new BreakdownConflictException("This assignment is inactive or completed.");
+        }
+
+        var generatedTasks = await aiTaskService.GenerateSubtasksAsync(
+            new AiTaskContext(
+                assignment.Title,
+                assignment.Description,
+                assignment.CourseName,
+                null,
+                assignment.DueDate),
+            prompt,
+            cancellationToken);
+        var tasks = await database.CreateSubtasksAsync(
+            assignment.Id,
+            new CreateSubtasksCommand(
+                request.Priority,
+                generatedTasks.Select(task => new GeneratedSubtaskRecord(task.Title, task.Description)).ToList()),
+            cancellationToken);
+
+        if (tasks is { Count: > 0 })
+        {
+            try
+            {
+                await notificationClient.PushAsync(
+                    new PushNotificationDto(
+                        StudentId: DemoStudentId,
+                        Type: "Deadline",
+                        SourceMicroservice: "deadlines",
+                        Message: $"{tasks.Count} subtask(s) generated for \"{assignment.Title}\".",
+                        RelatedEntityType: "Task",
+                        RelatedEntityId: assignment.Id),
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                var logger = loggerFactory.CreateLogger("Api.Endpoints.TaskEndpoints");
+                TaskEndpointsLog.PushNotificationFailed(logger, assignment.Id, ex);
+            }
+        }
+
+        return tasks is null
+            ? Results.NotFound()
+            : Results.Created($"/api/tasks/{assignment.Id}", tasks.Select(task => task.ToDto()).ToList());
     }
 
     private static async Task<IResult> ReviewBreakdown(
         Guid id,
         SubmitBreakdownReviewRequestDto request,
-        IOptions<AiGatewayOptions> options,
         IMultiAgentClient multiAgent,
         AssignmentBreakdownService breakdown,
         CancellationToken cancellationToken)
     {
-        if (options.Value.Enabled is not true) throw new AiGatewayConfigurationException("AI Mode is disabled.");
         if (!multiAgent.IsEnabled) throw new MultiAgentIntegrationDisabledException();
         if (request.WorkflowId == Guid.Empty || request.Revision < 0 ||
             string.IsNullOrWhiteSpace(request.ReviewerName) || request.ReviewerName.Length > 100 ||
@@ -170,12 +221,10 @@ public static class TaskEndpoints
     private static async Task<IResult> ReviseBreakdown(
         Guid id,
         ReviseBreakdownRequestDto request,
-        IOptions<AiGatewayOptions> options,
         IMultiAgentClient multiAgent,
         AssignmentBreakdownService breakdown,
         CancellationToken cancellationToken)
     {
-        if (options.Value.Enabled is not true) throw new AiGatewayConfigurationException("AI Mode is disabled.");
         if (!multiAgent.IsEnabled) throw new MultiAgentIntegrationDisabledException();
         if (request.WorkflowId == Guid.Empty || request.RequestId == Guid.Empty || request.Revision < 0 ||
             string.IsNullOrWhiteSpace(request.ReviewerName) || request.ReviewerName.Length > 100 ||

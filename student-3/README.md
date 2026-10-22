@@ -7,23 +7,28 @@ the shared Better Canvas UI kit. Persisted timestamps use `DateTime` normalized
 to UTC. Due dates can be changed or removed explicitly; completing a parent
 task also completes all of its descendants.
 
-AI Breakdown calls the existing shared Multi-Agent Server through the
+When Multi-Agent is enabled, AI Breakdown calls the shared Multi-Agent Server through the
 task-tracker backend. Planner, Worker and Reviewer generate a proposal,
 which the student reviews before any subtasks are created. Assignment prompt
 templates remain editable; assignment and course context comes from the
 private persistence API. Task descriptions still call `ai-mode` and can be drafted
 from a title and the selected course or parent assessment, then edited before
-saving.
+saving. When AI Mode is enabled but Multi-Agent is disabled, breakdown uses
+`ai-mode` directly and immediately creates the generated subtasks, as in the
+original AI Breakdown flow. This path has no proposal review or revision step.
 
 AI description generation and assignment breakdown are enabled by default.
 Set `AI_MODE_ENABLED=false` in the root `.env` and recreate
 `student-3-backend` with `docker compose up -d student-3-backend` to disable
-them. For standalone execution, set `AiGateway__Enabled=false`.
-The frontend reads `aiModeEnabled` from `GET /api/integrations/capabilities`
-and disables/grays out both AI controls when unavailable. Direct calls to the
-generation endpoints return HTTP 503 when disabled; manual task editing,
-CRUD, MCP, and RAG are unaffected. Breakdown additionally requires
-`MULTI_AGENT_ENABLED=true`; description generation does not.
+description generation and direct AI Mode breakdown. For standalone execution,
+set `AiGateway__Enabled=false`. The frontend reads `aiModeEnabled` and
+`multiAgentEnabled` from `GET /api/integrations/capabilities`. Breakdown prefers
+Multi-Agent, falls back to direct AI Mode when Multi-Agent is disabled, and is
+disabled/grayed out only when both flags are false. Description generation
+requires AI Mode alone. Direct calls to disabled endpoints return HTTP 503;
+manual task editing, CRUD, MCP, and RAG are unaffected.
+An enabled but unreachable Multi-Agent server returns an error rather than
+silently switching to direct task creation.
 Reload the frontend after changing the flag.
 
 The **AI ASSIST** button below the page navigation opens a centered dialog.
@@ -82,16 +87,19 @@ output. Real progress events and stronger output contracts remain deferred.
 Workflow writes are not automatically retried; correction retries reuse their
 request ID so they cannot create duplicate revisions.
 
-`POST /api/tasks/{id}/ai-breakdown` now returns a workflow and proposed tasks,
-not created tasks. `POST /api/tasks/{id}/ai-breakdown/review` takes the
+`POST /api/tasks/{id}/ai-breakdown` returns a workflow and proposed tasks (HTTP
+200) when Multi-Agent is enabled, or an array of created tasks (HTTP 201) when
+only AI Mode is enabled. `POST /api/tasks/{id}/ai-breakdown/review` takes the
 workflow ID/current revision, explicit decision, selected task indices/edits,
 reviewer name/comments and a reject flag. It returns the human-reviewed workflow
 and any created tasks. `POST /api/tasks/{id}/ai-breakdown/revise` takes the
 workflow ID/current revision, a request ID, reviewer name and feedback; it
 returns the revised proposal without writing subtasks. Superseded proposals
 cannot be accepted or used to overwrite a newer revision.
-`GET /api/integrations/capabilities` exposes `aiBreakdownEnabled` separately
-from `aiModeEnabled`. Disabled breakdown operations return 503; invalid
+`GET /api/integrations/capabilities` exposes only `aiModeEnabled` and
+`multiAgentEnabled`; the frontend derives breakdown availability from these.
+Generation returns 503 only when both are disabled. Review and revision require
+Multi-Agent, independently of the direct AI Mode flag. Invalid
 structured output/upstream failures return 502; stale/conflicting reviews
 return 409.
 
