@@ -43,7 +43,7 @@ const templates: Template[] = [
   },
 ]
 
-const { generateBreakdown, reviewBreakdown, reviseBreakdown, aiBreakdownEnabled } = useTasks()
+const { generateBreakdown, reviewBreakdown, reviseBreakdown, aiBreakdownEnabled, multiAgentEnabled } = useTasks()
 const selectedTemplateName = ref(templates[0]!.name)
 const prompt = ref('')
 const priority = ref<TaskPriority>('Medium')
@@ -121,7 +121,7 @@ function submit() {
 
 async function createPlan() {
   if (!aiBreakdownEnabled.value) {
-    error.value = 'AI Mode or Multi-Agent is unavailable.'
+    error.value = 'AI Mode and Multi-Agent are unavailable.'
     return
   }
 
@@ -139,8 +139,12 @@ async function createPlan() {
       prompt: prompt.value.trim(),
       priority: priority.value,
     })
-    if (currentRevision !== revision) return
-    setProposal(result)
+    if (Array.isArray(result)) {
+      if (result.length) emit('saved')
+      if (currentRevision === revision) close()
+    } else if (currentRevision === revision) {
+      setProposal(result)
+    }
   } catch (reason) {
     if (currentRevision === revision) {
       error.value = reason instanceof Error ? reason.message : 'Unable to generate this plan.'
@@ -229,7 +233,8 @@ async function requestCorrection() {
       </div>
       <div class="nb-dialog__body">
         <h2 id="breakdown-dialog-title">Break down {{ assignment?.title }}</h2>
-        <p>Review the agents' proposed sub-tasks, then accept, partially accept, request corrections or reject.</p>
+        <p v-if="multiAgentEnabled">Review the agents' proposed sub-tasks, then accept, partially accept, request corrections or reject.</p>
+        <p v-else>Choose a prompt template, tailor it, then let AI create the sub-tasks.</p>
         <div v-if="error" class="nb-alert nb-alert--error" role="alert">{{ error }}</div>
         <template v-if="!proposal">
           <div class="nb-form-grid">
@@ -255,11 +260,14 @@ async function requestCorrection() {
             <textarea v-model="prompt" rows="6" maxlength="2000" :disabled="busy" />
             <small>{{ prompt.length }}/2000</small>
           </label>
-          <p class="nb-helper nb-mono">
+          <p v-if="multiAgentEnabled" class="nb-helper nb-mono">
             THE ASSIGNMENT CONTEXT COMES FROM THE TRACKER. GENERATING A PROPOSAL DOES NOT CREATE TASKS.
           </p>
+          <p v-else class="nb-helper nb-mono">
+            THE ASSIGNMENT CONTEXT COMES FROM THE TRACKER. REVIEW GENERATED TASKS AFTER CREATION.
+          </p>
           <p v-if="generating" role="status">
-            Waiting for Planner, Worker and Reviewer.
+            {{ multiAgentEnabled ? 'Waiting for Planner, Worker and Reviewer.' : 'AI is creating tasks...' }}
           </p>
         </template>
         <template v-else>
@@ -332,7 +340,9 @@ async function requestCorrection() {
         <template v-if="!proposal">
           <button class="nb-btn nb-btn--outline" type="button" @click="close">Cancel</button>
           <button class="nb-btn nb-btn--accent" type="submit" :disabled="!canGenerate">
-            {{ generating ? 'Agents are preparing a proposal...' : 'Generate proposal' }}
+            {{ multiAgentEnabled
+              ? generating ? 'Agents are preparing a proposal...' : 'Generate proposal'
+              : generating ? 'AI is creating tasks...' : 'Generate sub-tasks' }}
           </button>
         </template>
         <template v-else-if="mode === 'decision'">

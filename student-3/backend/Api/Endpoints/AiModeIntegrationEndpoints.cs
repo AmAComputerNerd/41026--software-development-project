@@ -23,7 +23,7 @@ public static class AiModeIntegrationEndpoints
         return Results.Ok(new
         {
             AiModeEnabled = aiGatewayOptions.Value.Enabled,
-            AiBreakdownEnabled = aiGatewayOptions.Value.Enabled is true && multiAgentOptions.Value.Enabled is true
+            MultiAgentEnabled = multiAgentOptions.Value.Enabled is true
         });
     }
 }
