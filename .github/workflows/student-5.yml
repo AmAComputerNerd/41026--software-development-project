@@ -137,6 +137,7 @@ jobs:
           AiGateway__BaseUrl=http://127.0.0.1:5200 \
           McpServer__Enabled=false \
           RagServer__Enabled=false \
+          MultiAgentServer__Enabled=false \
           dotnet run \
             --project "${{ env.API_PROJECT }}" \
             --configuration Release \
