@@ -162,7 +162,7 @@ public static class DbSeeder
                 {
                     CourseStatus = seed.CourseStatus,
                     IsInternational = seed.IsInternational,
-                    CanvasApiKey = "implement later",
+                    CanvasApiKey = "Seeded User, No API Key Supplied", // pragma: allowlist-secret not actually a secret
                 });
             }
         }
@@ -187,7 +187,7 @@ public static class DbSeeder
                 pending.Add(new Teacher(user.Id)
                 {
                     EmploymentStatus = seed.EmploymentStatus,
-                    CanvasApiKey = "implement later",
+                    CanvasApiKey = "Seeded User, No API Key Supplied", // pragma: allowlist secret
                 });
             }
         }

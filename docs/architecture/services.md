@@ -167,7 +167,7 @@ See [`student-2/README.md`](../../student-2/README.md) for the full contract.
 
 - **Path**: `student-4/backend/`, `student-4/authentication/`, `student-4/database/`, `student-4/contracts/`, and `student-4/frontend/`
 - **Stack**:
-  - Backend: ASP.NET Core (.NET 10), profile API and AI profile summaries
+  - Backend: ASP.NET Core (.NET 10), profile API and Multi-Agent profile-summary review
   - Authentication: ASP.NET Core (.NET 10), login, password and account management, SMTP password reset
   - Database: ASP.NET Core (.NET 10) + EF Core SQLite, internal-only on `student-4-data`
   - Frontend: Vue 3 + TypeScript + Vite + `@better-canvas/ui-kit`
@@ -177,7 +177,8 @@ See [`student-2/README.md`](../../student-2/README.md) for the full contract.
 ### Responsibilities
 - Stores user, student, and teacher profile records with hashed passwords.
 - Issues password-reset emails through SMTP; development uses the `mailhog` container (SMTP `1025`, web UI `http://localhost:8025`).
-- Generates AI profile summaries through the `ai-mode` gateway.
+- Generates profile-summary proposals through the shared Multi-Agent Server;
+  human approval is required before a proposal can be selected and saved.
 - Provides read-only account readiness findings through local MCP and
   documentation-grounded Account Help through local RAG. Both are accessed
   from the **03 KNOWLEDGE** page (`/account/knowledge`) through this backend, optional for readiness, and
@@ -187,7 +188,9 @@ See [`student-2/README.md`](../../student-2/README.md) for the full contract.
 
 ### Key Endpoints
 - `GET|POST /api/users`, `GET|PUT|DELETE /api/users/{userId}` — User records.
-- `POST /api/users/{userId}/profile-summary` — AI profile summary.
+- `POST /api/users/{userId}/profile-summary` — Generate profile-summary proposal.
+- `POST /api/users/{userId}/profile-summary/{workflowId}/review` — Approve or reject a proposal.
+- `POST /api/users/{userId}/profile-summary/{workflowId}/revise` — Request a revised proposal.
 - `POST /api/users/{userId}/mcp-readiness` — MCP account readiness findings.
 - `POST /api/users/help/answers` — Account-scoped RAG answers with citations
   and confidence; unsupported questions return insufficient context.

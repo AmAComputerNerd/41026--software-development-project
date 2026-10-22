@@ -1,3 +1,4 @@
+using Api.DTOs;
 using Api.Services;
 using Student4.Contracts;
 
@@ -10,6 +11,8 @@ public static class ProfileSummaryEndpoints
         var group = endpoints.MapGroup("/api/users");
 
         group.MapPost("/{userId:guid}/profile-summary", GenerateProfileSummary);
+        group.MapPost("/{userId:guid}/profile-summary/{workflowId:guid}/review", ReviewProfileSummary);
+        group.MapPost("/{userId:guid}/profile-summary/{workflowId:guid}/revise", ReviseProfileSummary);
 
         return endpoints;
     }
@@ -17,7 +20,7 @@ public static class ProfileSummaryEndpoints
     private static async Task<IResult> GenerateProfileSummary(
         Guid userId,
         IAccountDatabaseClient db,
-        IAiProfileSummaryService aiService,
+        ProfileSummaryWorkflowService workflowService,
         INotificationClient notificationClient,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
@@ -41,11 +44,7 @@ public static class ProfileSummaryEndpoints
                 teacher = await db.GetTeacherAsync(userId, cancellationToken);
             }
 
-            var summary = await aiService.GenerateSummaryAsync(
-                user,
-                student,
-                teacher,
-                cancellationToken);
+            var proposal = await workflowService.GenerateAsync(user, student, teacher, cancellationToken);
 
             try
             {
@@ -53,7 +52,7 @@ public static class ProfileSummaryEndpoints
                     StudentId: userId,
                     Type: "AI",
                     SourceMicroservice: "account",
-                    Message: "New AI profile summary generated.",
+                    Message: "New AI profile summary proposal generated.",
                     RelatedEntityType: "User",
                     RelatedEntityId: userId), cancellationToken);
             }
@@ -66,23 +65,77 @@ public static class ProfileSummaryEndpoints
             return Results.Ok(new
             {
                 oldSummary = user.UserProfile,
-                newSummary = summary,
+                newSummary = proposal.NewSummary,
+                workflow = proposal.Workflow,
             });
         }
         catch (DatabaseServiceException ex)
         {
             return Results.Problem(detail: ex.Message, statusCode: 503);
         }
-        catch (AiGatewayException ex)
+        catch (MultiAgentServiceException ex)
         {
-            return Results.Json(
-                new
-                {
-                    error = ex.Message,
-                    upstreamStatusCode = ex.UpstreamStatusCode,
-                    rateLimitReset = ex.RateLimitReset,
-                },
-                statusCode: StatusCodes.Status502BadGateway);
+            return Results.Problem(detail: ex.Message,
+                statusCode: ex.StatusCode == System.Net.HttpStatusCode.Conflict
+                    ? StatusCodes.Status409Conflict
+                    : StatusCodes.Status502BadGateway);
+        }
+    }
+
+    private static async Task<IResult> ReviewProfileSummary(
+        Guid userId,
+        Guid workflowId,
+        MultiAgentReviewRequestDto request,
+        ProfileSummaryWorkflowService workflowService,
+        CancellationToken cancellationToken)
+    {
+        if (request.Decision is not ("Approve" or "Reject") ||
+            string.IsNullOrWhiteSpace(request.ReviewerName) || request.ReviewerName.Length > 100 ||
+            string.IsNullOrWhiteSpace(request.Comments) || request.Comments.Length > 2000 ||
+            request.ExpectedRevision is null or < 0)
+        {
+            return Results.BadRequest("Supply Approve or Reject, a reviewer name, comments, and the current revision.");
+        }
+
+        try
+        {
+            var result = await workflowService.ReviewAsync(userId, workflowId, request, cancellationToken);
+            return result is null ? Results.NotFound() : Results.Ok(result);
+        }
+        catch (MultiAgentServiceException exception)
+        {
+            return Results.Problem(detail: exception.Message,
+                statusCode: exception.StatusCode == System.Net.HttpStatusCode.Conflict
+                    ? StatusCodes.Status409Conflict
+                    : StatusCodes.Status502BadGateway);
+        }
+    }
+
+    private static async Task<IResult> ReviseProfileSummary(
+        Guid userId,
+        Guid workflowId,
+        MultiAgentRevisionRequestDto request,
+        ProfileSummaryWorkflowService workflowService,
+        CancellationToken cancellationToken)
+    {
+        if (request.RequestId == Guid.Empty || request.ExpectedRevision < 0 ||
+            string.IsNullOrWhiteSpace(request.ReviewerName) || request.ReviewerName.Length > 100 ||
+            string.IsNullOrWhiteSpace(request.Feedback) || request.Feedback.Length > 2000)
+        {
+            return Results.BadRequest("Supply a request ID, current revision, reviewer name, and feedback.");
+        }
+
+        try
+        {
+            var result = await workflowService.ReviseAsync(userId, workflowId, request, cancellationToken);
+            return result is null ? Results.NotFound() : Results.Ok(result);
+        }
+        catch (MultiAgentServiceException exception)
+        {
+            return Results.Problem(detail: exception.Message,
+                statusCode: exception.StatusCode == System.Net.HttpStatusCode.Conflict
+                    ? StatusCodes.Status409Conflict
+                    : StatusCodes.Status502BadGateway);
         }
     }
 }

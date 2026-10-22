@@ -66,11 +66,11 @@ public sealed record UpdateUserCommand(
 public sealed record UpdateStudentCommand(
     string? CourseStatus,
     bool? IsInternational,
-    string? CanvasApiKey);
+    string CanvasApiKey);
 
 public sealed record UpdateTeacherCommand(
     string? EmploymentStatus,
-    string? CanvasApiKey);
+    string CanvasApiKey);
 
 public sealed record ProfileSummaryCommand(string Summary);
 

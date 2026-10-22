@@ -19,12 +19,15 @@ FullTime, PartTime, or Inactive employment status. Editing role details does
 not change the account from Student to Teacher or Admin. Contact an
 administrator if your matching student or teacher record is missing.
 
-## Generating and saving an AI profile summary
+## Reviewing and saving a multi-agent profile summary
 
-GENERATE AI SUMMARY offers a new summary alongside the existing saved
-summary. Choose which summary to use, then save your profile to apply it.
-Generating or selecting a summary does not automatically persist it.
-You can write a summary manually when AI Mode is unavailable.
+GENERATE AI SUMMARY runs the shared Planner, Worker, and Reviewer and presents
+their proposal and review notes. Inspect the result, then approve, reject, or
+request a revision with feedback. A revised proposal returns for a new human
+decision. Approving does not save it: select USE NEW SUMMARY, then SAVE CHANGES.
+USE OLD SUMMARY keeps the existing value. The profile remains unchanged when
+generation or review fails, or when a proposal is rejected. You can still edit
+the summary manually when Multi-Agent is unavailable.
 
 ## Changing a known password
 

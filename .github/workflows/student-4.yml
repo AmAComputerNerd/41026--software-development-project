@@ -125,7 +125,8 @@ jobs:
           ASPNETCORE_URLS=http://127.0.0.1:5104 \
           DatabaseService__BaseUrl=http://127.0.0.1:5204 \
           SharedService__BaseUrl=http://127.0.0.1:5110 \
-          AiGateway__BaseUrl=http://127.0.0.1:5001 \
+          MultiAgentServer__Enabled=false \
+          AiGateway__Enabled=false \
           NotificationService__BaseUrl=http://127.0.0.1:5101 \
           dotnet run --project "${{ env.API_PROJECT }}" \
             --configuration Release --no-build --no-launch-profile > api.log 2>&1 &

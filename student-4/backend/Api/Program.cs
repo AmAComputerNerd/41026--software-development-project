@@ -27,11 +27,20 @@ builder.Services
         "DatabaseService:BaseUrl must be an absolute HTTP or HTTPS URL.")
     .ValidateOnStart();
 builder.Services
+    .AddOptions<MultiAgentServerOptions>()
+    .Bind(builder.Configuration.GetSection(MultiAgentServerOptions.SectionName))
+    .Validate(options => options.Enabled.HasValue, "MultiAgentServer:Enabled must be configured.")
+    .Validate(
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
+        "MultiAgentServer:BaseUrl must be an absolute HTTP or HTTPS URL when Multi-Agent is enabled.")
+    .ValidateOnStart();
+builder.Services
     .AddOptions<AiGatewayOptions>()
     .Bind(builder.Configuration.GetSection(AiGatewayOptions.SectionName))
+    .Validate(options => options.Enabled.HasValue, "AiGateway:Enabled must be configured.")
     .Validate(
-        options => IsAbsoluteHttpUrl(options.BaseUrl),
-        "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL.")
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
+        "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL when AI Gateway is enabled.")
     .ValidateOnStart();
 builder.Services
     .AddOptions<McpServerOptions>()
@@ -123,17 +132,21 @@ builder.Services
         client.Timeout = TimeSpan.FromSeconds(3);
     });
 
+builder.Services.AddHttpClient<IMultiAgentClient, MultiAgentClient>((services, client) =>
+{
+    var options = services.GetRequiredService<IOptions<MultiAgentServerOptions>>().Value;
+    if (options.Enabled is true) ConfigureClient(client, options.BaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(100);
+});
+
 builder.Services
-    .AddHttpClient(OpenRouterProfileSummaryService.HttpClientName, (services, client) =>
+    .AddHttpClient<IAiProfileSummaryService, OpenRouterProfileSummaryService>((services, client) =>
     {
-        var baseUrl = services.GetRequiredService<IOptions<AiGatewayOptions>>().Value.BaseUrl;
-        ConfigureClient(client, baseUrl);
+        var options = services.GetRequiredService<IOptions<AiGatewayOptions>>().Value;
+        if (options.Enabled is true) ConfigureClient(client, options.BaseUrl);
     })
     .AddStandardResilienceHandler(options =>
     {
-        // Retry transient 5xx from the AI gateway, but pass 429 (rate limit)
-        // through so the user sees the real upstream message instead of
-        // having us mask it as a retry.
         options.Retry.ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
             .Handle<HttpRequestException>()
             .HandleResult(r => (int)r.StatusCode >= 500);
@@ -143,7 +156,7 @@ builder.Services
         options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
     });
 
-builder.Services.AddScoped<IAiProfileSummaryService, OpenRouterProfileSummaryService>();
+builder.Services.AddScoped<ProfileSummaryWorkflowService>();
 
 builder.Services
     .AddHealthChecks()
