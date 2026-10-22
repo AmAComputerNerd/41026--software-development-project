@@ -4,10 +4,30 @@ The service manages accounts - settings, details and verification.
 It has a "forgot password" prompt where it will send a user an email
 to change their password. Passwords are securely stored using hashes.
 
-AI planning calls the internal `ai-mode` gateway through the account
-backend. AI profile summaries can still be edited manually, but an AI
-prompt will help users generate a generic summary for their profile.
-This will be expanded upon in future releases.
+AI profile summaries use the shared Multi-Agent Server. Planner, Worker,
+and Reviewer produce a proposal for the account holder to inspect. A human
+approval is required before the proposal can be selected; saving the profile
+still requires the existing **SAVE CHANGES** action.
+
+## Multi-Agent profile summary review
+
+On **02 PROFILE**, select **GENERATE AI SUMMARY**. The backend sends only the
+profile fields needed for a summary to the Multi-Agent coordinator, scoped to
+the current account ID. Password hashes, date of birth, email, and Canvas API
+keys are not included. The workflow is owned by `student-4` and remains
+separate from the Student 4 database.
+
+Inspect the Planner, Worker, and Reviewer output. You can request a revision
+with written feedback, approve the current proposal, or reject it. Approval
+does not update the account. After approval, select **USE NEW SUMMARY** and
+then **SAVE CHANGES** to persist it. Use **USE OLD SUMMARY** to keep the prior
+value. An unexpected or failed coordinator response leaves the profile
+unchanged.
+
+The feature is optional and controlled by `MULTI_AGENT_ENABLED` and
+`MultiAgentServer__Enabled`. Docker Compose targets
+`http://host.docker.internal:5004`; standalone backend runs can set
+`MultiAgentServer__BaseUrl=http://127.0.0.1:5004`. CI disables the integration.
 
 ## Account readiness through MCP
 
@@ -104,7 +124,7 @@ flowchart TD
 
     subgraph Student4Slice["student-4 Account & Auth Slice"]
         FE["student-4-frontend (Vue 3)<br>/account/"]
-        BE["student-4-backend (:5104)<br>Profiles & AI Summaries"]
+        BE["student-4-backend (:5104)<br>Profiles & Multi-Agent Summaries"]
         Auth["student-4-authentication (:5114)<br>Auth & Password Resets"]
         DB["student-4-database (:5204)<br>Internal Persistence Service"]
         Storage[("SQLite DB File<br>(student-4-db)")]
@@ -118,7 +138,7 @@ flowchart TD
 
     subgraph ExternalServices["External & Shared Services"]
         MailHog["MailHog (:1025 SMTP / :8025 Web)<br>Developer Mailbox"]
-        AIM["Host ai-mode (:5001)<br>Profile Summary LLM"]
+        MA["Host multi-agent-server (:5004)<br>Profile Summary Coordinator"]
     end
 
     Shell -- "Proxy /account/" --> FE
@@ -126,7 +146,7 @@ flowchart TD
     Shell -- "Proxy /api/auth/" --> Auth
 
     Auth -- "SMTP password reset" --> MailHog
-    BE -. "Profile summary generation" .-> AIM
+    BE -. "Profile summary review" .-> MA
 ```
 
 ## Standalone development

@@ -169,7 +169,7 @@ flowchart TD
 - **`student-1` (Notifications)**: Notification management, delivery preferences, SSE stream broker, AI digest generation and conversational assistant (`student-1-database` PostgreSQL 16 on port 5432).
 - **`student-2` (Automations)**: Assignment extension requests, scheduled Canvas posts, AI quiz answering with `ai-mode`, and periodic execution runner.
 - **`student-3` (Deadlines & Tasks)**: Coursework deadlines, subtask hierarchies, Canvas synchronization, AI breakdown planning, and push notifications to `student-1-backend` (`student-3-database` internal SQLite service on `student-3-data`).
-- **`student-4` (Account & Authentication)**: User registration, login authentication, MailHog password reset workflows, profile AI summaries (`student-4-database` internal SQLite service on `student-4-data`).
+- **`student-4` (Account & Authentication)**: User registration, login authentication, MailHog password reset workflows, and human-reviewed Multi-Agent profile summaries (`student-4-database` internal SQLite service on `student-4-data`).
 - **`student-5` (Grades & Progress)**: Marks calculation, target GPA simulation ("what-if" marks), and progress tracking (`student-5-database` internal SQLite service on `student-5-data`).
 
 ---
@@ -272,7 +272,7 @@ Notifications carry structured action metadata enabling cross-service operations
 ### E. Account, Authentication, and AI Profiles
 - `student-4-authentication` provides login, password change, account deletion, and email password-reset workflows; both authentication and profile APIs access `student-4-database` exclusively over HTTP.
 - Development password-reset messages are delivered to MailHog, whose web inbox is exposed on port `8025`.
-- `student-4-backend` can generate a replacement profile summary through `ai-mode` using the stored user and student/teacher profile context.
+- `student-4-backend` can generate a profile-summary proposal through the shared Multi-Agent Server using non-secret stored profile context. The account holder must approve it before selecting and saving it.
 - Student 4's **03 KNOWLEDGE** page (`/account/knowledge`) calls `POST /api/users/{userId}/mcp-readiness` to
   invoke the shared `accounts_check_readiness` MCP tool. MCP calls back
   through `/internal/ai-context/accounts/{userId}/readiness` on Student 4's

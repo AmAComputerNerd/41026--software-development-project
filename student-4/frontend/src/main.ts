@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 
 import App from './App.vue'
 import router from './router'
+import { useAuth } from './composables/useAuth'
 import '@better-canvas/ui-kit/styles/tokens.css'
 import '@better-canvas/ui-kit/styles/primitives.css'
 import './styles/style.scss'
@@ -9,5 +10,9 @@ import './styles/style.scss'
 const app = createApp(App)
 
 app.use(router)
+
+// Restore auth session on app mount
+const { restoreSession } = useAuth()
+restoreSession()
 
 app.mount('#app')

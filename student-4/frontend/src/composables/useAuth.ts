@@ -8,17 +8,21 @@ import {
   updateTeacher,
   changePassword,
   deleteAccount,
+  logout,
+  getCurrentUser,
   type UserDto,
   type StudentDto,
   type TeacherDto,
 } from '@/api/users'
 import { ApiError } from '@/api/http'
+import { setCanvasApiKeyCookie, clearCanvasApiKeyCookie } from '@/api/http'
 
 const currentUser = ref<UserDto | null>(null)
 const currentStudent = ref<StudentDto | null>(null)
 const currentTeacher = ref<TeacherDto | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
+let restoreAttempted = false
 
 export function useAuth() {
   const isAuthenticated = computed(() => currentUser.value !== null)
@@ -26,6 +30,28 @@ export function useAuth() {
   const isStudent = computed(() => userType.value?.toLowerCase() === 'student')
   const isTeacher = computed(() => userType.value?.toLowerCase() === 'teacher')
   const isAdmin = computed(() => userType.value?.toLowerCase() === 'admin')
+
+  async function restoreSession() {
+    if (restoreAttempted) return
+    restoreAttempted = true
+    
+    loading.value = true
+    error.value = null
+    try {
+      const user = await getCurrentUser()
+      if (user) {
+        await fetchUser(user.id)
+      }
+    } catch (err) {
+      // Session not valid, clear any stale data
+      currentUser.value = null
+      currentStudent.value = null
+      currentTeacher.value = null
+      localStorage.removeItem('userId')
+    } finally {
+      loading.value = false
+    }
+  }
 
   async function fetchUser(userId: string) {
     loading.value = true
@@ -50,6 +76,9 @@ export function useAuth() {
       if (currentUser.value?.userType === 'Student') {
         try {
           currentStudent.value = await getStudent(userId)
+          if (currentStudent.value?.canvasApiKey) {
+            setCanvasApiKeyCookie(currentStudent.value.canvasApiKey)
+          }
         } catch (err) {
           if (err instanceof ApiError && err.status === 404) {
             console.info('No student record yet for user', userId)
@@ -60,6 +89,9 @@ export function useAuth() {
       } else if (currentUser.value?.userType === 'Teacher') {
         try {
           currentTeacher.value = await getTeacher(userId)
+          if (currentTeacher.value?.canvasApiKey) {
+            setCanvasApiKeyCookie(currentTeacher.value.canvasApiKey)
+          }
         } catch (err) {
           if (err instanceof ApiError && err.status === 404) {
             console.info('No teacher record yet for user', userId)
@@ -108,6 +140,9 @@ export function useAuth() {
     try {
       const updated = await updateStudent(currentUser.value.id, studentData)
       currentStudent.value = updated
+      if (updated.canvasApiKey) {
+        setCanvasApiKeyCookie(updated.canvasApiKey)
+      }
       return updated
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to update student profile'
@@ -125,6 +160,9 @@ export function useAuth() {
     try {
       const updated = await updateTeacher(currentUser.value.id, teacherData)
       currentTeacher.value = updated
+      if (updated.canvasApiKey) {
+        setCanvasApiKeyCookie(updated.canvasApiKey)
+      }
       return updated
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to update teacher profile'
@@ -167,7 +205,13 @@ export function useAuth() {
     }
   }
 
-  function logout() {
+  async function logoutUser() {
+    try {
+      await logout()
+    } catch {
+      // Ignore logout errors
+    }
+    clearCanvasApiKeyCookie()
     currentUser.value = null
     currentStudent.value = null
     currentTeacher.value = null
@@ -186,11 +230,12 @@ export function useAuth() {
     isTeacher,
     isAdmin,
     fetchUser,
+    restoreSession,
     updateProfile,
     updateStudentProfile,
     updateTeacherProfile,
     changeUserPassword,
     deleteUserAccount,
-    logout,
+    logout: logoutUser,
   }
 }

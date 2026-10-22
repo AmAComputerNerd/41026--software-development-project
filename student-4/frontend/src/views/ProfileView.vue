@@ -2,7 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useRoute, useRouter } from 'vue-router'
-import { generateProfileSummary } from '@/api/users'
+import { generateProfileSummary, reviewProfileSummary, reviseProfileSummary } from '@/api/users'
+import type { MultiAgentWorkflow } from '@/types/multiAgent'
 
 const { currentUser, currentStudent, currentTeacher, isStudent, isTeacher, loading, error, fetchUser, updateProfile, updateStudentProfile, updateTeacherProfile, changeUserPassword, deleteUserAccount } = useAuth()
 const router = useRouter()
@@ -52,6 +53,10 @@ const generateSummaryLoading = ref(false)
 const generateSummaryError = ref<string | null>(null)
 const generatedOldSummary = ref<string | null>(null)
 const generatedNewSummary = ref<string | null>(null)
+const summaryWorkflow = ref<MultiAgentWorkflow | null>(null)
+const summaryReviewer = ref('')
+const summaryFeedback = ref('')
+const correctionRequestId = ref<string | null>(null)
 
 onMounted(async () => {
   const userId = localStorage.getItem('userId')
@@ -113,6 +118,8 @@ function cancelEditing() {
   populateForm()
   generatedOldSummary.value = null
   generatedNewSummary.value = null
+  summaryWorkflow.value = null
+  summaryFeedback.value = ''
   saveError.value = null
   saveSuccess.value = null
 }
@@ -156,6 +163,8 @@ async function handleSave() {
     isEditing.value = false
     generatedOldSummary.value = null
     generatedNewSummary.value = null
+    summaryWorkflow.value = null
+    summaryFeedback.value = ''
   } catch (err) {
     saveError.value = err instanceof Error ? err.message : 'Failed to update profile'
   } finally {
@@ -231,10 +240,15 @@ async function handleGenerateSummary() {
   generateSummaryLoading.value = true
   generateSummaryError.value = null
   try {
-    const { oldSummary, newSummary } = await generateProfileSummary(currentUser.value.id)
+    const { oldSummary, newSummary, workflow } = await generateProfileSummary(currentUser.value.id)
     generatedOldSummary.value = oldSummary
     generatedNewSummary.value = newSummary
-    saveSuccess.value = 'Choose which summary to use, then save your profile.'
+    summaryWorkflow.value = workflow
+    summaryFeedback.value = 'Verified and approved summary.'
+    correctionRequestId.value = null
+    // Auto-fill reviewer name with account name
+    summaryReviewer.value = `${currentUser.value.firstName} ${currentUser.value.lastName}`.trim()
+    saveSuccess.value = 'Review the agent proposal before choosing a summary.'
   } catch (err) {
     generateSummaryError.value = err instanceof Error ? err.message : 'Failed to generate summary'
   } finally {
@@ -242,8 +256,62 @@ async function handleGenerateSummary() {
   }
 }
 
-function formatUserType(type: string) {
-  return type.toUpperCase()
+async function handleReviewSummary(decision: 'Approve' | 'Reject') {
+  if (!currentUser.value || !summaryWorkflow.value || generateSummaryLoading.value) return
+  generateSummaryLoading.value = true
+  generateSummaryError.value = null
+  try {
+    const result = await reviewProfileSummary(currentUser.value.id, summaryWorkflow.value.id, {
+      decision,
+      reviewerName: summaryReviewer.value.trim() || 'Student Reviewer',
+      comments: decision === 'Approve' ? 'Verified and approved summary.' : 'Rejected profile summary proposal.',
+      expectedRevision: summaryWorkflow.value.revision,
+    })
+    summaryWorkflow.value = result.workflow
+    if (result.approvedSummary) {
+      generatedNewSummary.value = result.approvedSummary
+      saveSuccess.value = 'Approved. You can now choose the new summary and save your profile.'
+    } else {
+      saveSuccess.value = 'Proposal rejected. Your saved profile summary is unchanged.'
+    }
+  } catch (err) {
+    generateSummaryError.value = err instanceof Error ? err.message : 'Failed to record your review'
+  } finally {
+    generateSummaryLoading.value = false
+  }
+}
+
+async function handleReviseSummary() {
+  if (!currentUser.value || !summaryWorkflow.value || generateSummaryLoading.value) return
+  const feedback = summaryFeedback.value.trim()
+  if (!feedback) {
+    generateSummaryError.value = 'Enter feedback for the agents before requesting a revision.'
+    return
+  }
+  const reviewerName = summaryReviewer.value.trim() || 'Student Reviewer'
+  const requestKey = `${reviewerName}\n${feedback}`
+  if (!correctionRequestId.value || correctionRequestId.value !== requestKey) {
+    correctionRequestId.value = crypto.randomUUID()
+  }
+  generateSummaryLoading.value = true
+  generateSummaryError.value = null
+  try {
+    const proposal = await reviseProfileSummary(currentUser.value.id, summaryWorkflow.value.id, {
+      requestId: correctionRequestId.value,
+      expectedRevision: summaryWorkflow.value.revision,
+      reviewerName,
+      feedback,
+    })
+    summaryWorkflow.value = proposal.workflow
+    generatedNewSummary.value = proposal.newSummary
+    summaryFeedback.value = ''
+    correctionRequestId.value = null
+    saveSuccess.value = 'Revised proposal received. Review it before accepting.'
+  } catch (err) {
+    generateSummaryError.value = err instanceof Error ? err.message : 'Failed to revise the proposal'
+  } finally {
+    generateSummaryLoading.value = false
+  }
 }
 
 function formatGender(gender: string) {
@@ -269,7 +337,6 @@ function formatDate(dateStr: string) {
         <div class="nb-profile__info">
           <h1 class="nb-profile__name">{{ currentUser.firstName }} {{ currentUser.lastName }}</h1>
           <div class="nb-profile__badges">
-            <span class="nb-tag nb-tag--account nb-mono">{{ formatUserType(currentUser.userType) }}</span>
             <span v-if="currentUser.userType === 'Student'" class="nb-tag nb-tag--deadline nb-mono">STUDENT</span>
             <span v-if="currentUser.userType === 'Teacher'" class="nb-tag nb-tag--grade nb-mono">TEACHER</span>
             <span v-if="currentUser.userType === 'Admin'" class="nb-tag nb-tag--ai nb-mono">ADMIN</span>
@@ -522,6 +589,58 @@ function formatDate(dateStr: string) {
             DELETE ACCOUNT
           </button>
         </div>
+        <div v-if="summaryWorkflow" class="nb-panel nb-profile__summary-options">
+          <h3 class="nb-profile__field-label nb-mono" style="margin-top: var(--nb-space-4); margin-bottom: var(--nb-space-3); word-wrap: break-word;">MULTI-AGENT PROFILE REVIEW · REVISION {{ summaryWorkflow.revision }}</h3>
+          <div class="nb-profile__summary-option">
+            <strong class="nb-mono">PROPOSED SUMMARY</strong>
+            <p class="nb-profile__summary-text">{{ generatedNewSummary }}</p>
+          </div>
+          <details class="nb-profile__summary-option" style="margin-top: var(--nb-space-4);">
+            <summary class="nb-mono">PLANNER, WORKER AND REVIEWER</summary>
+            <div class="nb-profile__grid" style="margin-top: var(--nb-space-3);">
+              <div class="nb-profile__field nb-profile__field--full" style="margin-bottom: var(--nb-space-4);">
+                <label class="nb-profile__field-label nb-mono">PLANNER</label>
+                <p>{{ summaryWorkflow.planner.objective }}</p>
+                <ul><li v-for="(step, index) in summaryWorkflow.planner.steps" :key="index">{{ step }}</li></ul>
+              </div>
+              <div class="nb-profile__field nb-profile__field--full" style="margin-bottom: var(--nb-space-4);">
+                <label class="nb-profile__field-label nb-mono">WORKER</label>
+                <p>{{ summaryWorkflow.worker.evidenceSummary }}</p>
+              </div>
+              <div class="nb-profile__field nb-profile__field--full" style="margin-bottom: var(--nb-space-4);">
+                <label class="nb-profile__field-label nb-mono">REVIEWER</label>
+                <p>{{ summaryWorkflow.reviewer.verdict }} · {{ summaryWorkflow.reviewer.confidence }}</p>
+                <p>{{ summaryWorkflow.reviewer.critique }}</p>
+                <ul><li v-for="(risk, index) in summaryWorkflow.reviewer.identifiedRisks" :key="index">{{ risk }}</li></ul>
+              </div>
+            </div>
+          </details>
+          <hr style="border: none; border-top: var(--nb-border-width-md) solid var(--nb-color-ink); margin: var(--nb-space-4) auto; width: 100%; display: block;" />
+          <label class="nb-profile__field" style="margin-top: var(--nb-space-4);">
+            <label class="nb-profile__field-label nb-mono">HUMAN REVIEW</label>
+            <span class="nb-mono">REVIEWER NAME</span>
+            <input v-model="summaryReviewer" class="nb-input" maxlength="100" :disabled="generateSummaryLoading || summaryWorkflow.humanReview !== null" placeholder="Reviewer" />
+          </label>
+          <label v-if="summaryWorkflow.status === 'AwaitingHumanReview'" class="nb-profile__field" style="margin-top: var(--nb-space-3);">
+            <span class="nb-mono">FEEDBACK FOR REVISION</span>
+            <textarea v-model="summaryFeedback" class="nb-input nb-textarea" rows="3" maxlength="2000" :disabled="generateSummaryLoading" placeholder="Describe what should change in the summary." />
+          </label>
+          <div v-if="summaryWorkflow.humanReview" class="nb-profile__message nb-mono" style="margin-top: var(--nb-space-3);">
+            REVIEW {{ summaryWorkflow.humanReview.decision }} BY {{ summaryWorkflow.humanReview.reviewerName }}
+          </div>
+          <div class="nb-profile__actions-list" style="margin-top: var(--nb-space-4);">
+            <button v-if="summaryWorkflow.status === 'AwaitingHumanReview'" type="button" class="nb-btn nb-btn--outline" :disabled="generateSummaryLoading || !summaryFeedback.trim()" @click="handleReviseSummary">
+              {{ generateSummaryLoading ? 'WAITING FOR AGENTS...' : 'REQUEST REVISION' }}
+            </button>
+            <button v-if="summaryWorkflow.status === 'AwaitingHumanReview'" type="button" class="nb-btn nb-btn--accent" :disabled="generateSummaryLoading" @click="handleReviewSummary('Approve')">
+              {{ generateSummaryLoading ? 'RECORDING REVIEW...' : 'APPROVE SUMMARY' }}
+            </button>
+            <button v-if="summaryWorkflow.status === 'AwaitingHumanReview'" type="button" class="nb-btn nb-btn--outline" :disabled="generateSummaryLoading" @click="handleReviewSummary('Reject')">
+              REJECT
+            </button>
+          </div>
+          <p class="nb-profile__field-label nb-mono" style="opacity: 0.7; font-size: 0.85rem; margin-top: var(--nb-space-3);">Approving does not save changes. Choose the approved summary and select SAVE CHANGES.</p>
+        </div>
         <div v-if="generatedNewSummary !== null" class="nb-panel nb-profile__summary-options">
           <h3 class="nb-profile__field-label nb-mono">CHOOSE PROFILE SUMMARY</h3>
           <div class="nb-profile__summary-option">
@@ -542,6 +661,7 @@ function formatDate(dateStr: string) {
             <button
               type="button"
               class="nb-btn nb-btn--accent"
+              :disabled="summaryWorkflow?.humanReview?.decision !== 'Approve'"
               @click="chooseGeneratedSummary(generatedNewSummary || '')"
             >
               USE NEW SUMMARY
@@ -642,3 +762,78 @@ function formatDate(dateStr: string) {
     </div>
   </div>
 </template>
+
+<style scoped>
+.nb-profile__summary-options {
+  padding: var(--nb-space-4) !important;
+}
+
+.nb-profile__summary-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.6;
+  margin: var(--nb-space-3) 0;
+}
+
+.nb-profile__summary-option {
+  margin-bottom: var(--nb-space-4);
+}
+
+.nb-profile__summary-option:last-child {
+  margin-bottom: 0;
+}
+
+.nb-profile__grid {
+  row-gap: var(--nb-space-4);
+}
+
+.nb-profile__field--full {
+  grid-column: 1 / -1;
+}
+
+/* Fix overlapping reviewer name and feedback fields */
+.nb-profile__summary-options .nb-profile__field {
+  display: block;
+  margin-bottom: var(--nb-space-4);
+}
+
+.nb-profile__summary-options .nb-profile__field:last-child {
+  margin-bottom: 0;
+}
+
+.nb-profile__summary-options .nb-profile__field-label {
+  display: block;
+  margin-bottom: var(--nb-space-1);
+}
+
+.nb-profile__summary-options .nb-input,
+.nb-profile__summary-options .nb-textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure text wraps in agent sections */
+.nb-profile__summary-options .nb-profile__field p,
+.nb-profile__summary-options .nb-profile__field ul {
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.nb-profile__summary-options .nb-profile__field ul {
+  margin: var(--nb-space-2) 0;
+  padding-left: var(--nb-space-4);
+}
+
+.nb-profile__summary-options .nb-profile__field li {
+  margin-bottom: var(--nb-space-1);
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Make Planner, Worker, Reviewer labels 50% larger */
+.nb-profile__summary-options .nb-profile__field-label.nb-mono {
+  font-size: 1.5rem;
+}
+</style>

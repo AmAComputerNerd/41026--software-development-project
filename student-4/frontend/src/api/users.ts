@@ -1,4 +1,5 @@
 import { request, buildQuery } from './http'
+import type { MultiAgentWorkflow, ProfileSummaryProposal, ProfileSummaryReviewResult } from '@/types/multiAgent'
 
 export interface UserDto {
   id: string
@@ -132,15 +133,40 @@ export async function deleteAccount(
   })
 }
 
-// POST /api/users/{userId}/profile-summary — generates candidates without persisting a summary.
+// POST /api/users/{userId}/profile-summary — generates a multi-agent proposal.
 export interface ProfileSummaryResponse {
   oldSummary: string | null
   newSummary: string
+  workflow: MultiAgentWorkflow
 }
 
 export async function generateProfileSummary(userId: string): Promise<ProfileSummaryResponse> {
   return request(`/users/${userId}/profile-summary`, {
     method: 'POST',
+  })
+}
+
+// POST /api/users/{userId}/profile-summary/{workflowId}/review — approve or reject a proposal.
+export async function reviewProfileSummary(
+  userId: string,
+  workflowId: string,
+  input: { decision: 'Approve' | 'Reject'; reviewerName: string; comments: string; expectedRevision: number }
+): Promise<ProfileSummaryReviewResult> {
+  return request(`/users/${userId}/profile-summary/${workflowId}/review`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+// POST /api/users/{userId}/profile-summary/{workflowId}/revise — request a revision.
+export async function reviseProfileSummary(
+  userId: string,
+  workflowId: string,
+  input: { requestId: string; expectedRevision: number; reviewerName: string; feedback: string }
+): Promise<ProfileSummaryProposal> {
+  return request(`/users/${userId}/profile-summary/${workflowId}/revise`, {
+    method: 'POST',
+    body: JSON.stringify(input),
   })
 }
 
@@ -155,6 +181,18 @@ export async function forgotPassword(email: string): Promise<{ message: string }
   })
 }
 
+// POST /api/auth/logout — logs out the current user
+export async function logout(): Promise<{ message: string }> {
+  return request('/auth/logout', {
+    method: 'POST',
+  })
+}
+
+// GET /api/auth/me — get current authenticated user
+export async function getCurrentUser(): Promise<{ id: string; email: string; name: string; role: string }> {
+  return request('/auth/me')
+}
+
 // POST /api/auth/reset-password — exchanges the raw token from the
 // email link for a new password. Returns { message } on success or
 // throws a 400 ApiError if the token is invalid/expired.
@@ -166,4 +204,9 @@ export async function resetPassword(
     method: 'POST',
     body: JSON.stringify({ token, newPassword }),
   })
+}
+
+// GET /api/students/{userId}/canvas-api-key — returns the Canvas API key for a student
+export async function getCanvasApiKey(userId: string): Promise<{ canvasApiKey: string }> {
+  return request(`/students/${userId}/canvas-api-key`)
 }

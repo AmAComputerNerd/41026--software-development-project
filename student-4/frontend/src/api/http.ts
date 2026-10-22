@@ -39,6 +39,7 @@ function formatErrorMessage(status: number, statusText: string, body: string): s
 export async function request(path: string, options: RequestInit = {}) {
   const response = await fetch(`${BASE_URL}${path}`, {
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     ...options,
   })
 
@@ -60,4 +61,28 @@ export function buildQuery(params: Record<string, unknown>) {
   }
   const stringified = query.toString()
   return stringified ? `?${stringified}` : ''
+}
+
+// Canvas API Key cookie utilities
+const CANVAS_API_KEY_COOKIE = 'student4.canvasApiKey' // pragma: allowlist secret
+
+export function setCanvasApiKeyCookie(apiKey: string): void {
+  const expires = new Date()
+  expires.setFullYear(expires.getFullYear() + 1)
+  document.cookie = `${CANVAS_API_KEY_COOKIE}=${encodeURIComponent(apiKey)}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`
+}
+
+export function getCanvasApiKeyCookie(): string | null {
+  const cookies = document.cookie.split(';')
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=')
+    if (name === CANVAS_API_KEY_COOKIE) {
+      return decodeURIComponent(value)
+    }
+  }
+  return null
+}
+
+export function clearCanvasApiKeyCookie(): void {
+  document.cookie = `${CANVAS_API_KEY_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`
 }
