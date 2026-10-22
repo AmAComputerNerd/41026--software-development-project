@@ -212,7 +212,7 @@ jobs:
           echo "Student 3 Cloud Baseline CRUD + AI-Disabled verification passed."
 
       - name: Build Student 5 Backend and Database
-        run: dotnet build student-5/backend/GradesManager/GradesManager.sln --configuration Release -warnaserror
+        run: dotnet build student-5/backend/GradesManager/GradesManager.slnx --configuration Release -warnaserror
 
       - name: Run Student 5 Backend in Cloud Baseline Mode (All AI Flags False) & Execute CRUD Smoke Test
         env:
@@ -231,6 +231,7 @@ jobs:
           MultiAgentServer__Enabled: 'false'
         run: |
           set -euo pipefail
+          fail() { echo "::error::$1"; cat "$RUNNER_TEMP/student-5-cloud-database.log" "$RUNNER_TEMP/student-5-cloud-api.log" 2>/dev/null; exit 1; }
           (
             cd student-5/database/Database
             ASPNETCORE_URLS=http://127.0.0.1:5205 \
@@ -240,7 +241,7 @@ jobs:
           DATABASE_PID=$!
           (
             cd student-5/backend/GradesManager/GradesManager
-            exec dotnet bin/Release/net10.0/Api.dll
+            exec dotnet bin/Release/net10.0/GradesManager.dll
           ) > "$RUNNER_TEMP/student-5-cloud-api.log" 2>&1 &
           API_PID=$!
           trap 'kill "$API_PID" "$DATABASE_PID" 2>/dev/null || true; wait "$API_PID" "$DATABASE_PID" 2>/dev/null || true' EXIT
@@ -259,13 +260,55 @@ jobs:
           fi
 
           curl -fsS http://127.0.0.1:5105/health/ready | grep -q "Healthy"
-          curl -fsS http://127.0.0.1:5105/api/marks/ | grep -q '\['
-          curl -fsS -X POST http://127.0.0.1:5105/api/marks/ \
-            -H "Content-Type: application/json" \
-            -d '{"title":"Cloud baseline task","description":"CRUD works with AI disabled","priority":"Medium"}' \
-            | grep -q '"title":"Cloud baseline task"'
-          curl -fsS http://127.0.0.1:5105/api/integrations/capabilities \
-            | grep -q '"aiModeEnabled":false,"aiBreakdownEnabled":false'
+          echo "── Course contract"
+          courses_json=$(curl --fail --silent http://127.0.0.1:5105/api/courses) || fail "GET /api/courses failed"
+          echo "$courses_json" | jq --exit-status 'type == "array" and length > 0' || fail "Course contract failed: $courses_json"
+          echo "$courses_json" | jq --exit-status '.[0] | has("courseId") and has("code") and has("name")' || fail "Course contract failed: $courses_json"
+          course_id=$(echo "$courses_json" | jq --exit-status --raw-output '.[0].courseId')
+          echo "  course_id=$course_id"
+
+          echo "── Student contract"
+          students_json=$(curl --fail --silent http://127.0.0.1:5105/api/students/) || fail "GET /api/students/ failed"
+          echo "$students_json" | jq --exit-status 'type == "array" and length > 0' || fail "Student contract failed: $students_json"
+          echo "$students_json" | jq --exit-status '.[0] | has("studentId") and has("name") and has("idealMark")' || fail "Student contract failed: $students_json"
+          student_id=$(echo "$students_json" | jq --exit-status --raw-output '.[0].studentId')
+          echo "  student_id=$student_id"
+
+          echo "── Assignment contract"
+          assignments_json=$(curl --fail --silent "http://127.0.0.1:5105/api/assignment/student/$student_id") || fail "GET /api/assignment/student/$student_id failed"
+          echo "$assignments_json" | jq --exit-status 'type == "array" and length > 0' || fail "Assignment contract failed: $assignments_json"
+          echo "$assignments_json" | jq --exit-status '.[0] | has("assignmentId") and has("courseId") and has("name") and has("weight") and has("maxMark") and has("completed")' || fail "Assignment contract failed: $assignments_json"
+          assignment_id=$(echo "$assignments_json" | jq --exit-status --raw-output '.[0].assignmentId')
+          echo "  assignment_id=$assignment_id"
+
+          echo "── Marks contract"
+          marks_json=$(curl --fail --silent "http://127.0.0.1:5105/api/assignment/marks/$student_id") || fail "GET /api/assignment/marks/$student_id failed"
+          echo "$marks_json" | jq --exit-status 'type == "array"' || fail "Marks contract failed: $marks_json"
+
+          echo "── POST temp mark"
+          post_result=$(curl --fail --silent --request POST \
+              --header "Content-Type: application/json" \
+              --data "{\"studentId\":\"$student_id\",\"assignmentId\":\"$assignment_id\",\"tempMark\":85}" \
+              http://127.0.0.1:5105/api/assignment/marks/) || fail "POST /api/assignment/marks/ failed"
+          echo "$post_result" | jq --exit-status 'has("studentId") and has("assignmentId") and has("tempMark") and .tempMark == 85' || fail "POST contract failed: $post_result"
+
+          echo "── PUT temp mark"
+          put_result=$(curl --fail --silent --request PUT \
+              --header "Content-Type: application/json" \
+              --data "{\"studentId\":\"$student_id\",\"assignmentId\":\"$assignment_id\",\"tempMark\":92}" \
+              http://127.0.0.1:5105/api/assignment/marks/) || fail "PUT /api/assignment/marks/ failed"
+          echo "$put_result" | jq --exit-status 'has("studentId") and has("assignmentId") and has("tempMark") and .tempMark == 92' || fail "PUT contract failed: $put_result"
+
+          echo "── DELETE temp mark"
+          delete_status=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+              --request DELETE \
+              "http://127.0.0.1:5105/api/assignment/marks/$student_id/$assignment_id")
+          test "$delete_status" = "204" || fail "DELETE returned $delete_status (expected 204)"
+
+          echo "── Integrations capabilities"
+          caps_json=$(curl --fail --silent http://127.0.0.1:5105/api/integrations/capabilities) || fail "GET /api/integrations/capabilities failed"
+          echo "$caps_json" | jq --exit-status '.aiModeEnabled == false and .multiAgentEnabled == false' || fail "Capabilities contract failed: $caps_json"
+
           echo "Student 5 Cloud Baseline CRUD + AI-Disabled verification passed."
 
   # ---------------------------------------------------------------------------

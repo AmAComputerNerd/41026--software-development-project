@@ -21,7 +21,7 @@ public static class MultiAgentIntegrationEndpoints
         response.Headers.CacheControl = "no-store";
         return Results.Ok(new
         {
-            AiModeEnabled = aiGatewayOptions.Value.BaseUrl != null,
+            AiModeEnabled = aiGatewayOptions.Value.Enabled is true,
             MultiAgentEnabled = multiAgentOptions.Value.Enabled is true
         });
     }
