@@ -1,8 +1,11 @@
 using Authentication.DTOs;
 using Authentication.Extensions;
 using Authentication.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Student4.Contracts;
+using System.Security.Claims;
 
 namespace Authentication.Endpoints;
 
@@ -25,6 +28,8 @@ public static partial class AuthEndpoints
         var group = endpoints.MapGroup("/api/auth");
 
         group.MapPost("/login", Login);
+        group.MapPost("/logout", Logout);
+        group.MapGet("/me", GetCurrentUser);
         group.MapPost("/change-password", ChangePassword);
         group.MapDelete("/delete-account", DeleteAccount);
 
@@ -37,6 +42,7 @@ public static partial class AuthEndpoints
 
     private static async Task<IResult> Login(
         IAccountDatabaseClient db,
+        HttpContext httpContext,
         [FromBody] LoginRequestDto request,
         CancellationToken cancellationToken)
     {
@@ -53,12 +59,68 @@ public static partial class AuthEndpoints
             );
 
             var user = await db.LoginWithStatusAsync(command, cancellationToken);
-            return user is null ? Results.Unauthorized() : Results.Ok(user.ToDto());
+            if (user is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            // Create claims and sign in with cookie
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}".Trim()),
+                new Claim(ClaimTypes.Role, user.UserType),
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30),
+                AllowRefresh = true,
+            };
+
+            await httpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                authProperties);
+
+            return Results.Ok(user.ToDto());
         }
         catch (DatabaseServiceException ex)
         {
             return Results.Problem(detail: ex.Message, statusCode: 503);
         }
+    }
+
+    private static async Task<IResult> Logout(HttpContext httpContext)
+    {
+        await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return Results.Ok(new { message = "Logged out successfully." });
+    }
+
+    private static async Task<IResult> GetCurrentUser(HttpContext httpContext)
+    {
+        var user = httpContext.User;
+        if (user?.Identity?.IsAuthenticated != true)
+        {
+            return Results.Unauthorized();
+        }
+
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        return Results.Ok(new
+        {
+            id = userId,
+            email = user.FindFirst(ClaimTypes.Email)?.Value,
+            name = user.FindFirst(ClaimTypes.Name)?.Value,
+            role = user.FindFirst(ClaimTypes.Role)?.Value,
+        });
     }
 
     private static async Task<IResult> ChangePassword(

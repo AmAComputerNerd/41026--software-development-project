@@ -181,6 +181,18 @@ export async function forgotPassword(email: string): Promise<{ message: string }
   })
 }
 
+// POST /api/auth/logout — logs out the current user
+export async function logout(): Promise<{ message: string }> {
+  return request('/auth/logout', {
+    method: 'POST',
+  })
+}
+
+// GET /api/auth/me — get current authenticated user
+export async function getCurrentUser(): Promise<{ id: string; email: string; name: string; role: string }> {
+  return request('/auth/me')
+}
+
 // POST /api/auth/reset-password — exchanges the raw token from the
 // email link for a new password. Returns { message } on success or
 // throws a 400 ApiError if the token is invalid/expired.

@@ -39,6 +39,7 @@ function formatErrorMessage(status: number, statusText: string, body: string): s
 export async function request(path: string, options: RequestInit = {}) {
   const response = await fetch(`${BASE_URL}${path}`, {
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     ...options,
   })
 

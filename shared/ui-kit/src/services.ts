@@ -42,7 +42,7 @@ export const SERVICES: Service[] = [
   {
     id: 'account-settings',
     name: 'Account & Settings',
-    route: '/account/',
+    route: '/account/profile',
     live: true,
   },
 ]
