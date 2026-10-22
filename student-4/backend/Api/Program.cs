@@ -37,9 +37,10 @@ builder.Services
 builder.Services
     .AddOptions<AiGatewayOptions>()
     .Bind(builder.Configuration.GetSection(AiGatewayOptions.SectionName))
+    .Validate(options => options.Enabled.HasValue, "AiGateway:Enabled must be configured.")
     .Validate(
-        options => IsAbsoluteHttpUrl(options.BaseUrl),
-        "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL.")
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
+        "AiGateway:BaseUrl must be an absolute HTTP or HTTPS URL when AI Gateway is enabled.")
     .ValidateOnStart();
 builder.Services
     .AddOptions<McpServerOptions>()
@@ -142,7 +143,7 @@ builder.Services
     .AddHttpClient<IAiProfileSummaryService, OpenRouterProfileSummaryService>((services, client) =>
     {
         var options = services.GetRequiredService<IOptions<AiGatewayOptions>>().Value;
-        ConfigureClient(client, options.BaseUrl);
+        if (options.Enabled is true) ConfigureClient(client, options.BaseUrl);
     })
     .AddStandardResilienceHandler(options =>
     {
