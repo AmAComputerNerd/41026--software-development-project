@@ -15,6 +15,7 @@ public static class StudentEndpoints
 
         group.MapGet("/{userId:guid}", GetStudent);
         group.MapPut("/{userId:guid}", UpdateStudent);
+        group.MapGet("/{userId:guid}/canvas-api-key", GetCanvasApiKey);
 
         return endpoints;
     }
@@ -28,6 +29,26 @@ public static class StudentEndpoints
         {
             var student = await db.GetStudentAsync(userId, cancellationToken);
             return student is null ? Results.NotFound() : Results.Ok(student.ToDto());
+        }
+        catch (DatabaseServiceException ex)
+        {
+            return Results.Problem(detail: ex.Message, statusCode: 503);
+        }
+    }
+
+    private static async Task<IResult> GetCanvasApiKey(
+        Guid userId,
+        IAccountDatabaseClient db,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var student = await db.GetStudentAsync(userId, cancellationToken);
+            if (student is null)
+            {
+                return Results.NotFound("Student record not found");
+            }
+            return Results.Ok(new { canvasApiKey = student.CanvasApiKey });
         }
         catch (DatabaseServiceException ex)
         {

@@ -15,6 +15,7 @@ import {
   type TeacherDto,
 } from '@/api/users'
 import { ApiError } from '@/api/http'
+import { setCanvasApiKeyCookie, clearCanvasApiKeyCookie } from '@/api/http'
 
 const currentUser = ref<UserDto | null>(null)
 const currentStudent = ref<StudentDto | null>(null)
@@ -75,6 +76,9 @@ export function useAuth() {
       if (currentUser.value?.userType === 'Student') {
         try {
           currentStudent.value = await getStudent(userId)
+          if (currentStudent.value?.canvasApiKey) {
+            setCanvasApiKeyCookie(currentStudent.value.canvasApiKey)
+          }
         } catch (err) {
           if (err instanceof ApiError && err.status === 404) {
             console.info('No student record yet for user', userId)
@@ -85,6 +89,9 @@ export function useAuth() {
       } else if (currentUser.value?.userType === 'Teacher') {
         try {
           currentTeacher.value = await getTeacher(userId)
+          if (currentTeacher.value?.canvasApiKey) {
+            setCanvasApiKeyCookie(currentTeacher.value.canvasApiKey)
+          }
         } catch (err) {
           if (err instanceof ApiError && err.status === 404) {
             console.info('No teacher record yet for user', userId)
@@ -133,6 +140,9 @@ export function useAuth() {
     try {
       const updated = await updateStudent(currentUser.value.id, studentData)
       currentStudent.value = updated
+      if (updated.canvasApiKey) {
+        setCanvasApiKeyCookie(updated.canvasApiKey)
+      }
       return updated
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to update student profile'
@@ -150,6 +160,9 @@ export function useAuth() {
     try {
       const updated = await updateTeacher(currentUser.value.id, teacherData)
       currentTeacher.value = updated
+      if (updated.canvasApiKey) {
+        setCanvasApiKeyCookie(updated.canvasApiKey)
+      }
       return updated
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to update teacher profile'
@@ -198,6 +211,7 @@ export function useAuth() {
     } catch {
       // Ignore logout errors
     }
+    clearCanvasApiKeyCookie()
     currentUser.value = null
     currentStudent.value = null
     currentTeacher.value = null

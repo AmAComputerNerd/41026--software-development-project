@@ -334,7 +334,7 @@ async function handleForgotPassword() {
             <label for="studentIsInternational" class="nb-form-label nb-mono">INTERNATIONAL STUDENT</label>
           </div>
           <div class="nb-form-group">
-            <label for="studentCanvasApiKey" class="nb-form-label nb-mono">CANVAS API KEY (OPTIONAL)</label>
+            <label for="studentCanvasApiKey" class="nb-form-label nb-mono">CANVAS API KEY</label>
             <input
               id="studentCanvasApiKey"
               type="text"

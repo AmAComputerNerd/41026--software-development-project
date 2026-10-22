@@ -205,3 +205,8 @@ export async function resetPassword(
     body: JSON.stringify({ token, newPassword }),
   })
 }
+
+// GET /api/students/{userId}/canvas-api-key — returns the Canvas API key for a student
+export async function getCanvasApiKey(userId: string): Promise<{ canvasApiKey: string }> {
+  return request(`/students/${userId}/canvas-api-key`)
+}
