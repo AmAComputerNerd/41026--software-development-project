@@ -14,9 +14,9 @@ public class OpenRouterProfileSummaryService : IAiProfileSummaryService
 
     private readonly HttpClient _httpClient;
 
-    public OpenRouterProfileSummaryService(IHttpClientFactory httpClientFactory)
+    public OpenRouterProfileSummaryService(HttpClient httpClient)
     {
-        _httpClient = httpClientFactory.CreateClient(HttpClientName);
+        _httpClient = httpClient;
     }
 
     public async Task<string> GenerateSummaryAsync(
