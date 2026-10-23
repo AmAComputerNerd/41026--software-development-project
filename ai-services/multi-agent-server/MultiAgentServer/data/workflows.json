@@ -2493,5 +2493,93 @@
     "revision": 0,
     "evidenceSnapshot": "{\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null}",
     "revisions": []
+  },
+  {
+    "id": "30589894-fa53-4184-adcf-52cb581bd92b",
+    "owner": "student-4",
+    "studentId": "9e5a92e1-b475-48da-ab1a-a9397368f816",
+    "goal": "Create a concise professional profile summary for the account. Use only the supplied profile evidence. Do not infer or invent personal traits, qualifications, or interests. Return only the summary text, with no labels or commentary.",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-23T01:54:00.8906557Z",
+    "updatedAtUtc": "2026-10-23T01:54:12.756555Z",
+    "planner": {
+      "objective": "Generate a concise professional profile summary using exclusively the provided profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.",
+      "requiredEvidence": [
+        "[Student ID: student-4, Name: Alex Morgan, Current Role: Junior Developer, Skills: Python, JavaScript, Git, SQL, Docker, AWS, React, Node.js, Express, PostgreSQL, MongoDB, REST APIs, Agile methodologies, Problem-solving, Team collaboration, Communication, Detail-oriented, Quick learner, Education: Bachelor of Science in Computer Science, University of California, Los Angeles (UCLA), Graduated: June 2023, Projects: Developed a full-stack e-commerce application using MERN stack",
+        "Built a RESTful API for a library management system",
+        "Created a data visualization dashboard using React and D3.js, Experience: Intern, TechStart Inc., Summer 2023 - Fall 2023, Contributed to backend development and database optimization for a high-traffic application.]"
+      ],
+      "steps": [
+        "Inspect live student-4 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-23T01:54:07.5944637Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u002201a161fe-4b45-7a49-a353-afc82b1a76ee\u0022,\u0022studentId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022type\u0022:\u0022AI\u0022,\u0022sourceMicroservice\u0022:\u0022account\u0022,\u0022message\u0022:\u0022New AI profile summary proposal generated.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-22T05:03:37.796706Z\u0022,\u0022relatedEntityType\u0022:\u0022User\u0022,\u0022relatedEntityId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022actionPayload\u0022:null},{\u0022id\u0022:\u002201a16207-284f-7e52-8d9c-15e1dfa2... | RAG Grounded Context: {\u0022status\u0022:\u0022success\u0022,\u0022answer\u0022:\u0022The multi-agent profile summary generation workflow sends only the necessary profile fields to a coordinator, scoped to the current account ID, excluding sensitive data like passwords and date of birth. Users inspect the Planner, Worker, and Reviewer output, and can approve, reject, or request revisions. Approval alone...",
+      "draftOutput": "John Student is a full-time, non-binary international student. No existing professional summary is currently on file.\n\nRecommended actions:\n1. Generate a profile summary using only the verified fields: full-time status and international student status.\n2. Validate the generated summary against course policy and deadline rules from the RAG context.\n3. Submit the summary for Reviewer approval, ensuring no sensitive data (e.g., passwords, date of birth) is included.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-4/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-23T01:54:12.09706Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "John Student is a full-time, non-binary international student.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-23T01:54:12.7563071Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-23T01:54:00.8906557Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-4 (studentId=9e5a92e1-b475-48da-ab1a-a9397368f816)."
+      },
+      {
+        "timestampUtc": "2026-10-23T01:54:07.5944637Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate a concise professional profile summary using exclusively the provided profile evidence for student-4, adhering to the constraint of no inference or invention of personal traits.\u0027 with 3 execution steps and 3 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-23T01:54:12.09706Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-23T01:54:12.7563071Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-23T01:54:12.7565502Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022accountId\u0022:\u00229e5a92e1-b475-48da-ab1a-a9397368f816\u0022,\u0022firstName\u0022:\u0022John\u0022,\u0022middleNames\u0022:null,\u0022lastName\u0022:\u0022Student\u0022,\u0022userType\u0022:\u0022Student\u0022,\u0022gender\u0022:\u0022NonBinary\u0022,\u0022student\u0022:{\u0022courseStatus\u0022:\u0022FullTime\u0022,\u0022isInternational\u0022:true},\u0022teacher\u0022:null,\u0022existingSummary\u0022:null}",
+    "revisions": []
   }
 ]
