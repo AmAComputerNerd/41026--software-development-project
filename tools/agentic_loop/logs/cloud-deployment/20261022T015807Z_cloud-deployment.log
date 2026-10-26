@@ -1,0 +1,497 @@
+[cloud-deployment][PLAN] Loading authoritative codebase documentation and feature context
+[cloud-deployment][PLAN] Loaded context from '/Users/bryanrplee/Documents/Projects/41026--software-development-project/tools/agentic_loop/prompts/owners/shared/context_prompt.txt' and docs: AGENTS.md, docs/architecture/overview.md
+[cloud-deployment][ACT] Executing live probes, schema queries, and static inspection
+[cloud-deployment][OBSERVE] Structured 1608 words of observation evidence
+[cloud-deployment][ADAPT-PROPOSE] Running implementation model grounded in documentation
+[cloud-deployment][ADAPT-PROPOSE] Proposal generated
+[cloud-deployment][ADAPT-REVIEW] Loading review prompt and evaluating architectural compliance
+[cloud-deployment][ADAPT-REVIEW] Complete
+[cloud-deployment][DONE] Plan -> Act -> Observe -> Adapt cycle complete
+
+RUNNING: cloud-deployment
+OBSERVE: === RELEASE 2 CLOUD DEPLOYMENT REPORT EVIDENCE (Target: shared) ===
+
+--- 1. Azure Infrastructure-as-Code (infra/azure/main.bicep) ---
+
+// ============================================================================
+// Better Canvas — Release 2 Azure Cloud Deployment IaC (main.bicep)
+// Target Platform: Microsoft Azure Container Apps (ACA) + Azure Container Registry
+// Supports:
+//   1. Baseline Cloud Profile (Criterion 7, default):
+//      - All AI services disabled (AI_MODE_ENABLED=false, MCP_ENABLED=false,
+//        RAG_ENABLED=false, MULTI_AGENT_ENABLED=false)
+//      - Publicly accessible shared-shell Nginx reverse proxy (HTTPS/TLS)
+//      - Internal-only isolated microservices & persistence databases
+//   2. Bonus Cloud Profile (Bonus B1–B6, opt-in):
+//      - B1: AI Mode Gateway Container App (:5001)
+//      - B2: MCP Server Container App (:5002)
+//      - B3: RAG Server Container App (:5003)
+//      - B4: Multi-Agent Server Container App (:5004)
+//      - B5: Production Cloud Security (HTTPS/TLS ingress, CORS, rate limiting, Key Vault secrets)
+//      - B6: Full Cloud Infrastructure Architecture (internal VNet/ACA environment isolation)
+// ============================================================================
+
+@description('Azure region for all resources')
+param location string = resourceGroup().location
+
+@description('Environment prefix for resource naming')
+param environmentName string = 'better-canvas-r2'
+
+@description('Azure Container Registry name (alphanumeric)')
+param acrName string = 'acrbettercanvasr2'
+
+@description('Container image tag to deploy')
+param imageTag string = 'latest'
+
+@description('Enable Bonus B1–B4 AI Services in Cloud (default false for Criterion 7 Baseline Profile)')
+param enableBonusAi bool = false
+
+@description('Enable Bonus B5–B6 Cloud Security & Key Vault integration')
+param enableBonusSecurity bool = true
+
+@secure()
+@description('OpenRouter API Key (only injected into ai-mode when enableBonusAi is true)')
+param openRouterApiKey string = ''
+
+@description('OpenRouter Model (only injected into ai-mode when enableBonusAi is true)')
+param openRouterModel string = 'nvidia/nemotron-3.5-lightning:free'
+
+@secure()
+@description('Canvas LMS API Token (injected into shared-backend only)')
+param canvasApiToken string = ''
+
+@description('Canvas LMS Base URL')
+param canvasBaseUrl string = 'https://canvas.instructure.com'
+
+@secure()
+@description('PostgreSQL administrator password for student-1-database')
+param postgresPassword string = ''
+
+var actualPostgresPassword = empty(postgresPassword) ? 'postgres-cloud-r2-secure' : postgresPassword
+var aiEnabledString = enableBonusAi ? 'true' : 'false'
+var aiModeInternalUrl = enableBonusAi ? 'http://ai-mode' : 'http://localhost:5001'
+var mcpInternalUrl = enableBonusAi ? 'http://mcp-server' : 'http://localhost:5002'
+var ragInternalUrl = enableBonusAi ? 'http://rag-server' : 'http://localhost:5003'
+var multiAgentInternalUrl = enableBonusAi ? 'http://multi-agent-server' : 'http://localhost:5004'
+
+// ----------------------------------------------------------------------------
+// 1. Observability: Log Analytics Workspace
+// ----------------------------------------------------------------------------
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+  name: '${environmentName}-logs'
+  location: location
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+    retentionInDays: 30
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 2. Container Registry (ACR)
+// ----------------------------------------------------------------------------
+resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
+  name: acrName
+  location: location
+  sku: {
+    name: 'Basic'
+  }
+  properties: {
+    adminUserEnabled: true
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 3. Azure Container Apps Managed Environment (Internal Isolation + TLS)
+// ----------------------------------------------------------------------------
+resource managedEnv 'Microsoft.App/managedEnvironments@2023-05-01' = {
+  name: '${environmentName}-env'
+  location: location
+  properties: {
+    appLogsConfiguration: {
+      destination: 'log-analytics'
+      logAnalyticsConfiguration: {
+        customerId: logAnalytics.properties.customerId
+        sharedKey: logAnalytics.listKeys().primarySharedKey
+      }
+    }
+    zoneRedundant: false
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 4. Public Gateway: shared-shell (Nginx Reverse Proxy + Vue 3 Shell)
+//    Bonus B5: External HTTPS/TLS Ingress, CORS policy, Rate Limiting headers
+... (929 more lines)
+
+--- 2. Reusable Deployment & Validation Scripts (infra/azure/deploy.sh & validate-cloud.sh) ---
+
+File: infra/azure/deploy.sh
+#!/usr/bin/env bash
+# ============================================================================
+# Better Canvas — Release 2 Azure Cloud Deployment Script (deploy.sh)
+# Usage:
+#   ./infra/azure/deploy.sh --mode baseline [--dry-run]
+#   ./infra/azure/deploy.sh --mode bonus-full [--dry-run]
+# ============================================================================
+set -euo pipefail
+
+MODE="baseline"
+DRY_RUN="false"
+SKIP_BUILD="false"
+RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-rg-better-canvas-r2}"
+LOCATION="${AZURE_LOCATION:-australiaeast}"
+ACR_NAME="${AZURE_ACR_NAME:-acrbettercanvasr2}"
+IMAGE_TAG="${IMAGE_TAG:-latest}"
+OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-}"
+OPENROUTER_MODEL="${OPENROUTER_MODEL:-}"
+CANVAS_API_TOKEN="${CANVAS_API_TOKEN:-}"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# If running locally and .env exists, load OPENROUTER_API_KEY, OPENROUTER_MODEL and CANVAS_API_TOKEN if not already set
+if [[ -f "$REPO_ROOT/.env" ]]; then
+  if [[ -z "$OPENROUTER_API_KEY" ]]; then
+    OPENROUTER_API_KEY="$(grep -E '^OPENROUTER_API_KEY=' "$REPO_ROOT/.env" | cut -d '=' -f2- | tr -d '\"' | tr -d "'" || true)"
+  fi
+  if [[ -z "$OPENROUTER_MODEL" ]]; then
+    OPENROUTER_MODEL="$(grep -E '^OPENROUTER_MODEL=' "$REPO_ROOT/.env" | cut -d '=' -f2- | tr -d '\"' | tr -d "'" || true)"
+  fi
+  if [[ -z "$CANVAS_API_TOKEN" ]]; then
+    CANVAS_API_TOKEN="$(grep -E '^CANVAS_API_TOKEN=' "$REPO_ROOT/.env" | cut -d '=' -f2- | tr -d '\"' | tr -d "'" || true)"
+  fi
+fi
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --mode)
+      MODE="$2"
+      shift 2
+      ;;
+    --dry-run)
+      DRY_RUN="true"
+      shift
+      ;;
+    --skip-build)
+      SKIP_BUILD="true"
+      shift
+      ;;
+    --openrouter-key)
+      OPENROUTER_API_KEY="$2"
+      shift 2
+      ;;
+    --openrouter-model)
+      OPENROUTER_MODEL="$2"
+      shift 2
+      ;;
+    --canvas-token)
+      CANVAS_API_TOKEN="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown flag: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+ENABLE_BONUS_AI="false"
+ENABLE_BONUS_SECURITY="true"
+
+if [[ "$MODE" == "bonus-full" ]]; then
+  ENABLE_BONUS_AI="true"
+  ENABLE_BONUS_SECURITY="true"
+elif [[ "$MODE" == "baseline" ]]; then
+  ENABLE_BONUS_AI="false"
+  ENABLE_BONUS_SECURITY="true"
+else
+  echo "Invalid --mode '$MODE'. Expected 'baseline' or 'bonus-full'." >&2
+... (110 more lines)
+
+File: infra/azure/validate-cloud.sh
+#!/usr/bin/env bash
+# ============================================================================
+# Better Canvas — Release 2 Cloud Smoke & CRUD Verification (validate-cloud.sh)
+# Verifies:
+#   1. Public gateway health & frontend shell reachability
+#   2. Baseline AI-disabled status (AI_MODE_ENABLED=false, MCP_ENABLED=false,
+#      RAG_ENABLED=false, MULTI_AGENT_ENABLED=false) when in baseline profile
+#   3. Real database-backed CRUD operations across Student 1 endpoints:
+#      - Endpoint 1: GET /api/notifications/notifications
+#      - Endpoint 2: POST /api/notifications/notifications/push
+#      - Preferences: GET & PUT /api/notifications/preferences/{userId}
+# ============================================================================
+set -euo pipefail
+
+BASE_URL="${CLOUD_BASE_URL:-http://localhost:8080}"
+EXPECT_AI_ENABLED="${EXPECT_AI_ENABLED:-false}"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --url)
+      BASE_URL="${2%/}"
+      shift 2
+      ;;
+    --expect-ai-enabled)
+      EXPECT_AI_ENABLED="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+echo "=================================================================="
+echo "Better Canvas — Cloud Deployment Smoke & CRUD Validator"
+echo "Target URL          : $BASE_URL"
+echo "Expected AI Enabled : $EXPECT_AI_ENABLED"
+echo "=================================================================="
+
+echo "[1/4] Checking Student 1 Notification Service health..."
+curl -fsS "$BASE_URL/api/notifications/health" | grep -q '"status":"Healthy"'
+echo "  -> PASS: /api/notifications/health returned Healthy"
+
+echo "[2/4] Verifying Endpoint 1: GET /api/notifications/notifications (Read)..."
+GET_RESP=$(curl -fsS "$BASE_URL/api/notifications/notifications")
+echo "$GET_RESP" | grep -q '\['
+echo "  -> PASS: GET /api/notifications/notifications returned JSON array"
+
+echo "[3/4] Verifying Endpoint 2: POST /api/notifications/notifications/push (Create + Persistence)..."
+PUSH_RESP=$(curl -fsS -X POST "$BASE_URL/api/notifications/notifications/push" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "courseId": "CLOUD-R2-31251",
+    "CourseName": "Cloud Deployment Verification",
+    "Title": "Cloud Smoke Test Notification",
+    "SourceType": "system",
+    "EventType": "cloud_smoke_test",
+    "Content": "Automated verification of cloud persistence without AI dependency."
+  }')
+echo "$PUSH_RESP" | grep -q '"courseId":"CLOUD-R2-31251"'
+echo "  -> PASS: POST /api/notifications/notifications/push persisted notification"
+
+echo "[4/4] Verifying Multi-Agent status endpoint & AI flag posture..."
+MA_STATUS=$(curl -fsS "$BASE_URL/api/notifications/multi-agent/status")
+echo "  -> Status payload: $MA_STATUS"
+if [[ "$EXPECT_AI_ENABLED" == "false" ]]; then
+  echo "$MA_STATUS" | grep -q '"enabled":false'
+  echo "  -> PASS: Baseline profile verified (Multi-Agent & AI services disabled cleanly)"
+else
+  echo "$MA_STATUS" | grep -q '"enabled":true'
+  echo "  -> PASS: Bonus AI profile verified (Multi-Agent enabled)"
+fi
+
+echo "=================================================================="
+echo "ALL CLOUD SMOKE & CRUD CHECKS PASSED"
+echo "=================================================================="
+
+--- 3. Cloud Deployment GitHub Actions Workflow (.github/workflows/cloud-deployment.yml) ---
+
+name: Cloud Deployment (Azure Container Apps)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/azure/**'
+      - 'docker-compose.yml'
+      - 'shared/**'
+      - 'student-1/**'
+      - 'student-2/**'
+      - 'student-3/**'
+      - 'student-4/**'
+      - 'student-5/**'
+      - 'ai-services/**'
+      - '.github/workflows/cloud-deployment.yml'
+  workflow_dispatch:
+    inputs:
+      deployment_profile:
+        description: 'Cloud deployment profile (bonus-full enables AI Mode; baseline disables AI)'
+        required: true
+        default: 'bonus-full'
+        type: choice
+        options:
+          - bonus-full
+          - baseline
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Stage 1: CI Pre-Deployment Verification & Baseline Flag Audit
+  # ---------------------------------------------------------------------------
+  validate-iac-and-tests:
+    name: Validate IaC, Baseline Flags & Student 1 Tests
+    runs-on: ubuntu-latest
+    outputs:
+      azure_credentials_configured: ${{ steps.check-creds.outputs.configured }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Azure Deployment Credentials Availability
+        id: check-creds
+        env:
+          AZURE_CREDS: ${{ secrets.AZURE_CREDENTIALS }}
+          AZURE_DEP_SECRET: ${{ secrets.AZURE_DEPLOYMENT_ENABLED }}
+        run: |
+          if [ -n "$AZURE_CREDS" ] || [ "$AZURE_DEP_SECRET" = "true" ]; then # pragma: allowlist secret
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup .NET 10.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Validate Azure Bicep Template & Deployment Script (Dry-Run)
+        run: |
+          chmod +x infra/azure/deploy.sh infra/azure/validate-cloud.sh
+          ./infra/azure/deploy.sh --mode baseline --dry-run
+          ./infra/azure/deploy.sh --mode bonus-full --dry-run
+
+      - name: Verify Baseline Profile Disables All 4 AI Flags by Default
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          bicep = Path("infra/azure/main.bicep").read_text(encoding="utf-8")
+          for flag in ("AI_MODE_ENABLED", "MCP_ENABLED", "RAG_ENABLED", "MULTI_AGENT_ENABLED"):
+              assert flag in bicep, f"Missing {flag} in infra/azure/main.bicep"
+          assert "param enableBonusAi bool = false" in bicep, "enableBonusAi must default to false"
+          print("Verified: Baseline Cloud Profile disables AI_MODE, MCP, RAG, and MULTI_AGENT by default.")
+          PY
+
+      - name: Build Shared Multi-Agent Server (:5004)
+        run: dotnet build ai-services/multi-agent-server/MultiAgentServer/MultiAgentServer.csproj --configuration Release -warnaserror
+
+      - name: Run Student 1 Backend Unit & Integration Tests (Baseline + Multi-Agent)
+        run: dotnet test student-1/backend/NotificationService.sln --configuration Release --verbosity normal
+
+  # ---------------------------------------------------------------------------
+  # Stage 2: Baseline Smoke Verification (AI Disabled)
+  # ---------------------------------------------------------------------------
+  smoke-test-baseline-container:
+    name: Smoke Test Baseline Cloud Profile (AI Disabled)
+    needs: validate-iac-and-tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: notifications_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres # pragma: allowlist secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+... (143 more lines)
+
+--- 4. Baseline AI-Disabled & Host-Boundary Contract (.github/workflows/docker-ci.yml) ---
+
+name: Docker - CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ai-services/**"
+      - "shared/**"
+      - "student-*/**"
+      - "docker-compose.yml"
+      - "package.json"
+      - "package-lock.json"
+      - ".env.example"
+      - "tools/setup_env.py"
+      - "tools/run_ai_services.py"
+      - ".github/workflows/docker-ci.yml"
+  pull_request:
+    paths:
+      - "ai-services/**"
+      - "shared/**"
+      - "student-*/**"
+      - "docker-compose.yml"
+      - "package.json"
+      - "package-lock.json"
+      - ".env.example"
+      - "tools/setup_env.py"
+      - "tools/run_ai_services.py"
+      - ".github/workflows/docker-ci.yml"
+
+concurrency:
+  group: docker-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  OPENROUTER_API_KEY: ci-placeholder
+  CANVAS_BASE_URL: https://canvas.example.invalid
+  CANVAS_API_TOKEN: ci-placeholder
+
+jobs:
+  compose-contract:
+    name: Compose contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      services: ${{ steps.discover.outputs.services }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Compose environment
+        run: |
+          cat << 'EOF' > .env
+          OPENROUTER_API_KEY="ci-placeholder" # pragma: allowlist secret
+          OPENROUTER_MODEL=ci-placeholder
+          CANVAS_BASE_URL=https://canvas.example.invalid
+          CANVAS_API_TOKEN="ci-placeholder"
+          MCP_ENABLED=false
+          RAG_ENABLED=false
+          AI_MODE_ENABLED=false
+          AI_MODE_HOST_PORT=5001
+          MCP_HOST_PORT=5002
+          RAG_HOST_PORT=5003
+          MULTI_AGENT_ENABLED=false
+          MULTI_AGENT_HOST_PORT=5004
+          EOF
+          python -c 'import secrets; print("POSTGRES_PASSWORD=" + secrets.token_hex(32))' >> .env
+
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+
+      - name: Verify AI service boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          config=$(docker compose config --format json)
+          jq --exit-status '
+            . as $config |
+            (["ai-mode", "mcp-server", "rag-server", "multi-agent-server"] | all(
+              . as $service | $config.services | has($service) | not
+            )) and
+            ([.services | to_entries[] |
+              select(.value.environment | has("OPENROUTER_API_KEY")) | .key] == []) and
+            (.networks | has("ai-services") | not) and
+            ([1, 2, 3, 4, 5] | all(
+              . as $student |
+              $config.services["student-\($student)-backend"] as $backend |
+              ($backend.environment.AiGateway__BaseUrl == "http://host.docker.internal:5001") and
+              ($backend.environment.McpServer__BaseUrl == "http://host.docker.internal:5002/mcp") and
+              ($backend.environment.RagServer__BaseUrl == "http://host.docker.internal:5003") and
+              ($backend.extra_hosts == ["host.docker.internal=host-gateway"])
+            )) and
+            (.services["student-1-backend"].environment.MultiAgentServer__Enabled == "false") and
+            (.services["student-1-backend"].environment.MultiAgentServer__BaseUrl |
+              startswith("http://host.docker.internal:")) and
+... (288 more lines)
+
+IMPLEMENTATION (ADAPT PROPOSAL): No response generated.
+
+REVIEW (ADAPT CRITIQUE): No response generated.

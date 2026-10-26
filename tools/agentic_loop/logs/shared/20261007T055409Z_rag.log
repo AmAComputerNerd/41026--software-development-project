@@ -1,0 +1,7 @@
+[shared/rag][PLAN] Loading authoritative codebase documentation and feature context
+[shared/rag][PLAN] Loaded context from '/Users/bryanrplee/Documents/Projects/41026--software-development-project/tools/agentic_loop/prompts/owners/shared/context_prompt.txt' and docs: AGENTS.md, ai-services/rag-server/README.md, docs/architecture/data-flows.md
+[shared/rag][ACT] Executing live probes, schema queries, and static inspection
+[shared/rag][ACT] Inspection failed
+
+RUNNING: shared/rag
+ACT/OBSERVE FAILED: Static contract: curated Markdown retrieval has a relevance threshold, generation routes through ai-mode, responses carry structured citations and confidence, and an insufficient-context branch bypasses generation. Live validation failed: Grounded query returned HTTP 502; start Student 3, RAG, and AI Mode, then re-run validation.

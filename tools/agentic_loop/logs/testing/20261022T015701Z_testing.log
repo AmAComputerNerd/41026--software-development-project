@@ -1,0 +1,809 @@
+[testing][PLAN] Loading authoritative codebase documentation and feature context
+[testing][PLAN] Loaded context from '/Users/bryanrplee/Documents/Projects/41026--software-development-project/tools/agentic_loop/prompts/owners/shared/context_prompt.txt' and docs: AGENTS.md, docs/development/testing-and-ci.md
+[testing][ACT] Executing live probes, schema queries, and static inspection
+[testing][OBSERVE] Structured 2027 words of observation evidence
+[testing][ADAPT-PROPOSE] Running implementation model grounded in documentation
+[testing][ADAPT-PROPOSE] Proposal generated
+[testing][ADAPT-REVIEW] Loading review prompt and evaluating architectural compliance
+[testing][ADAPT-REVIEW] Complete
+[testing][DONE] Plan -> Act -> Observe -> Adapt cycle complete
+
+RUNNING: testing
+OBSERVE: === RELEASE 2 TESTING REPORT EVIDENCE (Target: shared) ===
+
+--- 1. Pre-Commit Security Configuration (Ruff Security, detect-secrets, pip-audit) ---
+
+File: .pre-commit-config.yaml
+minimum_pre_commit_version: "4.6.2"
+default_install_hook_types: [pre-commit]
+default_stages: [pre-commit]
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-security
+        name: Ruff security rules
+        entry: ruff check --config ruff.toml
+        language: python
+        additional_dependencies: [ruff==0.17.0]
+        types: [python]
+
+      - id: detect-secrets
+        name: Detect secrets
+        entry: detect-secrets-hook
+        language: python
+        additional_dependencies: [detect-secrets==1.5.0]
+        args:
+          - --baseline
+          - .secrets.baseline
+          - --no-verify
+        exclude: ^\.secrets\.baseline$
+
+      - id: pip-audit
+        name: Audit Python dependencies
+        entry: pip-audit --requirement tools/agentic_loop/requirements.txt
+        language: python
+        additional_dependencies: [pip-audit==2.10.1]
+        pass_filenames: false
+        always_run: true
+
+File: ruff.toml
+[lint]
+select = ["S"]
+
+[lint.per-file-ignores]
+# Best-effort console encoding setup, not a suppressed security failure.
+".agents/skills/caveman-compress/scripts/cli.py" = ["S110"]
+# Encoding fallback and fixed Claude CLI invocation with shell=False.
+".agents/skills/caveman-compress/scripts/compress.py" = ["S110", "S603"]
+# Re-executes the repository's existing virtualenv interpreter with argv.
+"tools/agentic_loop.py" = ["S606"]
+# stdout is piped; dotnet argv is fixed; health URLs are constructed loopback URLs.
+"tools/run_ai_services.py" = ["S101", "S603", "S310"]
+
+File: .github/workflows/security-ci.yml
+name: Security - CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security-checks:
+    name: Security checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pre-commit
+        run: python -m pip install pre-commit==4.6.2
+
+      - name: Run repository security checks
+        run: pre-commit run --all-files
+
+File: tools/setup_precommit_security.py
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+import subprocess
+import sys
+import venv
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+ENVIRONMENT_PATH = REPOSITORY_ROOT / ".local" / "pre-commit"
+PRE_COMMIT_VERSION = "4.6.2"
+
+
+def main() -> int:
+    argparse.ArgumentParser(
+        description="Install local commit-time security hooks and scan the repository."
+    ).parse_args()
+    if sys.version_info < (3, 10):
+        print("Security setup requires Python 3.10 or newer.", file=sys.stderr)
+        return 1
+
+    environment_python = ENVIRONMENT_PATH / (
+        "Scripts/python.exe" if sys.platform == "win32" else "bin/python"
+    )
+    stage = "creating the local Python environment"
+    try:
+        if not environment_python.is_file():
+            print(f"Creating {ENVIRONMENT_PATH.relative_to(REPOSITORY_ROOT)}", flush=True)
+            venv.EnvBuilder(with_pip=True).create(ENVIRONMENT_PATH)
+
+        commands = (
+            (
+                "installing pre-commit",
+                ["pip", "install", f"pre-commit=={PRE_COMMIT_VERSION}"],
+            ),
+            (
+                "installing the Git hook and scanner environments",
+                ["pre_commit", "install", "--install-hooks"],
+            ),
+            (
+                "running the initial repository security scan",
+                ["pre_commit", "run", "--all-files"],
+            ),
+        )
+        for stage, arguments in commands:
+            print(f"Security setup: {stage}", flush=True)
+            # Repository-local interpreter and fixed argument lists; no shell execution.
+            subprocess.run(  # noqa: S603
+                [str(environment_python), "-m", *arguments],
+... (23 more lines)
+
+--- 2. Live Static Security Check (Python Tools Syntax & Security) ---
+
+ExitCode=0
+
+
+--- 3. Post-Commit CI/CD Workflows (student-1.yml .. student-5.yml) ---
+
+Workflow (.github/workflows/student-1.yml):
+name: Student 1 - CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "student-1/backend/**"
+      - "student-1/database/**"
+      - "student-1/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-1.yml"
+  pull_request:
+    paths:
+      - "student-1/backend/**"
+      - "student-1/database/**"
+      - "student-1/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-1.yml"
+
+# Cancel superseded runs on the same branch/PR to save CI minutes.
+concurrency:
+  group: student-1-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  NODE_VERSION: "22"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SOLUTION: student-1/backend/NotificationService.sln
+  WORKING_DIR: student-1/backend/Api
+
+jobs:
+  frontend-tests:
+    name: Frontend build & Playwright E2E tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Type check and build
+        run: npm run build --workspace=student-1-frontend
+
+      - name: Run Playwright E2E tests
+        run: npm run test:e2e --workspace=student-1-frontend
+
+  build-and-test:
+    name: Backend build, test & format check
+    runs-on: ubuntu-latest
+    env:
+      McpServer__Enabled: "false"
+      RagServer__Enabled: "false"
+      MultiAgentServer__Enabled: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-1/backend/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore "${{ env.DOTNET_SOLUTION }}"
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-restore -warnaserror
+
+      - name: Post-Commit CI/CD Endpoint Tests (Endpoint 1 GET /notifications & Endpoint 2 POST /notifications/push)
+        run: dotnet test "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-build --filter "FullyQualifiedName~NotificationEndpointsTests|FullyQualifiedName~MultiAgentIntegrationEndpointsTests" --logger "console;verbosity=normal"
+
+... (79 more lines)
+
+Workflow (.github/workflows/student-2.yml):
+name: Student 2 - CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "student-2/backend/**"
+      - "student-2/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-2.yml"
+  pull_request:
+    paths:
+      - "student-2/backend/**"
+      - "student-2/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-2.yml"
+
+concurrency:
+  group: student-2-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  NODE_VERSION: "22"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  BACKEND_DIR: student-2/backend/Api
+  AiGateway__Enabled: "false"
+  McpServer__Enabled: "false"
+  RagServer__Enabled: "false"
+
+jobs:
+  frontend-build:
+    name: Frontend type check & production build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Type check and build
+        run: npm run build --workspace=student-2-frontend
+
+      - name: Audit production dependencies
+        run: npm audit --workspace=student-2-frontend --omit=dev --audit-level=high
+
+  backend-build:
+    name: Backend build, analyze & format check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-2/backend/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build --configuration Release --no-restore -warnaserror
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Verify AI Mode, MCP and RAG are disabled
+        shell: bash
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: |
+          ASPNETCORE_URLS=http://127.0.0.1:5122 \
+            dotnet run --configuration Release --no-build --no-launch-profile &
+          backend_pid=$!
+          trap 'kill "$backend_pid"' EXIT
+
+... (69 more lines)
+
+Workflow (.github/workflows/student-3.yml):
+name: Student 3 - CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "student-3/backend/**"
+      - "student-3/contracts/**"
+      - "student-3/database/**"
+      - "student-3/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-3.yml"
+  pull_request:
+    paths:
+      - "student-3/backend/**"
+      - "student-3/contracts/**"
+      - "student-3/database/**"
+      - "student-3/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-3.yml"
+
+# Cancel superseded runs on the same branch/PR to save CI minutes.
+concurrency:
+  group: student-3-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  NODE_VERSION: "22"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SOLUTION: student-3/backend/DeadlineTaskTracker.sln
+  API_PROJECT: student-3/backend/Api/Api.csproj
+  DATABASE_PROJECT: student-3/database/Database/Database.csproj
+
+jobs:
+  frontend-build:
+    name: Frontend type check & production build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Type check and build
+        run: npm run build --workspace=student-3-frontend
+
+  build-and-analyze:
+    name: Build, analyze & format check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-3/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore "${{ env.DOTNET_SOLUTION }}"
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-restore -warnaserror
+
+      - name: Verify code formatting
+        run: dotnet format "${{ env.DOTNET_SOLUTION }}" --verify-no-changes --severity warn
+
+  frontend-backend-contract:
+    name: API contract & browser CORS smoke test
+    needs: [frontend-build, build-and-analyze]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+... (204 more lines)
+
+Workflow (.github/workflows/student-4.yml):
+name: Student 4 - CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "student-4/authentication/**"
+      - "student-4/backend/**"
+      - "student-4/contracts/**"
+      - "student-4/database/**"
+      - "student-4/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-4.yml"
+  pull_request:
+    paths:
+      - "student-4/authentication/**"
+      - "student-4/backend/**"
+      - "student-4/contracts/**"
+      - "student-4/database/**"
+      - "student-4/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-4.yml"
+
+# Cancel superseded runs on the same branch/PR to save CI minutes.
+concurrency:
+  group: student-4-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  NODE_VERSION: "22"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SOLUTION: student-4/backend/AccountService.sln
+  API_PROJECT: student-4/backend/Api/Api.csproj
+  DATABASE_PROJECT: student-4/database/Database/Database.csproj
+  McpServer__Enabled: "false"
+  RagServer__Enabled: "false"
+
+jobs:
+  frontend-build:
+    name: Frontend type check & production build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Type check and build
+        run: npm run build --workspace=student-4-frontend
+
+  build-and-analyze:
+    name: Build, analyze & format check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-4/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore "${{ env.DOTNET_SOLUTION }}"
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-restore -warnaserror
+
+      - name: Verify code formatting
+        run: dotnet format "${{ env.DOTNET_SOLUTION }}" --verify-no-changes --severity warn
+
+  account-api-contract:
+    name: Account API & disabled MCP/RAG smoke test
+    needs: build-and-analyze
+... (124 more lines)
+
+Workflow (.github/workflows/student-5.yml):
+name: Student 5 - CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "student-5/backend/**"
+      - "student-5/contracts/**"
+      - "student-5/database/**"
+      - "student-5/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-5.yml"
+  pull_request:
+    paths:
+      - "student-5/backend/**"
+      - "student-5/contracts/**"
+      - "student-5/database/**"
+      - "student-5/frontend/**"
+      - "shared/ui-kit/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/student-5.yml"
+
+concurrency:
+  group: student-5-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  NODE_VERSION: "22"
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SOLUTION: student-5/backend/GradesManager/GradesManager.slnx
+  API_PROJECT: student-5/backend/GradesManager/GradesManager/GradesManager.csproj
+  DATABASE_PROJECT: student-5/database/Database/Database.csproj
+
+jobs:
+  frontend-build:
+    name: Frontend type check & production build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Type check and build
+        run: npm run build --workspace=student-5-frontend
+
+  build-and-analyze:
+    name: Build, analyze & format check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('student-5/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore "${{ env.DOTNET_SOLUTION }}"
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-restore -warnaserror
+
+      - name: Verify code formatting
+        run: dotnet format "${{ env.DOTNET_SOLUTION }}" --verify-no-changes --severity warn
+
+  frontend-backend-contract:
+    name: API contract smoke test
+    needs: [frontend-build, build-and-analyze]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+... (194 more lines)
+
+--- 4. Student 1 Endpoint Test Suite (NotificationEndpointsTests.cs) ---
+using System.Net;
+using System.Net.Http.Json;
+using Api.Data;
+using Api.DTOs;
+using Api.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit;
+
+namespace Api.Tests.Integration;
+
+public sealed class NotificationEndpointsTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public NotificationEndpointsTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task GetNotifications_ReturnsOkWithFilteredResults()
+    {
+        // Arrange
+        await _factory.ResetDatabaseAsync();
+        var studentId = Guid.NewGuid();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Notifications.AddRange(
+                new Notification
+                {
+                    StudentId = studentId,
+                    Type = NotificationType.Deadline,
+                    SourceMicroservice = "student-3",
+                    Message = "Assignment 1",
+                    IsRead = false,
+                    CreatedAtUtc = DateTime.UtcNow
+                },
+                new Notification
+                {
+                    StudentId = studentId,
+                    Type = NotificationType.Grade,
+                    SourceMicroservice = "student-5",
+                    Message = "Quiz 1 graded",
+                    IsRead = true,
+                    CreatedAtUtc = DateTime.UtcNow
+                },
+                new Notification
+                {
+                    StudentId = Guid.NewGuid(),
+                    Type = NotificationType.AI,
+                    SourceMicroservice = "ai-mode",
+                    Message = "Other student notification",
+                    IsRead = false,
+                    CreatedAtUtc = DateTime.UtcNow
+                }
+            );
+            await db.SaveChangesAsync();
+        }
+
+        // Act - filter by student and unread
+        var response = await _client.GetAsync($"/notifications?studentId={studentId}&isRead=false");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var notifications = await response.Content.ReadFromJsonAsync<List<NotificationDto>>();
+        Assert.NotNull(notifications);
+        Assert.Single(notifications);
+        Assert.Equal("Assignment 1", notifications[0].Message);
+        Assert.False(notifications[0].IsRead);
+    }
+... (221 more lines)
+
+--- 5. Student 1 Multi-Agent Endpoint Test Suite (MultiAgentIntegrationEndpointsTests.cs) ---
+using System.Net;
+using System.Net.Http.Json;
+using Api.DTOs;
+using Moq;
+using Xunit;
+
+namespace Api.Tests.Integration;
+
+public class MultiAgentIntegrationEndpointsTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly HttpClient _client;
+    private readonly CustomWebApplicationFactory _factory;
+    private static readonly Guid StudentId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+    public MultiAgentIntegrationEndpointsTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+
+    private static MultiAgentWorkflowDto CreateSampleWorkflow(Guid id, string status = "AwaitingHumanReview") =>
+        new(
+            Id: id,
+            Owner: "student-1",
+            StudentId: StudentId,
+            Goal: "Triage unread notifications and draft study plan",
+            Status: status,
+            CreatedAtUtc: DateTime.UtcNow,
+            UpdatedAtUtc: DateTime.UtcNow,
+            Planner: new MultiAgentPlannerStageDto(
+                Objective: "Triage notifications",
+                RequiredEvidence: ["PostgreSQL notifications_db", "RAG policies"],
+                Steps: ["Step 1: Check unread", "Step 2: Prioritise deadlines"],
+                CompletedAtUtc: DateTime.UtcNow),
+            Worker: new MultiAgentWorkerStageDto(
+                EvidenceSummary: "3 unread deadline alerts",
+                DraftOutput: "Focus on Assessment 3 due in 48 hours.",
+                RecommendedActions: ["Complete subtask breakdown", "Check grade impact"],
+                Citations: ["student-1-backend:/notifications", "rag-server:/api/answers"],
+                CompletedAtUtc: DateTime.UtcNow),
+            Reviewer: new MultiAgentReviewerStageDto(
+                Verdict: "ReadyForHumanReview",
+                Confidence: "high",
+                Critique: "Plan aligns with urgency and course policies.",
+                IdentifiedRisks: ["Confirm Canvas sync timestamp"],
+                Recommendations: ["Approve plan"],
+                CompletedAtUtc: DateTime.UtcNow),
+            HumanReview: status == "Approved"
+                ? new MultiAgentHumanReviewStageDto(
+                    Decision: "Approve",
+                    ReviewerName: "Bryan Lee",
+                    Comments: "Looks great",
+                    FinalOutput: "Focus on Assessment 3 due in 48 hours.",
+                    ReviewedAtUtc: DateTime.UtcNow)
+                : null,
+            AuditLog:
+            [
+                new MultiAgentAuditEntryDto(DateTime.UtcNow, "Planner", "PlanCreated", "Created 2-step plan"),
+                new MultiAgentAuditEntryDto(DateTime.UtcNow, "Worker", "TaskExecuted", "Drafted triage plan"),
+                new MultiAgentAuditEntryDto(DateTime.UtcNow, "Reviewer", "OutputReviewed", "Verified against evidence")
+            ]);
+
+    [Fact]
+    public async Task RunMultiAgentWorkflow_ValidRequest_ReturnsAwaitingHumanReview()
+    {
+        var workflowId = Guid.NewGuid();
+        var sample = CreateSampleWorkflow(workflowId);
+
+        _factory.MultiAgentClientMock
+            .SetupGet(m => m.IsEnabled)
+            .Returns(true);
+        _factory.MultiAgentClientMock
+            .Setup(m => m.RunWorkflowAsync(
+                StudentId,
+                "Triage unread notifications and draft study plan",
+... (58 more lines)
+
+IMPLEMENTATION (ADAPT PROPOSAL): No response generated.
+
+REVIEW (ADAPT CRITIQUE): No response generated.

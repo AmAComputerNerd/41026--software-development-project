@@ -1,0 +1,506 @@
+[multi-agent][PLAN] Loading authoritative codebase documentation and feature context
+[multi-agent][PLAN] Loaded context from '/Users/bryanrplee/Documents/Projects/41026--software-development-project/tools/agentic_loop/prompts/owners/shared/context_prompt.txt' and docs: AGENTS.md, ai-services/multi-agent-server/README.md, docs/architecture/data-flows.md
+[multi-agent][ACT] Executing live probes, schema queries, and static inspection
+[multi-agent][OBSERVE] Structured 2121 words of observation evidence
+[multi-agent][ADAPT-PROPOSE] Running implementation model grounded in documentation
+[multi-agent][ADAPT-PROPOSE] Proposal generated
+[multi-agent][ADAPT-REVIEW] Loading review prompt and evaluating architectural compliance
+[multi-agent][ADAPT-REVIEW] Complete
+[multi-agent][DONE] Plan -> Act -> Observe -> Adapt cycle complete
+
+RUNNING: multi-agent
+OBSERVE: === RELEASE 2 MULTI-AGENT WORKFLOW EVIDENCE (Target: shared) ===
+
+--- 1. Shared Non-Containerised Multi-Agent Server (:5004) ---
+
+File: ai-services/multi-agent-server/MultiAgentServer/Program.cs
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using MultiAgentServer.Configuration;
+using MultiAgentServer.Endpoints;
+using MultiAgentServer.Services;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services
+    .AddOptions<MultiAgentOptions>()
+    .Bind(builder.Configuration.GetSection(MultiAgentOptions.SectionName))
+    .Validate(
+        options => Uri.TryCreate(options.AiGatewayBaseUrl, UriKind.Absolute, out _),
+        "MultiAgent:AiGatewayBaseUrl must be a valid absolute URL.")
+    .ValidateOnStart();
+
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<WorkflowStore>();
+builder.Services.AddScoped<MultiAgentCoordinator>();
+builder.Services
+    .AddHealthChecks()
+    .AddCheck(
+        "self",
+        () => HealthCheckResult.Healthy(),
+        tags: ["live", "ready"]);
+
+var app = builder.Build();
+
+app.MapGet("/", (WorkflowStore store) => Results.Ok(new
+{
+    service = "multi-agent-server",
+    status = "ready",
+    agents = Agents,
+    workflowCount = store.List().Count
+}));
+
+app.MapWorkflowEndpoints();
+app.MapHealthChecks(
+    "/health/live",
+    new HealthCheckOptions
+    {
+        Predicate = registration => registration.Tags.Contains("live")
+    });
+app.MapHealthChecks(
+    "/health/ready",
+    new HealthCheckOptions
+    {
+        Predicate = registration => registration.Tags.Contains("ready")
+    });
+
+app.Run();
+
+public partial class Program
+{
+    private static readonly string[] Agents = ["Planner", "Worker", "Reviewer", "HumanReview"];
+}
+
+File: ai-services/multi-agent-server/MultiAgentServer/Endpoints/WorkflowEndpoints.cs
+using Microsoft.AspNetCore.Mvc;
+using MultiAgentServer.Models;
+using MultiAgentServer.Services;
+
+namespace MultiAgentServer.Endpoints;
+
+public static partial class WorkflowEndpoints
+{
+    public static IEndpointRouteBuilder MapWorkflowEndpoints(this IEndpointRouteBuilder endpoints)
+    {
+        var group = endpoints.MapGroup("/api/workflows");
+
+        group.MapGet("/", ListWorkflows);
+        group.MapGet("/{id:guid}", GetWorkflowById);
+        group.MapPost("/run", RunWorkflow);
+        group.MapPost("/{id:guid}/human-review", SubmitHumanReview);
+        group.MapPost("/{id:guid}/revise", ReviseWorkflow);
+
+        return endpoints;
+    }
+
+    private static IResult ListWorkflows(
+        [FromQuery] string? owner,
+        [FromQuery] Guid? studentId,
+        WorkflowStore store)
+    {
+        var workflows = store.List(owner, studentId);
+        return Results.Ok(workflows);
+    }
+
+    private static IResult GetWorkflowById(
+        [FromRoute] Guid id,
+        WorkflowStore store)
+    {
+        var workflow = store.GetById(id);
+        return workflow is null
+            ? Results.NotFound(new { error = $"Workflow {id} not found." })
+            : Results.Ok(workflow);
+    }
+
+    private static async Task<IResult> RunWorkflow(
+        [FromBody] RunWorkflowRequest request,
+        MultiAgentCoordinator coordinator,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Goal) || request.Goal.Trim().Length < 5)
+        {
+            return Results.BadRequest(new { error = "Goal must be at least 5 characters." });
+        }
+
+        try
+        {
+            var record = await coordinator.RunWorkflowAsync(request, cancellationToken);
+            return Results.Ok(record);
+        }
+        catch (Exception ex)
+        {
+            var logger = loggerFactory.CreateLogger("WorkflowEndpoints");
+            LogRunWorkflowFailed(logger, ex, request.Goal);
+            return Results.Problem(
+                title: "Multi-Agent Coordination Failed",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+    }
+
+    private static IResult SubmitHumanReview(
+        [FromRoute] Guid id,
+        [FromBody] HumanReviewRequest request,
+... (61 more lines)
+
+File: ai-services/multi-agent-server/MultiAgentServer/Services/MultiAgentCoordinator.cs (head)
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.Extensions.Options;
+using MultiAgentServer.Configuration;
+using MultiAgentServer.Models;
+
+namespace MultiAgentServer.Services;
+
+public sealed class MultiAgentCoordinator(
+    IHttpClientFactory httpClientFactory,
+    IOptions<MultiAgentOptions> options,
+    WorkflowStore store)
+{
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    private static readonly HashSet<string> ValidDecisions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Approve",
+        "Correct",
+        "PartialAccept",
+        "Reject"
+    };
+
+    public async Task<MultiAgentWorkflowRecord> RunWorkflowAsync(
+        RunWorkflowRequest request,
+        CancellationToken cancellationToken)
+    {
+        var owner = string.IsNullOrWhiteSpace(request.Owner) ? "student-1" : request.Owner.Trim().ToLowerInvariant();
+        var studentId = request.StudentId is { } sid && sid != Guid.Empty
+            ? sid
+            : Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var goal = request.Goal.Trim();
+        var startedAt = DateTime.UtcNow;
+        var auditLog = new List<CoordinationAuditEntry>
+        {
+            new(startedAt, "Coordinator", "WorkflowInitiated", $"Started Multi-Agent workflow for {owner} (studentId={studentId}).")
+        };
+
+        // 1. PLANNER AGENT
+        var planner = await ExecutePlannerAsync(owner, goal, cancellationToken);
+        auditLog.Add(new CoordinationAuditEntry(
+            planner.CompletedAtUtc,
+            "Planner",
+            "PlanCreated",
+            $"Defined objective '{planner.Objective}' with {planner.Steps.Count} execution steps and {planner.RequiredEvidence.Count} evidence requirements."));
+
+        // 2. EVIDENCE COLLECTION + WORKER AGENT
+        var gatheredEvidence = await GatherSliceEvidenceAsync(owner, studentId, goal, request.EvidenceSnapshot, cancellationToken);
+        var worker = await ExecuteWorkerAsync(owner, goal, planner, gatheredEvidence, cancellationToken);
+        auditLog.Add(new CoordinationAuditEntry(
+            worker.CompletedAtUtc,
+            "Worker",
+            "TaskExecuted",
+            $"Processed application evidence and produced draft output with {worker.RecommendedActions.Count} recommended actions."));
+
+        // 3. REVIEWER AGENT
+        var reviewer = await ExecuteReviewerAsync(owner, goal, planner, worker, gatheredEvidence, cancellationToken);
+        auditLog.Add(new CoordinationAuditEntry(
+            reviewer.CompletedAtUtc,
+            "Reviewer",
+            "OutputReviewed",
+            $"Completed review with verdict '{reviewer.Verdict}' (confidence={reviewer.Confidence}) and {reviewer.IdentifiedRisks.Count} identified risks."));
+
+        auditLog.Add(new CoordinationAuditEntry(
+            DateTime.UtcNow,
+            "Coordinator",
+            "AwaitingHumanReview",
+            "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."));
+
+        var record = new MultiAgentWorkflowRecord(
+            Guid.NewGuid(),
+            owner,
+            studentId,
+            goal,
+            "AwaitingHumanReview",
+            startedAt,
+            DateTime.UtcNow,
+            planner,
+            worker,
+            reviewer,
+             null,
+            auditLog)
+        {
+            EvidenceSnapshot = request.EvidenceSnapshot
+        };
+
+        return store.Save(record);
+    }
+
+... (562 more lines)
+
+--- 2. Host-Service Boundary Verification ---
+multi-agent-server containerised in docker-compose.yml: False (Expected: False)
+tools/run_ai_services.py includes multi-agent: True
+
+--- 3. student-1 Backend & Frontend Multi-Agent Integration ---
+
+Backend Endpoint (student-1/backend/Api/Endpoints/MultiAgentIntegrationEndpoints.cs):
+using Api.Data;
+using Api.DTOs;
+using Api.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace Api.Endpoints;
+
+public static class MultiAgentIntegrationEndpoints
+{
+    private static readonly string[] Agents = ["Planner", "Worker", "Reviewer", "HumanReview"];
+
+    private static readonly HashSet<string> ValidDecisions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Approve",
+        "Correct",
+        "PartialAccept",
+        "Reject"
+    };
+
+    public static IEndpointRouteBuilder MapMultiAgentIntegrationEndpoints(this IEndpointRouteBuilder endpoints)
+    {
+        var group = endpoints.MapGroup("/api/notifications/multi-agent");
+
+        group.MapGet("/status", GetStatus);
+        group.MapGet("/workflows", ListWorkflows);
+        group.MapGet("/workflows/{id:guid}", GetWorkflowById);
+        group.MapPost("/run", RunWorkflow);
+        group.MapPost("/workflows/{id:guid}/review", SubmitHumanReview);
+
+        return endpoints;
+    }
+
+    private static IResult GetStatus(IMultiAgentClient multiAgentClient) =>
+        Results.Ok(new
+        {
+            enabled = multiAgentClient.IsEnabled,
+            service = "multi-agent-server",
+            agents = Agents
+        });
+
+    private static async Task<IResult> ListWorkflows(
+        [FromQuery] Guid? studentId,
+        IMultiAgentClient multiAgentClient,
+        CancellationToken cancellationToken)
+    {
+        var workflows = await multiAgentClient.ListWorkflowsAsync(studentId, cancellationToken);
+        return Results.Ok(workflows);
+    }
+
+    private static async Task<IResult> GetWorkflowById(
+        [FromRoute] Guid id,
+        IMultiAgentClient multiAgentClient,
+        CancellationToken cancellationToken)
+    {
+        if (!multiAgentClient.IsEnabled)
+        {
+            return Results.Problem(
+                title: "Multi-Agent Service Disabled",
+                detail: "Multi-Agent Server integration is disabled for this environment.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        var workflow = await multiAgentClient.GetWorkflowByIdAsync(id, cancellationToken);
+        return workflow is null
+            ? Results.NotFound(new { error = $"Workflow {id} not found." })
+            : Results.Ok(workflow);
+    }
+
+    private static async Task<IResult> RunWorkflow(
+        [FromBody] StartMultiAgentWorkflowRequestDto request,
+        AppDbContext db,
+        IMultiAgentClient multiAgentClient,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Goal) || request.Goal.Trim().Length < 5)
+        {
+            return Results.BadRequest(new { error = "Goal must be at least 5 characters." });
+        }
+
+... (83 more lines)
+
+Frontend Panel (student-1/frontend/src/components/notifications/MultiAgentWorkflowPanel.vue):
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { CURRENT_STUDENT_ID } from '@/config'
+import MarkdownContent from './MarkdownContent.vue'
+import {
+  listMultiAgentWorkflows,
+  runMultiAgentWorkflow,
+  submitMultiAgentHumanReview,
+  type MultiAgentWorkflowRecord,
+} from '@/api/integration'
+
+const goal = ref(
+  'Triage my unread Canvas deadline and grade notifications and build a prioritised 48-hour action plan.',
+)
+const reviewerName = ref('Bryan Lee (25495108)')
+const reviewComments = ref('Verified notification priorities and approved the 48-hour study action plan.')
+const correctedOutput = ref('')
+const showCorrectionEditor = ref(false)
+
+const runningWorkflow = ref(false)
+const submittingReview = ref(false)
+const loadingHistory = ref(false)
+const errorMsg = ref<string | null>(null)
+
+const currentWorkflow = ref<MultiAgentWorkflowRecord | null>(null)
+const workflowHistory = ref<MultiAgentWorkflowRecord[]>([])
+
+const presetGoals = [
+  'Triage my unread Canvas deadline and grade notifications and build a prioritised 48-hour action plan.',
+  'Audit my notification delivery preferences against upcoming high-weight assessments.',
+  'Identify overdue or at-risk coursework from recent alerts and draft an action checklist.',
+]
+
+async function loadHistory() {
+  loadingHistory.value = true
+  try {
+    const list = await listMultiAgentWorkflows(CURRENT_STUDENT_ID)
+    workflowHistory.value = Array.isArray(list) ? list : []
+    if (!currentWorkflow.value && workflowHistory.value.length > 0) {
+      currentWorkflow.value = workflowHistory.value[0] ?? null
+      if (currentWorkflow.value) {
+        correctedOutput.value = currentWorkflow.value.worker.draftOutput
+      }
+    }
+  } catch {
+    // History may be empty or service disabled in baseline mode
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
+async function handleRunWorkflow() {
+  const trimmed = goal.value.trim()
+  if (trimmed.length < 5 || runningWorkflow.value) return
+
+  runningWorkflow.value = true
+  errorMsg.value = null
+  try {
+    const record = await runMultiAgentWorkflow(trimmed, CURRENT_STUDENT_ID)
+    currentWorkflow.value = record
+    correctedOutput.value = record.worker.draftOutput
+    showCorrectionEditor.value = false
+    await loadHistory()
+  } catch (err: any) {
+    errorMsg.value =
+      err?.message || 'Failed to execute Multi-Agent workflow. Ensure multi-agent-server (:5004) is running.'
+  } finally {
+    runningWorkflow.value = false
+  }
+}
+... (559 more lines)
+
+--- 4. Persisted Workflow History & Audit Logs ---
+
+File: ai-services/multi-agent-server/MultiAgentServer/data/workflows.json
+[
+  {
+    "id": "a4894b3f-a9b4-4fd2-9ae1-281a06b1062d",
+    "owner": "student-3",
+    "studentId": "11111111-1111-1111-1111-111111111111",
+    "goal": "{\u0022feature\u0022:\u0022student-3-assignment-breakdown\u0022,\u0022assignmentId\u0022:\u00229b33870f-b443-42ca-90c8-63e7edf9caa0\u0022,\u0022priority\u0022:\u0022Medium\u0022,\u0022assignmentFingerprint\u0022:\u00229469338D9DA8289346FFBBB8923E901873B2BCC12D3A04AE92F6E6F672D5CCB2\u0022,\u0022prompt\u0022:\u0022Break this assignment into 4 to 6 steps covering requirements review, source research, drafting, editing and final submission.\u0022,\u0022outputFormat\u0022:\u0022Return only compact JSON: {\\u0022tasks\\u0022:[{\\u0022title\\u0022:\\u0022Action\\u0022,\\u0022description\\u0022:\\u0022Short description\\u0022}]}. Create 2-10 distinct assignment subtasks; titles at most 120 characters, descriptions at most 500. Use the supplied assignment context, not notification triage. Keep the response within the worker\\u0027s output budget.\u0022}",
+    "status": "Approved",
+    "createdAtUtc": "2026-10-19T22:49:06.2385474Z",
+    "updatedAtUtc": "2026-10-19T22:50:48.0304605Z",
+    "planner": {
+      "objective": "Break assignment 9b33870f into 4-6 concrete subtasks covering requirements review, source research, drafting, editing, and final submission, incorporating feedback to add validation step and reference due date/guidelines.",
+      "requiredEvidence": [
+        "Assignment slice shows Week 10: Lambda calculus, Church numerals, reduction rules (\u03B1, \u03B2, \u03B7)",
+        "course 41080 Theory of Computing Science - Spring 2026",
+        "due date 2026-10-23T12:59:59Z",
+        "feedback requests title \u003E1 word",
+        "previous output had 5 tasks",
+        "reviewer recommends adding Validation step and explicitly mentioning Proto language numeral evaluation framework."
+      ],
+      "steps": [
+        "Inspect live student-3 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-19T22:50:06.2470942Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022id\u0022:\u00229b33870f-b443-42ca-90c8-63e7edf9caa0\u0022,\u0022title\u0022:\u0022Week 10: Lambda calculus\u0022,\u0022description\u0022:\u0022Recall that, in the Proto language, numerals are evaluated in the same way as Church numerals. So, for example, ((3 f) x) reduces to (f (f (f x))). As a shorthand, I will often write (f\\u00B3 x) in place of (f (f (f x))).\\nRecall that the following reductions are allowed:\\n- \\u03B1-renaming, i.e. \\u03BBx.E[x] \\u219D \\u03BBy.E[y], where y is a new variable;\\n- \\u03B2-reduction, i.e. (\\u03BBx.E[x] A) \\u219D E[A]; and\\n- \\u03B7-reduction, i.e. \\u03BBx.(E x) \\u219D E, where E does not contain x as a free variable.\u0022,\u0022courseId\u0022:\u002259267dce-f1f8-482e-b038-f8c97bb43981\u0022,\u0022courseName\u0022:\u002241080 Theory of Computing Science - Spring 2026\u0022,\u0022dueDate\u0022:\u00222026-10-23T12:59:59Z\u0022} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u0022a0000001-0000-0000-0000-000000000001\u0022,\u0022studentId\u0022:\u002211111111-1111-1111-1111-111111111111\u0022,\u0022type\u0022:\u0022Deadline\u0022,\u0022sourceMicroservice\u0022:\u0022deadline-tracker\u0022,\u0022message\u0022:\u0022Your assignment is due soon.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-01T23:13:03.627921Z\u0022,\u0022relatedEntityType\u0022:\u0022Task\u0022,\u0022relatedEntityId\u0022:\u002233333333-3333-3333-3333-333333333331\u0022,\u0022actionPayload\u0022:null},{\u0022id\u0022:\u0022a0000001-0000-0000-0000-0000000...",
+      "draftOutput": "{\n  \u0022tasks\u0022: [\n    {\n      \u0022title\u0022: \u0022Requirements Review\u0022,\n      \u0022description\u0022: \u0022Analyze assignment prompt, Lambda calculus rules (\u03B1, \u03B2, \u03B7-reduction), and course policies. Confirm due date 2026-10-23T12:59:59Z and submission guidelines.\u0022\n    },\n    {\n      \u0022title\u0022: \u0022Source Research\u0022,\n      \u0022description\u0022: \u0022Review provided course materials and external references on Proto language numeral evaluation and Church encoding framework.\u0022\n    },\n    {\n      \u0022title\u0022: \u0022Drafting\u0022,\n      \u0022description\u0022: \u0022Develop solutions for Lambda calculus problems, applying allowed reductions and shorthand notation (f\u00B3 x).\u0022\n    },\n    {\n      \u0022title\u0022: \u0022Editing\u0022,\n      \u0022description\u0022: \u0022Proofread solutions for correctness, ensure proper reduction steps, and verify adherence to assignment constraints.\u0022\n    },\n    {\n      \u0022title\u0022: \u0022Validation\u0022,\n      \u0022description\u0022: \u0022Quality check: verify all reduction steps are documented, shorthand usage is correct, and constraints are met.\u0022\n    },\n    {\n      \u0022title\u0022: \u0022Final Submission\u0022,\n      \u0022description\u0022: \u0022Format final deliverable, confirm due date, and submit via course portal before 2026-10-23T12:59:59Z.\u0022\n    }\n  ]\n}",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-3/backend/supplied-context",
+        "student-1-backend:/notifications"
+      ],
+      "completedAtUtc": "2026-10-19T22:50:08.3873997Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "**Reviewer Assessment**\n\nThe Worker output successfully addresses the human revision context and Plan Objective. All requirements are met:\n\n- **6 distinct subtasks** (within the 4-6 step requirement), including the newly added \u0022Validation\u0022 step as recommended.\n- **Titles are under 120 characters** and **descriptions under 500 characters**.\n- **Output format** matches the specified compact JSON structure with a \u0060tasks\u0060 array of objects containing \u0060title\u0060 and \u0060description\u0060.\n- **Evidence integration**: Descriptions reference the assignment slice (Lambda calculus, Church numerals, reduction rules \u03B1, \u03B2, \u03B7), the Proto language numeral evaluation framework, shorthand notation (f\u00B3 x), the due date (2026-10-23T12:59:59Z), and course policies.\n- **Feedback incorporation**: The \u0022Validation\u0022 step is added between Editing and Final Submission; descriptions now explicitly mention course policies, submission guidelines, and the due date.\n\n**Strengths:**\n- 6 tasks covering all required phases plus validation.\n- Descriptions are concise, context-aware, and directly reference assignment evidence.\n- Due date and submission guidelines are confirmed in two tasks.\n- Format is valid compact JSON.\n\n**Minor Recommendations:**\n1. The \u0022Requirements Review\u0022 description could explicitly mention confirming the assignment title (\u0022Week 10: Lambda calculus\u0022) and the Proto language numeral evaluation framework for absolute completeness.\n2. The \u0022Source Research\u0022 description could note checking the allowed reduction rules (\u03B1, \u03B2, \u03B7) as defined in the course materials, which is already implicitly covered but could be made slightly more explicit.\n\n**Risk Assessment:** No critical risks identified. The output is",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-19T22:50:12.4195574Z"
+    },
+    "humanReview": {
+      "decision": "Approve",
+      "reviewerName": "Student Reviewer",
+      "comments": "Accepted all proposed subtasks.",
+      "finalOutput": "{\n  \u0022tasks\u0022: [\n    {\n      \u0022title\u0022: \u0022Requirements Review\u0022,\n      \u0022description\u0022: \u0022Analyze assignment prompt, Lambda calculus rules (\u03B1, \u03B2, \u03B7-reduction), and course policies. Confirm due date 2026-10-23T12:59:59Z and submission guidelines.\u0022\n    },\n    {\n      \u0022title\u0022: \u0022Source Research\u0022,\n      \u0022description\u0022: \u0022Review provided course materials and external references on Proto language numeral evaluation and Church encoding framework.\u0022\n    },\n    {\n      \u0022title\u0022: \u0022Drafting\u0022,\n      \u0022description\u0022: \u0022Develop solutions for Lambda calculus problems, applying allowed reductions and shorthand notation (f\u00B3 x).\u0022\n    },\n    {\n      \u0022title\u0022: \u0022Editing\u0022,\n      \u0022description\u0022: \u0022Proofread solutions for correctness, ensure proper reduction steps, and verify adherence to assignment constraints.\u0022\n    },\n    {\n      \u0022title\u0022: \u0022Validation\u0022,\n      \u0022description\u0022: \u0022Quality check: verify all reduction steps are documented, shorthand usage is correct, and constraints are met.\u0022\n    },\n    {\n      \u0022title\u0022: \u0022Final Submission\u0022,\n      \u0022description\u0022: \u0022Format final deliverable, confirm due date, and submit via course portal before 2026-10-23T12:59:59Z.\u0022\n    }\n  ]\n}",
+      "reviewedAtUtc": "2026-10-19T22:50:48.0304605Z"
+    },
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-19T22:49:06.2385474Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-3 (studentId=11111111-1111-1111-1111-111111111111)."
+      },
+      {
+        "timestampUtc": "2026-10-19T22:49:08.0608052Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Decompose assignment 9b33870f-b443-42ca-90c8-63e7edf9caa0 into 4-6 distinct subtasks covering requirements review, source research, drafting, editing, and final submission.\u0027 with 3 execution steps and 3 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-19T22:49:09.4188166Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-19T22:49:10.9527153Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-19T22:49:10.9529878Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+... (1376 more lines)
+
+--- 5. Live Multi-Agent Server Probe ---
+
+GET http://127.0.0.1:5004/health/ready -> HTTP 200
+GET http://127.0.0.1:5004/ -> {"service":"multi-agent-server","status":"ready","agents":["Planner","Worker","Reviewer","HumanReview"],"workflowCount":10}
+GET http://127.0.0.1:5004/api/workflows -> 10 persisted workflow(s)
+Latest Workflow ID=1b0fa2af-b595-4aee-a6d7-6a5a7a59d817 Status=Approved Owner=student-1 AuditEntries=6
+
+IMPLEMENTATION (ADAPT PROPOSAL): No response generated.
+
+REVIEW (ADAPT CRITIQUE): No response generated.

@@ -1,0 +1,209 @@
+[
+  {
+    "id": "81a7d0fc-4efe-42e0-a262-635616cbe1c8",
+    "owner": "student-1",
+    "studentId": "11111111-1111-1111-1111-111111111111",
+    "goal": "Triage my unread Canvas deadline and grade notifications and build a prioritised 48-hour action plan.",
+    "status": "Rejected",
+    "createdAtUtc": "2026-10-21T02:55:35.131056Z",
+    "updatedAtUtc": "2026-10-21T03:09:10.132847Z",
+    "planner": {
+      "objective": "Systematically process unread Canvas notifications to identify all pending deadlines and grades, then categorize them by urgency and effort to produce a prioritized 48-hour action plan.",
+      "requiredEvidence": [
+        "Canvas notification inbox (unread count, timestamps, types)",
+        "Course roster and assignment due dates",
+        "Grade book entries with scores and feedback",
+        "Student priority matrix (deadline proximity, grade impact, effort required)."
+      ],
+      "steps": [
+        "Inspect live student-1 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-21T02:55:38.23223Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: PostgreSQL notifications_db (8 items): Deadline [Unread]: Due date for \"Design in Action Video (group assignment, graded)\" changed from 2026-10-30 to 2026-11-02. (canvas-sync); Grade [Unread]: \"Week 11: Submit your tute group in-class work here! \" is now graded. (canvas-sync); Deadline [Unread]: New assignment \"Make up Quiz 2 \" is due 2026-11-01. (canvas-sync); Deadline [Unread]: Due date for \"Week 11: Submit your tute group in-class work here! \" changed from 2026-10-15 to 2026-10-16. (canvas-sync); Grade [Unread]: \"Week 11: Quiz 2 (10 Marks)\" is now graded. (canvas-sync); Grade [Unread]: \"Practical (individual assignment, graded)\" is now graded. (canvas-sync); Grade [Unread]: \"Paper Prototype and Usability Report (individual assignment, graded)\" is now submitted. (canvas-sync); Deadline [Unread]: New assignment \"Week 11: Submit your tute group in-class work here! \" is due 2026-10-15. (canvas-sync) | Live Student-1 Notifications API Snapshot: [{\"id\":\"a0000001-0000-0000-0000-000000000001\",\"studentId\":\"11111111-1111-1111-1111-111111111111\",\"type\":\"Deadline\",\"sourceMicroservice\":\"deadline-tracker\",\"message\":\"Your assignment is due soon.\",\"isRead\":false,\"createdAtUtc\":\"2026-09-08T01:48:28.521156Z\",\"relatedEntityType\":\"Task\",\"relatedEntityId\":\"33333333-3333-3333-3333-333333333331\",\"actionPayload\":null},{\"id\":\"a0000001-0000-0000-0000-0000000... | RAG Grounded Context: {\"status\":\"success\",\"answer\":\"**Prioritised 48-Hour Action Plan**\\n\\n**Hour 0–6: Immediate Triage**\\n1.  **Consume Unread Notifications**: Access `GET /notifications/stream` on `student-1-frontend` to retrieve all active Deadline and Grade notifications. Filter by the five streams defined in the NotificationService SLA (Deadline, Grade, Automation,...",
+      "draftOutput": "**Actionable Summary (<120 words):**\nProcess 8 unread Canvas notifications: 3 Deadlines (Make up Quiz 2 due 2026-11-01, Design in Action Video shifted to 2026-11-02, Week 11 in-class work shifted to 2026-10-16) and 5 Grades (Week 11 tute work, Quiz 2, Practical, Paper Prototype submitted; 1 new unread deadline). Cross-reference dates against course policies. Prioritize by urgency (due <48h) and effort (low-effort grades first). Generate a 48-hour action plan with verification criteria for Reviewer audit.\n\n**3 Recommended Actions:**\n1. **Fetch live notifications** via `GET /notifications/stream` on `student-1-frontend` and filter unread Deadline/Grade items.\n2. **Map due dates** against the RAG course policy calendar; flag any date changes (e.g., Design in Action Video 2026-11-02) for stakeholder confirmation.\n3. **Build the 48-hour plan**: Sort tasks by urgency (Quiz 2 ≤ 48h) and effort (submit graded items first), then define concrete next steps (e.g., \"Submit Make up Quiz 2 by 23:59 2026-11-01\") with pass/fail verification criteria.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-1/backend/supplied-context",
+        "student-1-backend:/notifications",
+        "rag-server:/api/answers"
+      ],
+      "completedAtUtc": "2026-10-21T02:55:45.910339Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "Verified Worker output against student-1 Planner steps and cited evidence (student-1/backend/supplied-context, student-1-backend:/notifications, rag-server:/api/answers). The proposed triage order aligns with assignment urgency and preserves database isolation (Rule 1) and Canvas gateway boundaries (Rule 2).",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student's Canvas timetable.",
+        "Use 'Correct' or 'PartialAccept' if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-21T02:56:00.940297Z"
+    },
+    "humanReview": {
+      "decision": "Reject",
+      "reviewerName": "Bryan Lee (25495108)",
+      "comments": "Verified notification priorities and approved the 48-hour study action plan.",
+      "finalOutput": "[REJECTED BY HUMAN REVIEWER (Bryan Lee (25495108))]: Verified notification priorities and approved the 48-hour study action plan.",
+      "reviewedAtUtc": "2026-10-21T03:09:10.132847Z"
+    },
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-21T02:55:35.131056Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-1 (studentId=11111111-1111-1111-1111-111111111111)."
+      },
+      {
+        "timestampUtc": "2026-10-21T02:55:38.23223Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective 'Systematically process unread Canvas notifications to identify all pending deadlines and grades, then categorize them by urgency and effort to produce a prioritized 48-hour action plan.' with 3 execution steps and 4 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-21T02:55:45.910339Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-21T02:56:00.940297Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict 'ReadyForHumanReview' (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-21T02:56:00.940388Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      },
+      {
+        "timestampUtc": "2026-10-21T03:09:06.510257Z",
+        "agent": "HumanReviewer",
+        "action": "Decision:Reject",
+        "summary": "Bryan Lee (25495108) recorded decision 'Reject' -> final status 'Rejected'. Notes: Verified notification priorities and approved the 48-hour study action plan."
+      },
+      {
+        "timestampUtc": "2026-10-21T03:09:10.132847Z",
+        "agent": "HumanReviewer",
+        "action": "Decision:Reject",
+        "summary": "Bryan Lee (25495108) recorded decision 'Reject' -> final status 'Rejected'. Notes: Verified notification priorities and approved the 48-hour study action plan."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "PostgreSQL notifications_db (8 items): Deadline [Unread]: Due date for \"Design in Action Video (group assignment, graded)\" changed from 2026-10-30 to 2026-11-02. (canvas-sync); Grade [Unread]: \"Week 11: Submit your tute group in-class work here! \" is now graded. (canvas-sync); Deadline [Unread]: New assignment \"Make up Quiz 2 \" is due 2026-11-01. (canvas-sync); Deadline [Unread]: Due date for \"Week 11: Submit your tute group in-class work here! \" changed from 2026-10-15 to 2026-10-16. (canvas-sync); Grade [Unread]: \"Week 11: Quiz 2 (10 Marks)\" is now graded. (canvas-sync); Grade [Unread]: \"Practical (individual assignment, graded)\" is now graded. (canvas-sync); Grade [Unread]: \"Paper Prototype and Usability Report (individual assignment, graded)\" is now submitted. (canvas-sync); Deadline [Unread]: New assignment \"Week 11: Submit your tute group in-class work here! \" is due 2026-10-15. (canvas-sync)",
+    "revisions": []
+  },
+  {
+    "id": "1b0fa2af-b595-4aee-a6d7-6a5a7a59d817",
+    "owner": "student-1",
+    "studentId": "11111111-1111-1111-1111-111111111111",
+    "goal": "Triage my unread Canvas deadline and grade notifications and build a prioritised 48-hour action plan.",
+    "status": "Approved",
+    "createdAtUtc": "2026-10-21T03:10:03.803426Z",
+    "updatedAtUtc": "2026-10-21T03:10:25.854323Z",
+    "planner": {
+      "objective": "Systematically triage unread Canvas notifications to identify all pending deadlines and grades, then construct a prioritized 48-hour action plan based on urgency and impact.",
+      "requiredEvidence": [
+        "Canvas notification feed",
+        "Course gradebooks",
+        "Assignment due dates",
+        "Instructor communications."
+      ],
+      "steps": [
+        "Inspect live student-1 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-21T03:10:05.651533Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: PostgreSQL notifications_db (8 items): Deadline [Unread]: Due date for \"Design in Action Video (group assignment, graded)\" changed from 2026-10-30 to 2026-11-02. (canvas-sync); Grade [Unread]: \"Week 11: Submit your tute group in-class work here! \" is now graded. (canvas-sync); Deadline [Unread]: New assignment \"Make up Quiz 2 \" is due 2026-11-01. (canvas-sync); Deadline [Unread]: Due date for \"Week 11: Submit your tute group in-class work here! \" changed from 2026-10-15 to 2026-10-16. (canvas-sync); Grade [Unread]: \"Week 11: Quiz 2 (10 Marks)\" is now graded. (canvas-sync); Grade [Unread]: \"Practical (individual assignment, graded)\" is now graded. (canvas-sync); Grade [Unread]: \"Paper Prototype and Usability Report (individual assignment, graded)\" is now submitted. (canvas-sync); Deadline [Unread]: New assignment \"Week 11: Submit your tute group in-class work here! \" is due 2026-10-15. (canvas-sync) | Live Student-1 Notifications API Snapshot: [{\"id\":\"a0000001-0000-0000-0000-000000000001\",\"studentId\":\"11111111-1111-1111-1111-111111111111\",\"type\":\"Deadline\",\"sourceMicroservice\":\"deadline-tracker\",\"message\":\"Your assignment is due soon.\",\"isRead\":false,\"createdAtUtc\":\"2026-09-08T01:48:28.521156Z\",\"relatedEntityType\":\"Task\",\"relatedEntityId\":\"33333333-3333-3333-3333-333333333331\",\"actionPayload\":null},{\"id\":\"a0000001-0000-0000-0000-0000000...",
+      "draftOutput": "**Triage Summary**\nIdentified 8 unread notifications: 3 new/changed deadlines (Make up Quiz 2 due 2026-11-01, Design in Action Video due 2026-11-02, Week 11 Tute work due 2026-10-15/16) and 4 grade updates (Week 11 Quiz 2, Practical, Paper Prototype submitted; 1 new grade). Two deadline date changes require policy cross-reference.\n\n**Prioritised 48-Hour Action Plan**\n1. **Immediate (0-12h):** Submit \"Make up Quiz 2\" (due 2026-11-01, graded) and verify \"Week 11 Tute group in-class work\" submission for the 2026-10-15 deadline.\n2. **Short-term (12-24h):** Complete \"Design in Action Video\" group assignment revisions by 2026-11-02; confirm \"Practical (individual)\" and \"Paper Prototype and Usability Report\" grades are recorded.\n3. **Verification (24-48h):** Cross-reference all due dates against course RAG/MCP policies; update delivery preferences to prevent future sync delays.\n\n**Reviewer Audit Criteria**\n- All 3 pending deadlines actioned or escalated by 2026-11-02.\n- Grade discrepancies resolved against course policy.\n- Notification preference log updated.",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-1/backend/supplied-context",
+        "student-1-backend:/notifications"
+      ],
+      "completedAtUtc": "2026-10-21T03:10:14.04442Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "**Reviewer Assessment: Worker Output Analysis**\n\n### **1. Alignment with Plan Objective**\nThe worker has successfully achieved the core objective of systematically triaging the 8 unread notifications. The output correctly categorizes the items into 3 new/changed deadlines and 4 grade updates, matching the evidence provided in the PostgreSQL `notifications_db` slice.\n\n### **2. Analysis of Key Findings**\n*   **Deadline Identification:** The worker correctly identified the three critical deadlines:\n    *   **Make up Quiz 2:** Due 2026-11-01.\n    *   **Design in Action Video:** Due 2026-11-02.\n    *   **Week 11 Tute work:** Date changed from 2026-10-15 to 2026-10-16 (though a new notification suggests it was also newly created for 2026-10-15).\n*   **Grade Identification:** All 4 grade items were identified as \"now graded\" or \"now submitted,\" which is accurate based on the evidence.\n*   **Policy Cross-Reference:** The worker flagged that two deadline date changes require policy cross-reference, which is a prudent risk mitigation step.\n\n### **3. Risk Assessment**\n| Risk | Severity | Reason |\n| :--- | :--- | :--- |\n| **Date Conflict** | **High** | There is a contradiction regarding the \"Week 11 Tute group in-class work\" deadline. One notification states the due date changed to **2026-10-16**, while another states a **new assignment is due",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student's Canvas timetable.",
+        "Use 'Correct' or 'PartialAccept' if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-21T03:10:17.139518Z"
+    },
+    "humanReview": {
+      "decision": "Approve",
+      "reviewerName": "Bryan Lee (25495108)",
+      "comments": "Verified notification priorities and approved the 48-hour study action plan.",
+      "finalOutput": "**Triage Summary**\nIdentified 8 unread notifications: 3 new/changed deadlines (Make up Quiz 2 due 2026-11-01, Design in Action Video due 2026-11-02, Week 11 Tute work due 2026-10-15/16) and 4 grade updates (Week 11 Quiz 2, Practical, Paper Prototype submitted; 1 new grade). Two deadline date changes require policy cross-reference.\n\n**Prioritised 48-Hour Action Plan**\n1. **Immediate (0-12h):** Submit \"Make up Quiz 2\" (due 2026-11-01, graded) and verify \"Week 11 Tute group in-class work\" submission for the 2026-10-15 deadline.\n2. **Short-term (12-24h):** Complete \"Design in Action Video\" group assignment revisions by 2026-11-02; confirm \"Practical (individual)\" and \"Paper Prototype and Usability Report\" grades are recorded.\n3. **Verification (24-48h):** Cross-reference all due dates against course RAG/MCP policies; update delivery preferences to prevent future sync delays.\n\n**Reviewer Audit Criteria**\n- All 3 pending deadlines actioned or escalated by 2026-11-02.\n- Grade discrepancies resolved against course policy.\n- Notification preference log updated.",
+      "reviewedAtUtc": "2026-10-21T03:10:25.854323Z"
+    },
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-21T03:10:03.803426Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-1 (studentId=11111111-1111-1111-1111-111111111111)."
+      },
+      {
+        "timestampUtc": "2026-10-21T03:10:05.651533Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective 'Systematically triage unread Canvas notifications to identify all pending deadlines and grades, then construct a prioritized 48-hour action plan based on urgency and impact.' with 3 execution steps and 4 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-21T03:10:14.04442Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-21T03:10:17.139518Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict 'ReadyForHumanReview' (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-21T03:10:17.13953Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      },
+      {
+        "timestampUtc": "2026-10-21T03:10:25.854323Z",
+        "agent": "HumanReviewer",
+        "action": "Decision:Approve",
+        "summary": "Bryan Lee (25495108) recorded decision 'Approve' -> final status 'Approved'. Notes: Verified notification priorities and approved the 48-hour study action plan."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "PostgreSQL notifications_db (8 items): Deadline [Unread]: Due date for \"Design in Action Video (group assignment, graded)\" changed from 2026-10-30 to 2026-11-02. (canvas-sync); Grade [Unread]: \"Week 11: Submit your tute group in-class work here! \" is now graded. (canvas-sync); Deadline [Unread]: New assignment \"Make up Quiz 2 \" is due 2026-11-01. (canvas-sync); Deadline [Unread]: Due date for \"Week 11: Submit your tute group in-class work here! \" changed from 2026-10-15 to 2026-10-16. (canvas-sync); Grade [Unread]: \"Week 11: Quiz 2 (10 Marks)\" is now graded. (canvas-sync); Grade [Unread]: \"Practical (individual assignment, graded)\" is now graded. (canvas-sync); Grade [Unread]: \"Paper Prototype and Usability Report (individual assignment, graded)\" is now submitted. (canvas-sync); Deadline [Unread]: New assignment \"Week 11: Submit your tute group in-class work here! \" is due 2026-10-15. (canvas-sync)",
+    "revisions": []
+  }
+]
