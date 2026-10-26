@@ -1,0 +1,3 @@
+[rag][PLAN] Loading authoritative codebase documentation and feature context
+[rag][PLAN] Loaded context from '/Users/bryanrplee/Documents/Projects/41026--software-development-project/tools/agentic_loop/prompts/owners/shared/context_prompt.txt' and docs: AGENTS.md, ai-services/rag-server/README.md, docs/architecture/data-flows.md
+[rag][ACT] Executing live probes, schema queries, and static inspection
