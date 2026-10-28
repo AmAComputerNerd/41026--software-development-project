@@ -3879,5 +3879,92 @@
         }
       }
     ]
+  },
+  {
+    "id": "7595698e-057c-4136-b101-4ac44eba74b8",
+    "owner": "student-3",
+    "studentId": "11111111-1111-1111-1111-111111111111",
+    "goal": "{\u0022feature\u0022:\u0022student-3-assignment-breakdown\u0022,\u0022assignmentId\u0022:\u0022458d1834-43f5-48c9-b4a9-13adfde8139a\u0022,\u0022priority\u0022:\u0022Medium\u0022,\u0022assignmentFingerprint\u0022:\u0022D692A39E9D2E30D7416074CC186AE37A82B10AF68B54F5D08C6C1CCE3552868D\u0022,\u0022prompt\u0022:\u0022Create a focused exam preparation plan with 4 to 7 steps covering topic review, study materials, practice and final revision.\u0022,\u0022outputFormat\u0022:\u0022Return only compact JSON: {\\u0022tasks\\u0022:[{\\u0022title\\u0022:\\u0022Action\\u0022,\\u0022description\\u0022:\\u0022Short description\\u0022}]}. Create 2-10 distinct assignment subtasks with unique titles; titles at most 120 characters, descriptions at most 500. Use the supplied assignment context, not notification triage. Keep the response within the worker\\u0027s output budget.\u0022}",
+    "status": "AwaitingHumanReview",
+    "createdAtUtc": "2026-10-28T03:14:36.2639447Z",
+    "updatedAtUtc": "2026-10-28T03:14:47.5390399Z",
+    "planner": {
+      "objective": "Generate 2-10 distinct assignment subtasks with unique titles and descriptions for student-3\u0027s assignment 458d1834-43f5-48c9-b4a9-13adfde8139a, focusing on exam preparation steps covering topic review, study materials, practice, and final revision, all within output budget.",
+      "requiredEvidence": [
+        "Assignment ID 458d1834-43f5-48c9-b4a9-13adfde8139a with fingerprint D692A39E9D2E30D7416074CC186AE37A82B10AF68B54F5D08C6C1CCE3552868D",
+        "prompt requires 4-7 steps covering topic review, study materials, practice and final revision",
+        "output format demands compact JSON with tasks array containing title (max 120 chars) and description (max 500 chars)."
+      ],
+      "steps": [
+        "Inspect live student-3 notifications, unread alerts, and delivery preferences for urgency and due dates.",
+        "Cross-reference active items against grounded course policies and deadline rules from RAG/MCP.",
+        "Synthesise a prioritised action plan with concrete next steps and verification criteria for Reviewer audit."
+      ],
+      "completedAtUtc": "2026-10-28T03:14:40.5579761Z"
+    },
+    "worker": {
+      "evidenceSummary": "Supplied Slice Evidence: {\u0022id\u0022:\u0022458d1834-43f5-48c9-b4a9-13adfde8139a\u0022,\u0022title\u0022:\u0022Part B\u0022,\u0022description\u0022:\u0022This assessment explores how computability theory applies to systems that exchange and execute programs. It uses Proto so that you can examine the relevant computations directly.\\nThe Proto reference describes more features than you need for this assessment. You need only the glyphs \\u0398, \\u22A4, \\u22A5, \\u2237, \\u2190, \\u2192, and _, together with abstractions and applications. Two abbreviations will also be useful:\\n- \\u03BA.E means \\u03BBx.E, where x does not occur in E.\\n- @[A, B] means ((\\u2237 A) B), the pair containing A and B.\\nPay particular attention to the rule for \\u0398: (\\u0398 F) \\u27A4 (F (\\u0398 F))\\nRemember that Proto evaluates the function in an application first. It then applies any applicable evaluation rule, evaluating the argument only when needed. An abstraction can therefore discard an argument without evaluating it.\\nThe scenario\\nYou are a new hire at Y Corp, which is developing a system of cooperating software agents. Agents acquire capabilities by exchanging programs, called skills. They can install new skills and replace existing ones\\u2014including the programs they use to check and install other skills.\\nYour team is testing proposed designs before deployment. Your job is to establish what these designs do, identify failures, and assess proposed remedies. Some proposals are deliberately flawed.\\nPrograms as data\\nFor this assessment, consider two proposed additions to Proto: !QUOTE and !EVAL. These instructions allow programs to obtain encoded expressions and execute them.\\nAn expression is a finite piece of text, so it can be represented by a finite sequence of bytes. That sequence, together with enough information to recover its length, can be encoded as a natural number. Write \\u2308E\\u230B for the Proto numeral encoding the expression E; you do not need to calculate any numerical encodings.\\nThe two instructions behave as follows:\\n- (!QUOTE E) returns \\u2308E\\u230B without evaluating E. It encodes the expression present when the instruction is applied, after any substitutions already performed.\\n- (!EVAL C) first evaluates C to a numeral, decodes that numeral as a Proto expression, and evaluates the decoded expression. This evaluation need not terminate.\\nAssume that all codes supplied to !EVAL in these questions encode valid Proto expressions.\\nConventions for your answers\\nMacro names abbreviate their defining expressions, including inside quotations. You may retain these abbreviations in your written traces.\\nUse \\u27A4 for an evaluation step and \\u27A4* for zero or more steps. You may introduce clearly defined abbreviations for repeated expressions.\\nYou may use results established in earlier questions even if you did not complete their proofs.\u0022,\u0022courseId\u0022:\u0022ad764a5b-f217-4470-81fa-7ba64ef1d163\u0022,\u0022courseName\u0022:\u002241080 Theory of Computing Science - Spring 2026\u0022,\u0022dueDate\u0022:\u00222026-11-14T12:59:59Z\u0022} | Live Student-1 Notifications API Snapshot: [{\u0022id\u0022:\u0022a0000001-0000-0000-0000-000000000001\u0022,\u0022studentId\u0022:\u002211111111-1111-1111-1111-111111111111\u0022,\u0022type\u0022:\u0022Deadline\u0022,\u0022sourceMicroservice\u0022:\u0022deadline-tracker\u0022,\u0022message\u0022:\u0022Your assignment is due soon.\u0022,\u0022isRead\u0022:false,\u0022createdAtUtc\u0022:\u00222026-10-28T01:49:54.97545Z\u0022,\u0022relatedEntityType\u0022:\u0022Task\u0022,\u0022relatedEntityId\u0022:\u002233333333-3333-3333-3333-333333333331\u0022,\u0022actionPayload\u0022:null},{\u0022id\u0022:\u0022a0000001-0000-0000-0000-00000000...",
+      "draftOutput": "{\n  \u0022tasks\u0022: [\n    {\n      \u0022title\u0022: \u0022Review core Proto evaluation rules\u0022,\n      \u0022description\u0022: \u0022Revisit the reduction rule for \u0398 and the evaluation order convention for function application in Proto.\u0022\n    },\n    {\n      \u0022title\u0022: \u0022Decode and practice !QUOTE and !EVAL\u0022,\n      \u0022description\u0022: \u0022Work through exercises encoding expressions and executing them via quoted/numerical evaluation.\u0022\n    },\n    {\n      \u0022title\u0022: \u0022Complete Part B exercise set\u0022,\n      \u0022description\u0022: \u0022Solve all assigned problems focusing on skill exchange design, flaw identification, and proposed remedies.\u0022\n    },\n    {\n      \u0022title\u0022: \u0022Final revision and self-test\u0022,\n      \u0022description\u0022: \u0022Review key rules, attempt timed practice questions, and verify understanding of encoding conventions.\u0022\n    }\n  ]\n}",
+      "recommendedActions": [
+        "Triage unread high-priority Canvas deadline and grade notifications first.",
+        "Execute inline action buttons (AI Break Down / Grade Impact / Mark Complete) on due-soon items.",
+        "Confirm notification delivery preferences and archive resolved alerts."
+      ],
+      "citations": [
+        "student-3/backend/supplied-context",
+        "student-1-backend:/notifications"
+      ],
+      "completedAtUtc": "2026-10-28T03:14:42.5726419Z"
+    },
+    "reviewer": {
+      "verdict": "ReadyForHumanReview",
+      "confidence": "high",
+      "critique": "### Reviewer Analysis\n\n**Worker Output Assessment:**\nThe worker output provides 4 distinct assignment subtasks that directly address the prompt requirements. The tasks cover topic review (Proto evaluation rules), study materials (!QUOTE/!EVAL exercises), practice (Part B exercise set), and final revision (self-test). All titles are unique and within the 120-character limit, and descriptions are within the 500-character limit.\n\n**Strengths:**\n- Successfully generates 2-10 distinct subtasks (4 provided, within range)\n- Topics align with exam preparation: topic review, study materials, practice, and final revision\n- Uses assignment context (Proto evaluation rules, !QUOTE/!EVAL, Part B exercises)\n- Output format matches the required compact JSON structure\n- Stays within worker output budget\n\n**Risks \u0026 Recommendations:**\n1. **Task count at lower bound**: Only 4 tasks generated (minimum required is 2, maximum is 10). Consider if additional subtasks could provide more granular coverage of the exam preparation topics.\n\n2. **Coverage completeness**: The tasks broadly cover the required areas but could be more specifically tied to the assignment\u0027s focus on computability theory and Proto systems. The \u0022Complete Part B exercise set\u0022 task is appropriate but could specify particular problem types.\n\n3. **No significant risks identified**: The output successfully meets all prompt requirements within constraints.\n\n**Recommendation:** The worker output is acceptable for human review. No critical issues require immediate correction. The 4 subtasks provide adequate coverage of exam preparation steps while staying within all specified constraints. If more detailed coverage is desired, consider requesting 6-8 subtasks for more granular task breakdown.",
+      "identifiedRisks": [
+        "Automated triage recommendations should be confirmed by the student before mutating task completion state.",
+        "External Canvas sync latency may delay newly published announcements by up to the 3-minute cache TTL."
+      ],
+      "recommendations": [
+        "Approve the action plan if current deadlines match the student\u0027s Canvas timetable.",
+        "Use \u0027Correct\u0027 or \u0027PartialAccept\u0027 if custom priority overrides are needed before saving."
+      ],
+      "completedAtUtc": "2026-10-28T03:14:47.5389953Z"
+    },
+    "humanReview": null,
+    "auditLog": [
+      {
+        "timestampUtc": "2026-10-28T03:14:36.2639447Z",
+        "agent": "Coordinator",
+        "action": "WorkflowInitiated",
+        "summary": "Started Multi-Agent workflow for student-3 (studentId=11111111-1111-1111-1111-111111111111)."
+      },
+      {
+        "timestampUtc": "2026-10-28T03:14:40.5579761Z",
+        "agent": "Planner",
+        "action": "PlanCreated",
+        "summary": "Defined objective \u0027Generate 2-10 distinct assignment subtasks with unique titles and descriptions for student-3\u0027s assignment 458d1834-43f5-48c9-b4a9-13adfde8139a, focusing on exam preparation steps covering topic review, study materials, practice, and final revision, all within output budget.\u0027 with 3 execution steps and 3 evidence requirements."
+      },
+      {
+        "timestampUtc": "2026-10-28T03:14:42.5726419Z",
+        "agent": "Worker",
+        "action": "TaskExecuted",
+        "summary": "Processed application evidence and produced draft output with 3 recommended actions."
+      },
+      {
+        "timestampUtc": "2026-10-28T03:14:47.5389953Z",
+        "agent": "Reviewer",
+        "action": "OutputReviewed",
+        "summary": "Completed review with verdict \u0027ReadyForHumanReview\u0027 (confidence=high) and 2 identified risks."
+      },
+      {
+        "timestampUtc": "2026-10-28T03:14:47.5390348Z",
+        "agent": "Coordinator",
+        "action": "AwaitingHumanReview",
+        "summary": "Workflow paused at Human Review gate awaiting approval, correction, partial acceptance, or rejection."
+      }
+    ],
+    "revision": 0,
+    "evidenceSnapshot": "{\u0022id\u0022:\u0022458d1834-43f5-48c9-b4a9-13adfde8139a\u0022,\u0022title\u0022:\u0022Part B\u0022,\u0022description\u0022:\u0022This assessment explores how computability theory applies to systems that exchange and execute programs. It uses Proto so that you can examine the relevant computations directly.\\nThe Proto reference describes more features than you need for this assessment. You need only the glyphs \\u0398, \\u22A4, \\u22A5, \\u2237, \\u2190, \\u2192, and _, together with abstractions and applications. Two abbreviations will also be useful:\\n- \\u03BA.E means \\u03BBx.E, where x does not occur in E.\\n- @[A, B] means ((\\u2237 A) B), the pair containing A and B.\\nPay particular attention to the rule for \\u0398: (\\u0398 F) \\u27A4 (F (\\u0398 F))\\nRemember that Proto evaluates the function in an application first. It then applies any applicable evaluation rule, evaluating the argument only when needed. An abstraction can therefore discard an argument without evaluating it.\\nThe scenario\\nYou are a new hire at Y Corp, which is developing a system of cooperating software agents. Agents acquire capabilities by exchanging programs, called skills. They can install new skills and replace existing ones\\u2014including the programs they use to check and install other skills.\\nYour team is testing proposed designs before deployment. Your job is to establish what these designs do, identify failures, and assess proposed remedies. Some proposals are deliberately flawed.\\nPrograms as data\\nFor this assessment, consider two proposed additions to Proto: !QUOTE and !EVAL. These instructions allow programs to obtain encoded expressions and execute them.\\nAn expression is a finite piece of text, so it can be represented by a finite sequence of bytes. That sequence, together with enough information to recover its length, can be encoded as a natural number. Write \\u2308E\\u230B for the Proto numeral encoding the expression E; you do not need to calculate any numerical encodings.\\nThe two instructions behave as follows:\\n- (!QUOTE E) returns \\u2308E\\u230B without evaluating E. It encodes the expression present when the instruction is applied, after any substitutions already performed.\\n- (!EVAL C) first evaluates C to a numeral, decodes that numeral as a Proto expression, and evaluates the decoded expression. This evaluation need not terminate.\\nAssume that all codes supplied to !EVAL in these questions encode valid Proto expressions.\\nConventions for your answers\\nMacro names abbreviate their defining expressions, including inside quotations. You may retain these abbreviations in your written traces.\\nUse \\u27A4 for an evaluation step and \\u27A4* for zero or more steps. You may introduce clearly defined abbreviations for repeated expressions.\\nYou may use results established in earlier questions even if you did not complete their proofs.\u0022,\u0022courseId\u0022:\u0022ad764a5b-f217-4470-81fa-7ba64ef1d163\u0022,\u0022courseName\u0022:\u002241080 Theory of Computing Science - Spring 2026\u0022,\u0022dueDate\u0022:\u00222026-11-14T12:59:59Z\u0022}",
+    "revisions": []
   }
 ]
