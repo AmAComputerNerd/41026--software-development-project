@@ -1,5 +1,6 @@
 **/bin
 **/obj
+Api.Tests/
 **/Data/*.db
 **/Data/*.db-shm
 **/Data/*.db-wal

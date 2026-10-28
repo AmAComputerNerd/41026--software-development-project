@@ -38,6 +38,7 @@ public sealed class QuizFillerAutomationDto : AutomationDto
     public bool ShortAnswer { get; init; }
     public int NumberOfAttemptsRequired { get; init; }
     public bool AllowForNoTimeLimit { get; init; }
+    public bool RequireHumanReview { get; init; }
 }
 
 public abstract class SaveAutomationRequestDto
@@ -200,6 +201,7 @@ public sealed class SaveQuizFillerAutomationRequestDto
     public bool ShortAnswer { get; init; }
     public int NumberOfAttemptsRequired { get; init; }
     public bool AllowForNoTimeLimit { get; init; }
+    public bool RequireHumanReview { get; init; }
 
     protected override string? ValidateValues()
     {
@@ -225,6 +227,7 @@ public sealed class SaveQuizFillerAutomationRequestDto
         automation.ShortAnswer = ShortAnswer;
         automation.NumberOfAttemptsRequired = NumberOfAttemptsRequired;
         automation.AllowForNoTimeLimit = AllowForNoTimeLimit;
+        automation.RequireHumanReview = RequireHumanReview;
     }
 }
 
@@ -260,4 +263,8 @@ public sealed class QuizFillerAutomationRunDto : AutomationRunDto
     public long QuizId { get; init; }
     public string QuizTitle { get; init; } = string.Empty;
     public int QuestionCount { get; init; }
+    public Guid? WorkflowId { get; init; }
+    public string? ReviewDecision { get; init; }
+    public string? ReviewerName { get; init; }
+    public DateTime? ReviewedAtUtc { get; init; }
 }

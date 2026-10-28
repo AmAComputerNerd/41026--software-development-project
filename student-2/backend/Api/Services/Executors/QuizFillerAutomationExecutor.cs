@@ -5,7 +5,8 @@ namespace Api.Services.Executors;
 
 public sealed class QuizFillerAutomationExecutor(
     ISharedCanvasClient canvas,
-    IAiQuizAnswerService ai) : AutomationExecutor<QuizFillerAutomation>
+    IAiQuizAnswerService ai,
+    QuizAnswerReviewService review) : AutomationExecutor<QuizFillerAutomation>
 {
     private const string MultipleChoiceQuestionType = "multiple_choice_question";
     private const string TrueFalseQuestionType = "true_false_question";
@@ -50,7 +51,9 @@ public sealed class QuizFillerAutomationExecutor(
                     .Select(quiz => new QuizFillerExecutionCandidate(
                         canvas,
                         ai,
+                        automation.RequireHumanReview ? review : null,
                         automation.Id,
+                        automation.StudentId,
                         quiz,
                         questionTypes)));
             }
@@ -138,10 +141,14 @@ public sealed class QuizFillerAutomationExecutor(
     private sealed class QuizFillerExecutionCandidate(
         ISharedCanvasClient canvas,
         IAiQuizAnswerService ai,
+        QuizAnswerReviewService? review,
         Guid automationId,
+        Guid studentId,
         SharedCanvasQuizDto quiz,
         HashSet<string> questionTypes) : IAutomationExecutionCandidate
     {
+        private QuizFillerAutomationRun? _run;
+
         public string ExecutionKey { get; } = $"quiz-filler:v1:{quiz.Id}";
 
         public bool MatchesRun(AutomationRun run)
@@ -151,7 +158,7 @@ public sealed class QuizFillerAutomationExecutor(
 
         public AutomationRun CreateRun(DateTime startedAtUtc)
         {
-            return new QuizFillerAutomationRun
+            _run = new QuizFillerAutomationRun
             {
                 AutomationId = automationId,
                 ExecutionKey = ExecutionKey,
@@ -162,10 +169,16 @@ public sealed class QuizFillerAutomationExecutor(
                 QuizTitle = quiz.Title,
                 QuestionCount = quiz.QuestionCount
             };
+            return _run;
         }
 
         public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            if (review is { IsMultiAgentEnabled: false })
+            {
+                throw new MultiAgentIntegrationDisabledException();
+            }
+
             var submission = await canvas.StartQuizSubmissionAsync(
                 quiz.CourseId,
                 quiz.Id,
@@ -181,6 +194,23 @@ public sealed class QuizFillerAutomationExecutor(
             {
                 throw new InvalidOperationException(
                     "The quiz does not contain any selected supported question types.");
+            }
+
+            if (review is not null && _run is not null)
+            {
+                var draft = await review.ProposeAsync(
+                    studentId,
+                    _run.Id,
+                    quiz.Title,
+                    targetedQuestions,
+                    cancellationToken);
+                _run.SubmissionId = submission.Id;
+                _run.SubmissionAttempt = submission.Attempt;
+                _run.ValidationToken = submission.ValidationToken;
+                _run.WorkflowId = draft.WorkflowId;
+                _run.ProposalJson = QuizAnswerReviewService.SerializeProposal(draft.Proposal);
+                _run.Result = AutomationRunResult.AwaitingReview;
+                return;
             }
 
             var answers = await ai.AnswerQuestionsAsync(

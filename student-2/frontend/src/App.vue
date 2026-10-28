@@ -6,7 +6,7 @@ import NotificationButton from '@/components/NotificationButton.vue'
 const route = useRoute()
 const navLinks = [
   { to: { name: 'automations' }, label: '01 AUTOMATIONS', matches: ['automations', 'new-automation', 'edit-automation'] },
-  { to: { name: 'history' }, label: '02 RUN HISTORY', matches: ['history'] },
+  { to: { name: 'history' }, label: '02 RUN HISTORY', matches: ['history', 'quiz-review'] },
 ]
 </script>
 

@@ -51,4 +51,13 @@ onMounted(async () => {
     <input v-model="model.allowForNoTimeLimit" type="checkbox" />
     <span>Also run when a quiz has no time limit</span>
   </label>
+
+  <label class="nb-checkbox-row">
+    <input v-model="model.requireHumanReview" type="checkbox" />
+    <span>Review answers before they are saved to Canvas (Planner → Worker → Reviewer → you)</span>
+  </label>
+  <small v-if="model.requireHumanReview" class="nb-run-warning">
+    Answers are drafted by the shared Multi-Agent Server and held until you approve, correct or reject them in Run history.
+    Review timed quizzes before their time limit expires.
+  </small>
 </template>

@@ -148,7 +148,12 @@ public sealed class AutomationExecutionBackgroundService(
             try
             {
                 await candidate.ExecuteAsync(cancellationToken);
-                run.Result = AutomationRunResult.Success;
+                var awaitingReview = run.Result == AutomationRunResult.AwaitingReview;
+                if (!awaitingReview)
+                {
+                    run.Result = AutomationRunResult.Success;
+                }
+
                 await db.SaveChangesAsync(CancellationToken.None);
 
                 try
@@ -160,7 +165,9 @@ public sealed class AutomationExecutionBackgroundService(
                             StudentId: automation.StudentId,
                             Type: "Automation",
                             SourceMicroservice: "automations",
-                            Message: $"{title} executed successfully.",
+                            Message: awaitingReview
+                                ? $"{title} answers are ready for your review (Multi-Agent workflow)."
+                                : $"{title} executed successfully.",
                             RelatedEntityType: "Automation",
                             RelatedEntityId: automation.Id),
                         CancellationToken.None);

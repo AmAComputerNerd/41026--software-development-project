@@ -268,6 +268,7 @@ Notifications carry structured action metadata enabling cross-service operations
 - `student-2-backend` stores assignment-extension, scheduled-post, and quiz-filler automations in its owned SQLite database.
 - A periodic execution worker durably claims due work, accesses Canvas only through `shared-backend`, and records execution history.
 - Quiz-filler automations send eligible Canvas quiz questions to `ai-mode`, validate the structured answers, and save draft attempts through the Canvas gateway without automatically submitting.
+- With human review enabled, the Planner → Worker → Reviewer workflow on `multi-agent-server` drafts the answers and the student approves, corrects or rejects them at `/automations/runs/:id/review` before anything is saved to Canvas.
 
 ### E. Account, Authentication, and AI Profiles
 - `student-4-authentication` provides login, password change, account deletion, and email password-reset workflows; both authentication and profile APIs access `student-4-database` exclusively over HTTP.

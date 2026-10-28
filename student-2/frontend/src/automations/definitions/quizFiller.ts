@@ -17,6 +17,7 @@ export default defineAutomationType({
     shortAnswer: false,
     numberOfAttemptsRequired: 2,
     allowForNoTimeLimit: false,
+    requireHumanReview: true,
   }),
   loadForm: (automation) => ({
     $type: automation.$type,
@@ -26,6 +27,7 @@ export default defineAutomationType({
     shortAnswer: automation.shortAnswer,
     numberOfAttemptsRequired: automation.numberOfAttemptsRequired,
     allowForNoTimeLimit: automation.allowForNoTimeLimit,
+    requireHumanReview: automation.requireHumanReview,
   }),
   buildInput: (form, studentId) => ({
     $type: form.$type,
@@ -36,6 +38,7 @@ export default defineAutomationType({
     shortAnswer: form.shortAnswer,
     numberOfAttemptsRequired: form.numberOfAttemptsRequired,
     allowForNoTimeLimit: form.allowForNoTimeLimit,
+    requireHumanReview: form.requireHumanReview,
   }),
   buildUpdateInput: (automation, enabled) => ({
     $type: automation.$type,
@@ -46,6 +49,7 @@ export default defineAutomationType({
     shortAnswer: automation.shortAnswer,
     numberOfAttemptsRequired: automation.numberOfAttemptsRequired,
     allowForNoTimeLimit: automation.allowForNoTimeLimit,
+    requireHumanReview: automation.requireHumanReview,
   }),
   automationTitle: (automation) =>
     [
@@ -55,7 +59,7 @@ export default defineAutomationType({
       .filter(Boolean)
       .join(' + ') || 'No question types',
   automationDetail: (automation) =>
-    `${automation.subjectId ? `SUBJECT ${automation.subjectId}` : 'ANY SUBJECT'} · ${automation.numberOfAttemptsRequired} ATTEMPTS${automation.allowForNoTimeLimit ? ' OR NO TIME LIMIT' : ''}`,
+    `${automation.subjectId ? `SUBJECT ${automation.subjectId}` : 'ANY SUBJECT'} · ${automation.numberOfAttemptsRequired} ATTEMPTS${automation.allowForNoTimeLimit ? ' OR NO TIME LIMIT' : ''}${automation.requireHumanReview ? ' · MULTI-AGENT + HUMAN REVIEW' : ''}`,
   runTitle: (run) => run.quizTitle,
   runDetail: (run) => `QUIZ ${run.quizId} · ${run.questionCount} QUESTIONS`,
 })

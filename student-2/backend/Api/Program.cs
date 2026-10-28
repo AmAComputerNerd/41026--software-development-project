@@ -95,6 +95,23 @@ builder.Services.AddHttpClient<IRagClient, RagClient>((services, client) =>
     client.BaseAddress = new Uri($"{baseUrl.TrimEnd('/')}/", UriKind.Absolute);
     client.Timeout = TimeSpan.FromSeconds(190);
 });
+builder.Services
+    .AddOptions<MultiAgentServerOptions>()
+    .Bind(builder.Configuration.GetSection(MultiAgentServerOptions.SectionName))
+    .Validate(options => options.Enabled.HasValue, "MultiAgentServer:Enabled must be configured.")
+    .Validate(
+        options => options.Enabled is false || IsAbsoluteHttpUrl(options.BaseUrl),
+        "MultiAgentServer:BaseUrl must be an absolute HTTP or HTTPS URL when Multi-Agent is enabled.")
+    .ValidateOnStart();
+builder.Services.AddHttpClient<IMultiAgentClient, MultiAgentClient>((services, client) =>
+{
+    var baseUrl = services.GetRequiredService<IOptions<MultiAgentServerOptions>>().Value.BaseUrl;
+    client.BaseAddress = string.IsNullOrWhiteSpace(baseUrl)
+        ? null
+        : new Uri($"{baseUrl.TrimEnd('/')}/", UriKind.Absolute);
+    client.Timeout = TimeSpan.FromSeconds(180);
+});
+builder.Services.AddScoped<QuizAnswerReviewService>();
 var executorTypes = typeof(IAutomationExecutor).Assembly
     .GetTypes()
     .Where(type => !type.IsAbstract && typeof(IAutomationExecutor).IsAssignableFrom(type));
@@ -128,6 +145,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.MapAutomationEndpoints();
 app.MapAutomationRunEndpoints();
+app.MapQuizReviewEndpoints();
 app.MapCanvasOptionEndpoints();
 app.MapIntegrationEndpoints();
 app.MapHealthChecks(
@@ -150,3 +168,5 @@ app.Run();
 static bool IsAbsoluteHttpUrl(string value) =>
     Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
     (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+
+public partial class Program;
