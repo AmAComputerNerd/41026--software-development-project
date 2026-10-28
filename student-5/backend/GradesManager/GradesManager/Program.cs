@@ -86,10 +86,10 @@ builder.Services
     .AddStandardResilienceHandler(options =>
     {
         options.Retry.MaxRetryAttempts = 4;
-        options.Retry.Delay = TimeSpan.FromMilliseconds(400);
+        options.Retry.Delay = TimeSpan.FromMilliseconds(250);
         options.Retry.DisableForUnsafeHttpMethods();
-        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(20);
-        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(35);
     });
 builder.Services
     .AddHttpClient<IAiTaskService, AiTaskService>((services, client) =>
