@@ -272,16 +272,24 @@ jobs:
           echo "$user_detail_json" | jq --exit-status --arg id "$user_id" '.id == $id' || fail "User detail contract failed: $user_detail_json"
 
           echo "── MCP readiness disabled"
-          mcp_status=$(curl --silent --output /dev/null --write-out "%{http_code}" --request POST "http://127.0.0.1:5104/api/users/$user_id/mcp-readiness")
+          mcp_status=$(curl --silent --output /tmp/mcp-readiness-body.txt --write-out "%{http_code}" \
+            --request POST "http://127.0.0.1:5104/api/users/$user_id/mcp-readiness")
           test "$mcp_status" = "503" || fail "MCP readiness should return 503, got $mcp_status"
-          mcp_json=$(curl --fail --silent --request POST "http://127.0.0.1:5104/api/users/$user_id/mcp-readiness")
-          echo "$mcp_json" | jq --exit-status '.detail == "MCP integration is disabled for this environment."' || fail "MCP detail mismatch: $mcp_json"
 
-          echo "── RAG answers disabled"
-          rag_status=$(curl --silent --output /dev/null --write-out "%{http_code}" --request POST --header "Content-Type: application/json" --data '{"question":"How do I reset my password?"}' "http://127.0.0.1:5104/api/users/help/answers")
+          mcp_json=$(cat /tmp/mcp-readiness-body.txt)
+          echo "$mcp_json" | jq --exit-status '.detail == "MCP integration is disabled for this environment."' \
+            || fail "MCP detail mismatch: $mcp_json"
+
+          rag_status=$(curl --silent --output /tmp/rag-body.txt --write-out "%{http_code}" \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data '{"question":"How do I reset my password?"}' \
+            "http://127.0.0.1:5104/api/users/help/answers")
           test "$rag_status" = "503" || fail "RAG answers should return 503, got $rag_status"
-          rag_json=$(curl --fail --silent --request POST --header "Content-Type: application/json" --data '{"question":"How do I reset my password?"}' "http://127.0.0.1:5104/api/users/help/answers")
-          echo "$rag_json" | jq --exit-status '.detail == "RAG integration is disabled for this environment."' || fail "RAG detail mismatch: $rag_json"
+
+          rag_json=$(cat /tmp/rag-body.txt)
+          echo "$rag_json" | jq --exit-status '.detail == "RAG integration is disabled for this environment."' \
+            || fail "RAG detail mismatch: $rag_json"
 
           echo "── Internal readiness disabled"
           readiness_status=$(curl --silent --output /dev/null --write-out "%{http_code}" "http://127.0.0.1:5104/internal/ai-context/accounts/$user_id/readiness")
