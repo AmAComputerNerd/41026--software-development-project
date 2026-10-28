@@ -85,11 +85,11 @@ builder.Services
             services.GetRequiredService<IOptions<DatabaseServiceOptions>>().Value.BaseUrl))
     .AddStandardResilienceHandler(options =>
     {
-        options.Retry.MaxRetryAttempts = 2;
-        options.Retry.Delay = TimeSpan.FromMilliseconds(250);
+        options.Retry.MaxRetryAttempts = 4;
+        options.Retry.Delay = TimeSpan.FromMilliseconds(400);
         options.Retry.DisableForUnsafeHttpMethods();
-        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
-        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(35);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(20);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(45);
     });
 builder.Services
     .AddHttpClient<IAiTaskService, AiTaskService>((services, client) =>
@@ -102,12 +102,12 @@ builder.Services
     })
     .AddStandardResilienceHandler(options =>
     {
-        options.Retry.MaxRetryAttempts = 2;
-        options.Retry.Delay = TimeSpan.FromSeconds(1);
+        options.Retry.MaxRetryAttempts = 4;
+        options.Retry.Delay = TimeSpan.FromSeconds(20);
         options.Retry.DisableForUnsafeHttpMethods();
-        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(60);
-        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(120);
-        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(190);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(240);
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(240);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(400);
     });
 builder.Services.AddSingleton<IMcpGradesClient, McpGradesClient>();
 builder.Services
@@ -117,19 +117,19 @@ builder.Services
             services.GetRequiredService<IOptions<RagServerOptions>>().Value.BaseUrl))
     .AddStandardResilienceHandler(options =>
     {
-        options.Retry.MaxRetryAttempts = 1;
-        options.Retry.Delay = TimeSpan.FromMilliseconds(500);
+        options.Retry.MaxRetryAttempts = 3;
+        options.Retry.Delay = TimeSpan.FromMilliseconds(1000);
         options.Retry.DisableForUnsafeHttpMethods();
-        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(95);
-        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(200);
-        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(100);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(240);
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(400);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(200);
     });
 builder.Services.AddHttpClient<IMultiAgentClient, MultiAgentClient>((services, client) =>
 {
     var options = services.GetRequiredService<IOptions<MultiAgentServerOptions>>().Value;
     if (options.Enabled is true) ConfigureClient(client, options.BaseUrl);
     // The existing server executes all stages synchronously; never retry workflow writes.
-    client.Timeout = TimeSpan.FromSeconds(60);
+    client.Timeout = TimeSpan.FromSeconds(600);
 });
 
 // Health check services
