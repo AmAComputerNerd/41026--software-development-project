@@ -7,6 +7,14 @@ from pathlib import Path
 import urllib.error
 import urllib.request
 
+SLICE_INTEGRATION_FILES: dict[str, tuple[str, ...]] = {
+    "student-2": (
+        "student-2/backend/Api/Services/QuizAnswerReviewService.cs",
+        "student-2/backend/Api/Endpoints/QuizReviewEndpoints.cs",
+        "student-2/frontend/src/views/QuizReviewView.vue",
+    ),
+}
+
 
 def _read_excerpt(path: Path, max_lines: int = 80) -> str:
     if not path.is_file():
@@ -86,6 +94,8 @@ def collect(owner: str | None, repo_root: Path) -> tuple[bool, str]:
         sections.append(f"Backend Endpoint ({s1_endpoint.relative_to(repo_root)}):\n{_read_excerpt(s1_endpoint, 80)}")
     if s1_panel.is_file():
         sections.append(f"Frontend Panel ({s1_panel.relative_to(repo_root)}):\n{_read_excerpt(s1_panel, 70)}")
+    for relative in SLICE_INTEGRATION_FILES.get(slice_owner, ()):
+        sections.append(f"Integration File ({relative}):\n{_read_excerpt(repo_root / relative, 90)}")
 
     # 4. Persisted workflow history & audit logs
     sections.append("--- 4. Persisted Workflow History & Audit Logs ---")

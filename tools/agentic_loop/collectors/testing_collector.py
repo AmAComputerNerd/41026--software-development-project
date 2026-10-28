@@ -6,6 +6,13 @@ from pathlib import Path
 import subprocess
 import sys
 
+SLICE_ENDPOINT_TESTS: dict[str, tuple[str, ...]] = {
+    "student-2": (
+        "student-2/backend/Api.Tests/AutomationEndpointsTests.cs",
+        "student-2/backend/Api.Tests/QuizReviewEndpointsTests.cs",
+    ),
+}
+
 
 def _read_excerpt(path: Path, max_lines: int = 80) -> str:
     if not path.is_file():
@@ -95,5 +102,11 @@ def collect(owner: str | None, repo_root: Path) -> tuple[bool, str]:
         sections.append(
             f"--- 5. Student 1 Multi-Agent Endpoint Test Suite (MultiAgentIntegrationEndpointsTests.cs) ---\n{_read_excerpt(s1_ma_tests, 75)}"
         )
+
+    for student, test_files in SLICE_ENDPOINT_TESTS.items():
+        if student not in owners_to_inspect:
+            continue
+        for relative in test_files:
+            sections.append(f"--- {student} Endpoint Test Suite ({relative}) ---\n{_read_excerpt(repo_root / relative, 75)}")
 
     return True, "\n\n".join(sections)

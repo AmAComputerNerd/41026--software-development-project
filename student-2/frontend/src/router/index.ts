@@ -23,6 +23,11 @@ const router = createRouter({
       name: 'history',
       component: () => import('@/views/RunHistoryView.vue'),
     },
+    {
+      path: '/runs/:id/review',
+      name: 'quiz-review',
+      component: () => import('@/views/QuizReviewView.vue'),
+    },
   ],
 })
 

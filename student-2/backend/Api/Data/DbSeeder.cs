@@ -64,7 +64,8 @@ public static class DbSeeder
                 MultipleChoice = true,
                 ShortAnswer = true,
                 NumberOfAttemptsRequired = 2,
-                AllowForNoTimeLimit = true
+                AllowForNoTimeLimit = true,
+                RequireHumanReview = true
             });
         }
 

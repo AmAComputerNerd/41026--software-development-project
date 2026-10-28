@@ -64,6 +64,16 @@ public class QuizFillerAutomationRun : AutomationRun
     public long QuizId { get; set; }
     public string QuizTitle { get; set; } = string.Empty;
     public int QuestionCount { get; set; }
+    public long? SubmissionId { get; set; }
+    public int? SubmissionAttempt { get; set; }
+    // Canvas quiz-submission token; never returned by the API.
+    public string? ValidationToken { get; set; }
+    public Guid? WorkflowId { get; set; }
+    public int WorkflowRevision { get; set; }
+    public string? ProposalJson { get; set; }
+    public string? ReviewDecision { get; set; }
+    public string? ReviewerName { get; set; }
+    public DateTime? ReviewedAtUtc { get; set; }
 
     public override AutomationRunDto ToDto()
     {
@@ -76,7 +86,11 @@ public class QuizFillerAutomationRun : AutomationRun
             CourseId = CourseId,
             QuizId = QuizId,
             QuizTitle = QuizTitle,
-            QuestionCount = QuestionCount
+            QuestionCount = QuestionCount,
+            WorkflowId = WorkflowId,
+            ReviewDecision = ReviewDecision,
+            ReviewerName = ReviewerName,
+            ReviewedAtUtc = ReviewedAtUtc
         };
     }
 }
@@ -86,4 +100,6 @@ public static class AutomationRunResult
     public const string Running = "RUN";
     public const string Success = "SUC";
     public const string Failed = "FAI";
+    public const string AwaitingReview = "REV";
+    public const string Rejected = "REJ";
 }

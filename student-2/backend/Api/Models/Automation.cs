@@ -68,6 +68,7 @@ public class QuizFillerAutomation : Automation
     public bool ShortAnswer { get; set; }
     public int NumberOfAttemptsRequired { get; set; }
     public bool AllowForNoTimeLimit { get; set; }
+    public bool RequireHumanReview { get; set; }
 
     public override AutomationDto ToDto()
     {
@@ -80,7 +81,8 @@ public class QuizFillerAutomation : Automation
             MultipleChoice = MultipleChoice,
             ShortAnswer = ShortAnswer,
             NumberOfAttemptsRequired = NumberOfAttemptsRequired,
-            AllowForNoTimeLimit = AllowForNoTimeLimit
+            AllowForNoTimeLimit = AllowForNoTimeLimit,
+            RequireHumanReview = RequireHumanReview
         };
     }
 }

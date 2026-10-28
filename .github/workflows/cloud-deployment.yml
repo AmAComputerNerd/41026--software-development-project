@@ -154,6 +154,55 @@ jobs:
           curl -fsS http://127.0.0.1:5101/api/notifications/multi-agent/status | grep -q '"enabled":false'
           echo "Cloud Baseline Profile CRUD + AI-Disabled verification passed."
 
+      - name: Build Student 2 Backend
+        run: dotnet build student-2/backend/Api/Api.csproj --configuration Release -warnaserror
+
+      - name: Run Student 2 Backend in Cloud Baseline Mode (All AI Flags False) & Execute CRUD Smoke Test
+        env:
+          ASPNETCORE_ENVIRONMENT: Production
+          ASPNETCORE_URLS: http://127.0.0.1:5102
+          SharedService__BaseUrl: http://127.0.0.1:5110
+          NotificationService__BaseUrl: http://127.0.0.1:5101
+          AI_MODE_ENABLED: 'false'
+          MCP_ENABLED: 'false'
+          RAG_ENABLED: 'false'
+          MULTI_AGENT_ENABLED: 'false'
+          AiGateway__Enabled: 'false'
+          McpServer__Enabled: 'false'
+          RagServer__Enabled: 'false'
+          MultiAgentServer__Enabled: 'false'
+        run: |
+          set -euo pipefail
+          export ConnectionStrings__DefaultConnection="Data Source=$RUNNER_TEMP/student-2-cloud-baseline.db"
+          dotnet run --project student-2/backend/Api/Api.csproj --configuration Release --no-build --no-launch-profile \
+            > "$RUNNER_TEMP/student-2-cloud-api.log" 2>&1 &
+          API_PID=$!
+          trap 'kill "$API_PID" 2>/dev/null || true' EXIT
+
+          READY=false
+          for _ in {1..45}; do
+            if curl -fsS --max-time 3 http://127.0.0.1:5102/health/ready > /dev/null 2>&1; then
+              READY=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY" != "true" ]; then
+            echo "::error::Student 2 backend failed to become healthy within 45 attempts."
+            cat "$RUNNER_TEMP/student-2-cloud-api.log" || true
+            exit 1
+          fi
+
+          curl -fsS http://127.0.0.1:5102/api/automations/ | grep -q '\['
+          curl -fsS -X POST http://127.0.0.1:5102/api/automations/ \
+            -H "Content-Type: application/json" \
+            -d '{"$type":"quizFiller","studentId":"25341708-0000-0000-0000-000000000002","enabled":false,"subjectId":null,"multipleChoice":true,"shortAnswer":false,"numberOfAttemptsRequired":1,"allowForNoTimeLimit":true,"requireHumanReview":true}' \
+            | grep -q '"requireHumanReview":true'
+          curl -fsS http://127.0.0.1:5102/api/automation-runs/ | grep -q '\['
+          curl -fsS http://127.0.0.1:5102/api/integrations/capabilities \
+            | grep -q '"aiModeEnabled":false,"mcpEnabled":false,"ragEnabled":false,"multiAgentEnabled":false'
+          echo "Student 2 Cloud Baseline CRUD + AI-Disabled verification passed."
+
       - name: Build Student 3 Backend and Database
         run: dotnet build student-3/backend/DeadlineTaskTracker.sln --configuration Release -warnaserror
 

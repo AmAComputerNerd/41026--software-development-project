@@ -21,5 +21,9 @@ public sealed class QuizFillerAutomationRunConfiguration
     {
         builder.ToTable("QuizFillerAutomationRuns");
         builder.Property(run => run.QuizTitle).HasMaxLength(255);
+        builder.Property(run => run.ValidationToken).HasMaxLength(255);
+        builder.Property(run => run.ReviewDecision).HasMaxLength(20);
+        builder.Property(run => run.ReviewerName).HasMaxLength(100);
+        builder.Property(run => run.ReviewedAtUtc).HasConversion<UtcDateTimeConverter>();
     }
 }

@@ -29,9 +29,11 @@ env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   BACKEND_DIR: student-2/backend/Api
+  DOTNET_SOLUTION: student-2/backend/AutomationsService.slnx
   AiGateway__Enabled: "false"
   McpServer__Enabled: "false"
   RagServer__Enabled: "false"
+  MultiAgentServer__Enabled: "false"
 
 jobs:
   frontend-build:
@@ -57,7 +59,7 @@ jobs:
         run: npm audit --workspace=student-2-frontend --omit=dev --audit-level=high
 
   backend-build:
-    name: Backend build, analyze & format check
+    name: Backend build, endpoint tests, analyze & format check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -77,14 +79,27 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore
-        run: dotnet restore
-        working-directory: ${{ env.BACKEND_DIR }}
+        run: dotnet restore "${{ env.DOTNET_SOLUTION }}"
 
       - name: Build (Release, warnings as errors)
-        run: dotnet build --configuration Release --no-restore -warnaserror
-        working-directory: ${{ env.BACKEND_DIR }}
+        run: dotnet build "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-restore -warnaserror
 
-      - name: Verify AI Mode, MCP and RAG are disabled
+      - name: Post-Commit CI/CD Endpoint Tests (Endpoint 1 /api/automations & Endpoint 2 /api/automation-runs/{id}/quiz-review)
+        run: >-
+          dotnet test "${{ env.DOTNET_SOLUTION }}" --configuration Release --no-build
+          --filter "FullyQualifiedName~AutomationEndpointsTests|FullyQualifiedName~QuizReviewEndpointsTests"
+          --logger "console;verbosity=normal"
+          --logger "trx;LogFileName=student-2-endpoint-tests.trx"
+          --results-directory TestResults
+
+      - name: Upload endpoint test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: student-2-endpoint-tests
+          path: TestResults/*.trx
+
+      - name: Verify AI Mode, MCP, RAG and Multi-Agent are disabled
         shell: bash
         working-directory: ${{ env.BACKEND_DIR }}
         run: |
@@ -108,10 +123,11 @@ jobs:
             --request POST --header 'Content-Type: application/json' \
             --data '{"question":"How do automations work?"}' \
             http://127.0.0.1:5122/api/integrations/rag/query)" = "503"
+          curl --fail --silent http://127.0.0.1:5122/api/integrations/capabilities \
+            | grep -q '"multiAgentEnabled":false'
 
       - name: Verify code formatting
-        run: dotnet format --verify-no-changes --severity warn --no-restore
-        working-directory: ${{ env.BACKEND_DIR }}
+        run: dotnet format "${{ env.DOTNET_SOLUTION }}" --verify-no-changes --severity warn --no-restore
 
   ef-core-migrations-check:
     name: EF Core migrations drift check
