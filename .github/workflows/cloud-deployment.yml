@@ -231,7 +231,21 @@ jobs:
           MultiAgentServer__Enabled: 'false'
         run: |
           set -euo pipefail
-          fail() { echo "::error::$1"; cat "$RUNNER_TEMP/student-4-cloud-database.log" "$RUNNER_TEMP/student-4-cloud-api.log" 2>/dev/null; exit 1; }
+          wait_for_url() {
+            local url="$1"
+            local label="$2"
+            for _ in $(seq 1 60); do
+              if curl -fsS --max-time 3 "$url" >/dev/null 2>&1; then
+                echo "$label is ready"
+                return 0
+              fi
+              sleep 1
+            done
+
+            echo "::error::$label did not become healthy within 60 seconds"
+            exit 1
+          }
+
           (
             cd student-4/database/Database
             ASPNETCORE_URLS=http://127.0.0.1:5204 \
@@ -239,6 +253,9 @@ jobs:
             exec dotnet bin/Release/net10.0/Database.dll
           ) > "$RUNNER_TEMP/student-4-cloud-database.log" 2>&1 &
           DATABASE_PID=$!
+
+          wait_for_url "http://127.0.0.1:5204/health/ready" "Student 4 database"
+
           (
             cd student-4/backend/Api
             exec dotnet bin/Release/net10.0/Api.dll
@@ -246,6 +263,8 @@ jobs:
           API_PID=$!
           trap 'kill "$API_PID" "$DATABASE_PID" 2>/dev/null || true; wait "$API_PID" "$DATABASE_PID" 2>/dev/null || true' EXIT
 
+          wait_for_url "http://127.0.0.1:5104/health/ready" "Student 4 API"
+          
           READY=false
           for _ in {1..45}; do
             if curl -fsS --max-time 3 http://127.0.0.1:5104/health/ready > /dev/null 2>&1; then
