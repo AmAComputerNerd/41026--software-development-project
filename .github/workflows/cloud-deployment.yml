@@ -242,7 +242,7 @@ jobs:
             done
             exit 1
           }
-            
+
           wait_for_url() {
             local url="$1"
             local label="$2"
@@ -330,7 +330,7 @@ jobs:
           new_user_email="cloud-test-$(date +%s)@example.com"
           create_result=$(curl --fail --silent --request POST \
               --header "Content-Type: application/json" \
-              --data "{\"email\":\"$new_user_email\",\"passwordHash\":\"TestPass123!\",\"firstName\":\"Cloud\",\"middleNames\":null,\"lastName\":\"TestUser\",\"gender\":\"NonBinary\",\"dateOfBirth\":\"2000-01-01T00:00:00Z\",\"userType\":\"Student\"}" \
+              --data "{\"email\":\"$new_user_email\",\"passwordHash\":\"TestPass123!\",\"firstName\":\"Cloud\",\"middleNames\":null,\"lastName\":\"TestUser\",\"gender\":\"NonBinary\",\"dateOfBirth\":\"2000-01-01T00:00:00Z\",\"userType\":\"Student\",\"studentDto\":{\"userId\":\"00000000-0000-0000-0000-000000000000\",\"courseStatus\":\"FullTime\",\"isInternational\":false,\"canvasApiKey\":\"test-key\"}}" \
               http://127.0.0.1:5104/api/users/) || fail "POST /api/users/ failed"
           echo "$create_result" | jq --exit-status 'has("id") and .email == "'"$new_user_email"'" and .firstName == "Cloud" and .lastName == "TestUser" and .userType == "Student"' || fail "POST user contract failed: $create_result"
           new_user_id=$(echo "$create_result" | jq --exit-status --raw-output '.id')
