@@ -287,6 +287,38 @@ jobs:
           readiness_status=$(curl --silent --output /dev/null --write-out "%{http_code}" "http://127.0.0.1:5104/internal/ai-context/accounts/$user_id/readiness")
           test "$readiness_status" = "503" || fail "Internal readiness should return 503, got $readiness_status"
 
+          echo "── POST create user"
+          new_user_email="cloud-test-$(date +%s)@example.com"
+          create_result=$(curl --fail --silent --request POST \
+              --header "Content-Type: application/json" \
+              --data "{\"email\":\"$new_user_email\",\"passwordHash\":\"TestPass123!\",\"firstName\":\"Cloud\",\"middleNames\":null,\"lastName\":\"TestUser\",\"gender\":\"NonBinary\",\"dateOfBirth\":\"2000-01-01T00:00:00Z\",\"userType\":\"Student\"}" \
+              http://127.0.0.1:5104/api/users/) || fail "POST /api/users/ failed"
+          echo "$create_result" | jq --exit-status 'has("id") and .email == "'"$new_user_email"'" and .firstName == "Cloud" and .lastName == "TestUser" and .userType == "Student"' || fail "POST user contract failed: $create_result"
+          new_user_id=$(echo "$create_result" | jq --exit-status --raw-output '.id')
+          echo "  new_user_id=$new_user_id"
+
+          echo "── PUT update user"
+          update_result=$(curl --fail --silent --request PUT \
+              --header "Content-Type: application/json" \
+              --data "{\"email\":\"$new_user_email\",\"firstName\":\"CloudUpdated\",\"middleNames\":null,\"lastName\":\"TestUserUpdated\",\"gender\":\"NonBinary\",\"dateOfBirth\":\"2000-01-01T00:00:00Z\",\"userProfile\":\"Updated via cloud baseline test\"}" \
+              "http://127.0.0.1:5104/api/users/$new_user_id") || fail "PUT /api/users/$new_user_id failed"
+          echo "$update_result" | jq --exit-status '.firstName == "CloudUpdated" and .lastName == "TestUserUpdated" and .userProfile == "Updated via cloud baseline test"' || fail "PUT user contract failed: $update_result"
+
+          echo "── Student record contract"
+          student_json=$(curl --fail --silent "http://127.0.0.1:5104/api/students/$new_user_id") || fail "GET /api/students/$new_user_id failed"
+          echo "$student_json" | jq --exit-status 'has("userId") and has("courseStatus") and has("isInternational") and has("canvasApiKey")' || fail "Student contract failed: $student_json"
+
+          echo "── PUT update student"
+          student_update=$(curl --fail --silent --request PUT \
+              --header "Content-Type: application/json" \
+              --data "{\"courseStatus\":\"PartTime\",\"isInternational\":true,\"canvasApiKey\":\"test-canvas-key\"}" \
+              "http://127.0.0.1:5104/api/students/$new_user_id") || fail "PUT /api/students/$new_user_id failed"
+          echo "$student_update" | jq --exit-status '.courseStatus == "PartTime" and .isInternational == true and .canvasApiKey == "test-canvas-key"' || fail "PUT student contract failed: $student_update"
+
+          echo "── DELETE user"
+          delete_status=$(curl --silent --output /dev/null --write-out "%{http_code}" --request DELETE "http://127.0.0.1:5104/api/users/$new_user_id")
+          test "$delete_status" = "204" || fail "DELETE /api/users/$new_user_id returned $delete_status (expected 204)"
+
           echo "Student 4 Cloud Baseline CRUD + AI-Disabled verification passed."
 
       - name: Build Student 5 Backend and Database
