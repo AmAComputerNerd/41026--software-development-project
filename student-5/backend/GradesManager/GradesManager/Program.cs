@@ -106,7 +106,7 @@ builder.Services
         options.Retry.Delay = TimeSpan.FromSeconds(20);
         options.Retry.DisableForUnsafeHttpMethods();
         options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(240);
-        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(240);
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(500);
         options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(400);
     });
 builder.Services.AddSingleton<IMcpGradesClient, McpGradesClient>();
@@ -121,8 +121,8 @@ builder.Services
         options.Retry.Delay = TimeSpan.FromMilliseconds(1000);
         options.Retry.DisableForUnsafeHttpMethods();
         options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(240);
-        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(400);
-        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(200);
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(500);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(300);
     });
 builder.Services.AddHttpClient<IMultiAgentClient, MultiAgentClient>((services, client) =>
 {
