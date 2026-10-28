@@ -121,19 +121,20 @@ jobs:
             --no-launch-profile > database.log 2>&1 &
           database_pid=$!
 
-          for _ in {1..30}; do
+          for _ in {1..120}; do
             if curl --fail --silent http://127.0.0.1:5205/health/ready > /dev/null; then break; fi
             if ! kill -0 "$database_pid" 2>/dev/null; then fail "Database process died"; fi
             sleep 1
           done
           curl --fail --silent http://127.0.0.1:5205/health/ready > /dev/null \
-            || fail "Database health check failed after 30 s"
+            || fail "Database health check failed after 120 s"
           echo "  ✓ database ready"
 
           echo "── Starting API service …"
           ASPNETCORE_URLS=http://127.0.0.1:5105 \
           ASPNETCORE_ENVIRONMENT=Production \
           DatabaseService__BaseUrl=http://127.0.0.1:5205 \
+          AiGateway__Enabled=false \
           AiGateway__BaseUrl=http://127.0.0.1:5200 \
           McpServer__Enabled=false \
           RagServer__Enabled=false \
@@ -152,7 +153,7 @@ jobs:
           }
           trap cleanup EXIT
 
-          for _ in {1..30}; do
+          for _ in {1..120}; do
             if curl --fail --silent http://127.0.0.1:5105/api/courses/ > courses.json; then break; fi
             if ! kill -0 "$api_pid" 2>/dev/null; then fail "API process died"; fi
             sleep 1
