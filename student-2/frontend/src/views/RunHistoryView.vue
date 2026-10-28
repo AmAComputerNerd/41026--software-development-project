@@ -26,7 +26,9 @@ const runRows = computed(() => visibleRuns.value.map((run) => {
 const resultFilters = [
   { value: 'All', label: 'ALL' },
   { value: 'RUN', label: 'RUNNING' },
+  { value: 'REV', label: 'AWAITING REVIEW' },
   { value: 'SUC', label: 'SUCCESS' },
+  { value: 'REJ', label: 'REJECTED' },
   { value: 'FAI', label: 'FAILED' },
 ] as const
 
@@ -55,8 +57,13 @@ function toggleDetails(runId: string) {
 }
 
 function getResultLabel(result: AutomationRun['result']) {
-  if (result === 'RUN') return 'Running'
-  return result === 'SUC' ? 'Success' : 'Failed'
+  return {
+    RUN: 'Running',
+    SUC: 'Success',
+    FAI: 'Failed',
+    REV: 'Awaiting human review',
+    REJ: 'Rejected by reviewer',
+  }[result]
 }
 </script>
 

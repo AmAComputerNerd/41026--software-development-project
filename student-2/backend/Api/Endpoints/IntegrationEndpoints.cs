@@ -18,10 +18,26 @@ public static class IntegrationEndpoints
             "/api/integrations/mcp/automation-health",
             GetAutomationHealthThroughMcp);
         endpoints.MapPost("/api/integrations/rag/query", QueryRag);
+        endpoints.MapGet("/api/integrations/capabilities", GetCapabilities);
         endpoints.MapGet(
             "/internal/ai-context/automation-health",
             GetAutomationHealthContext);
         return endpoints;
+    }
+
+    private static IResult GetCapabilities(
+        IOptions<AiGatewayOptions> aiGateway,
+        IOptions<McpServerOptions> mcp,
+        IOptions<RagServerOptions> rag,
+        IMultiAgentClient multiAgent)
+    {
+        return Results.Ok(new
+        {
+            aiModeEnabled = aiGateway.Value.Enabled is true,
+            mcpEnabled = mcp.Value.Enabled is true,
+            ragEnabled = rag.Value.Enabled is true,
+            multiAgentEnabled = multiAgent.IsEnabled
+        });
     }
 
     private static async Task<IResult> GetAutomationHealthThroughMcp(

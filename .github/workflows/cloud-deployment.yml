@@ -154,6 +154,55 @@ jobs:
           curl -fsS http://127.0.0.1:5101/api/notifications/multi-agent/status | grep -q '"enabled":false'
           echo "Cloud Baseline Profile CRUD + AI-Disabled verification passed."
 
+      - name: Build Student 2 Backend
+        run: dotnet build student-2/backend/Api/Api.csproj --configuration Release -warnaserror
+
+      - name: Run Student 2 Backend in Cloud Baseline Mode (All AI Flags False) & Execute CRUD Smoke Test
+        env:
+          ASPNETCORE_ENVIRONMENT: Production
+          ASPNETCORE_URLS: http://127.0.0.1:5102
+          SharedService__BaseUrl: http://127.0.0.1:5110
+          NotificationService__BaseUrl: http://127.0.0.1:5101
+          AI_MODE_ENABLED: 'false'
+          MCP_ENABLED: 'false'
+          RAG_ENABLED: 'false'
+          MULTI_AGENT_ENABLED: 'false'
+          AiGateway__Enabled: 'false'
+          McpServer__Enabled: 'false'
+          RagServer__Enabled: 'false'
+          MultiAgentServer__Enabled: 'false'
+        run: |
+          set -euo pipefail
+          export ConnectionStrings__DefaultConnection="Data Source=$RUNNER_TEMP/student-2-cloud-baseline.db"
+          dotnet run --project student-2/backend/Api/Api.csproj --configuration Release --no-build --no-launch-profile \
+            > "$RUNNER_TEMP/student-2-cloud-api.log" 2>&1 &
+          API_PID=$!
+          trap 'kill "$API_PID" 2>/dev/null || true' EXIT
+
+          READY=false
+          for _ in {1..45}; do
+            if curl -fsS --max-time 3 http://127.0.0.1:5102/health/ready > /dev/null 2>&1; then
+              READY=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY" != "true" ]; then
+            echo "::error::Student 2 backend failed to become healthy within 45 attempts."
+            cat "$RUNNER_TEMP/student-2-cloud-api.log" || true
+            exit 1
+          fi
+
+          curl -fsS http://127.0.0.1:5102/api/automations/ | grep -q '\['
+          curl -fsS -X POST http://127.0.0.1:5102/api/automations/ \
+            -H "Content-Type: application/json" \
+            -d '{"$type":"quizFiller","studentId":"25341708-0000-0000-0000-000000000002","enabled":false,"subjectId":null,"multipleChoice":true,"shortAnswer":false,"numberOfAttemptsRequired":1,"allowForNoTimeLimit":true,"requireHumanReview":true}' \
+            | grep -q '"requireHumanReview":true'
+          curl -fsS http://127.0.0.1:5102/api/automation-runs/ | grep -q '\['
+          curl -fsS http://127.0.0.1:5102/api/integrations/capabilities \
+            | grep -q '"aiModeEnabled":false,"mcpEnabled":false,"ragEnabled":false,"multiAgentEnabled":false'
+          echo "Student 2 Cloud Baseline CRUD + AI-Disabled verification passed."
+
       - name: Build Student 3 Backend and Database
         run: dotnet build student-3/backend/DeadlineTaskTracker.sln --configuration Release -warnaserror
 
@@ -231,7 +280,33 @@ jobs:
           MultiAgentServer__Enabled: 'false'
         run: |
           set -euo pipefail
-          fail() { echo "::error::$1"; cat "$RUNNER_TEMP/student-4-cloud-database.log" "$RUNNER_TEMP/student-4-cloud-api.log" 2>/dev/null; exit 1; }
+          fail() {
+            local message="${1:-Unknown failure}"
+            echo "::error::$message"
+            for log in "$RUNNER_TEMP/student-4-cloud-database.log" "$RUNNER_TEMP/student-4-cloud-api.log"; do
+              if [ -f "$log" ]; then
+                echo "--- $log ---"
+                cat "$log" || true
+              fi
+            done
+            exit 1
+          }
+
+          wait_for_url() {
+            local url="$1"
+            local label="$2"
+            for _ in $(seq 1 60); do
+              if curl -fsS --max-time 3 "$url" >/dev/null 2>&1; then
+                echo "$label is ready"
+                return 0
+              fi
+              sleep 1
+            done
+
+            echo "::error::$label did not become healthy within 60 seconds"
+            exit 1
+          }
+
           (
             cd student-4/database/Database
             ASPNETCORE_URLS=http://127.0.0.1:5204 \
@@ -239,12 +314,17 @@ jobs:
             exec dotnet bin/Release/net10.0/Database.dll
           ) > "$RUNNER_TEMP/student-4-cloud-database.log" 2>&1 &
           DATABASE_PID=$!
+
+          wait_for_url "http://127.0.0.1:5204/health/ready" "Student 4 database"
+
           (
             cd student-4/backend/Api
             exec dotnet bin/Release/net10.0/Api.dll
           ) > "$RUNNER_TEMP/student-4-cloud-api.log" 2>&1 &
           API_PID=$!
           trap 'kill "$API_PID" "$DATABASE_PID" 2>/dev/null || true; wait "$API_PID" "$DATABASE_PID" 2>/dev/null || true' EXIT
+
+          wait_for_url "http://127.0.0.1:5104/health/ready" "Student 4 API"
 
           READY=false
           for _ in {1..45}; do
@@ -272,16 +352,24 @@ jobs:
           echo "$user_detail_json" | jq --exit-status --arg id "$user_id" '.id == $id' || fail "User detail contract failed: $user_detail_json"
 
           echo "── MCP readiness disabled"
-          mcp_status=$(curl --silent --output /dev/null --write-out "%{http_code}" --request POST "http://127.0.0.1:5104/api/users/$user_id/mcp-readiness")
+          mcp_status=$(curl --silent --output /tmp/mcp-readiness-body.txt --write-out "%{http_code}" \
+            --request POST "http://127.0.0.1:5104/api/users/$user_id/mcp-readiness")
           test "$mcp_status" = "503" || fail "MCP readiness should return 503, got $mcp_status"
-          mcp_json=$(curl --fail --silent --request POST "http://127.0.0.1:5104/api/users/$user_id/mcp-readiness")
-          echo "$mcp_json" | jq --exit-status '.detail == "MCP integration is disabled for this environment."' || fail "MCP detail mismatch: $mcp_json"
 
-          echo "── RAG answers disabled"
-          rag_status=$(curl --silent --output /dev/null --write-out "%{http_code}" --request POST --header "Content-Type: application/json" --data '{"question":"How do I reset my password?"}' "http://127.0.0.1:5104/api/users/help/answers")
+          mcp_json=$(cat /tmp/mcp-readiness-body.txt)
+          echo "$mcp_json" | jq --exit-status '.detail == "MCP integration is disabled for this environment."' \
+            || fail "MCP detail mismatch: $mcp_json"
+
+          rag_status=$(curl --silent --output /tmp/rag-body.txt --write-out "%{http_code}" \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data '{"question":"How do I reset my password?"}' \
+            "http://127.0.0.1:5104/api/users/help/answers")
           test "$rag_status" = "503" || fail "RAG answers should return 503, got $rag_status"
-          rag_json=$(curl --fail --silent --request POST --header "Content-Type: application/json" --data '{"question":"How do I reset my password?"}' "http://127.0.0.1:5104/api/users/help/answers")
-          echo "$rag_json" | jq --exit-status '.detail == "RAG integration is disabled for this environment."' || fail "RAG detail mismatch: $rag_json"
+
+          rag_json=$(cat /tmp/rag-body.txt)
+          echo "$rag_json" | jq --exit-status '.detail == "RAG integration is disabled for this environment."' \
+            || fail "RAG detail mismatch: $rag_json"
 
           echo "── Internal readiness disabled"
           readiness_status=$(curl --silent --output /dev/null --write-out "%{http_code}" "http://127.0.0.1:5104/internal/ai-context/accounts/$user_id/readiness")
@@ -291,7 +379,7 @@ jobs:
           new_user_email="cloud-test-$(date +%s)@example.com"
           create_result=$(curl --fail --silent --request POST \
               --header "Content-Type: application/json" \
-              --data "{\"email\":\"$new_user_email\",\"passwordHash\":\"TestPass123!\",\"firstName\":\"Cloud\",\"middleNames\":null,\"lastName\":\"TestUser\",\"gender\":\"NonBinary\",\"dateOfBirth\":\"2000-01-01T00:00:00Z\",\"userType\":\"Student\"}" \
+              --data "{\"email\":\"$new_user_email\",\"passwordHash\":\"TestPass123!\",\"firstName\":\"Cloud\",\"middleNames\":null,\"lastName\":\"TestUser\",\"gender\":\"NonBinary\",\"dateOfBirth\":\"2000-01-01T00:00:00Z\",\"userType\":\"Student\",\"studentDto\":{\"userId\":\"00000000-0000-0000-0000-000000000000\",\"courseStatus\":\"FullTime\",\"isInternational\":false,\"canvasApiKey\":\"test-key\"}}" \
               http://127.0.0.1:5104/api/users/) || fail "POST /api/users/ failed"
           echo "$create_result" | jq --exit-status 'has("id") and .email == "'"$new_user_email"'" and .firstName == "Cloud" and .lastName == "TestUser" and .userType == "Student"' || fail "POST user contract failed: $create_result"
           new_user_id=$(echo "$create_result" | jq --exit-status --raw-output '.id')

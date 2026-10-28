@@ -112,6 +112,9 @@ namespace Api.Migrations
                     b.Property<int>("NumberOfAttemptsRequired")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("RequireHumanReview")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("ShortAnswer")
                         .HasColumnType("INTEGER");
 
@@ -173,6 +176,9 @@ namespace Api.Migrations
                     b.Property<long>("CourseId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("ProposalJson")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("QuestionCount")
                         .HasColumnType("INTEGER");
 
@@ -183,6 +189,33 @@ namespace Api.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");
+
+                    b.Property<string>("ReviewDecision")
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReviewerName")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("SubmissionAttempt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("SubmissionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ValidationToken")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("WorkflowId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("WorkflowRevision")
+                        .HasColumnType("INTEGER");
 
                     b.ToTable("QuizFillerAutomationRuns", (string)null);
                 });

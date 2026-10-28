@@ -125,12 +125,15 @@ flowchart TD
 - Stores assignment-extension, scheduled-post, and quiz-filler automation configurations in polymorphic EF Core tables.
 - Runs a background worker (default every 30 seconds) that claims due execution candidates with durable execution keys before contacting Canvas.
 - Executes scheduled Canvas conversations and AI-assisted Classic Quiz filling through `shared-backend` and `ai-mode`; it never turns a quiz in automatically.
+- Release 2: quiz fillers with `requireHumanReview` send questions to the shared `multi-agent-server` (`:5004`, owner `student-2`), hold the run as `REV`, and save answers to Canvas only after the student approves, corrects, partially accepts or rejects them.
 - Dispatches real-time push notifications to `student-1-backend` upon automation execution (success/failure) and configuration updates.
 - Exposes read-only run history.
 
 ### Key Endpoints
 - `/api/automations` — Automation CRUD (polymorphic `$type` payloads).
 - `/api/automation-runs` — Read-only run history.
+- `/api/automation-runs/{id}/quiz-review` — Multi-Agent proposal (`GET`) and human decision (`POST`); `POST .../revise` re-runs the agents with reviewer feedback.
+- `/api/integrations/capabilities` — AI Mode, MCP, RAG and Multi-Agent flags.
 - Swagger UI in Development at `http://localhost:5102/swagger`.
 
 See [`student-2/README.md`](../../student-2/README.md) for the full contract.

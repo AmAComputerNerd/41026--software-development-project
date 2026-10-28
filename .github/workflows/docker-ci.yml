@@ -93,6 +93,9 @@ jobs:
             (.services["student-1-backend"].environment.MultiAgentServer__Enabled == "false") and
             (.services["student-1-backend"].environment.MultiAgentServer__BaseUrl |
               startswith("http://host.docker.internal:")) and
+            (.services["student-2-backend"].environment.MultiAgentServer__Enabled == "false") and
+            (.services["student-2-backend"].environment.MultiAgentServer__BaseUrl |
+              startswith("http://host.docker.internal:")) and
             (.services["student-3-backend"].environment.McpServer__Enabled == "false") and
             (.services["student-3-backend"].environment.MultiAgentServer__Enabled == "false") and
             (.services["student-3-backend"].environment.MultiAgentServer__BaseUrl |

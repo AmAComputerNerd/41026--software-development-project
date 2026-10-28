@@ -41,6 +41,7 @@ export interface QuizFillerAutomation extends AutomationBase {
   shortAnswer: boolean
   numberOfAttemptsRequired: number
   allowForNoTimeLimit: boolean
+  requireHumanReview: boolean
 }
 
 export type Automation =
@@ -79,6 +80,7 @@ export interface SaveQuizFillerAutomationInput extends SaveAutomationInputBase {
   shortAnswer: boolean
   numberOfAttemptsRequired: number
   allowForNoTimeLimit: boolean
+  requireHumanReview: boolean
 }
 
 export type SaveAutomationInput =
@@ -115,6 +117,7 @@ export interface QuizFillerAutomationFormData extends AutomationFormDataBase {
   shortAnswer: boolean
   numberOfAttemptsRequired: number
   allowForNoTimeLimit: boolean
+  requireHumanReview: boolean
 }
 
 export type AutomationFormData =
@@ -126,7 +129,7 @@ interface AutomationRunBase {
   id: string
   automationId: string
   executionTimeStamp: string
-  result: 'RUN' | 'SUC' | 'FAI'
+  result: 'RUN' | 'SUC' | 'FAI' | 'REV' | 'REJ'
 }
 
 export interface AssignmentExtensionAutomationRun extends AutomationRunBase {
@@ -150,6 +153,10 @@ export interface QuizFillerAutomationRun extends AutomationRunBase {
   quizId: number
   quizTitle: string
   questionCount: number
+  workflowId: string | null
+  reviewDecision: string | null
+  reviewerName: string | null
+  reviewedAtUtc: string | null
 }
 
 export type AutomationRun =

@@ -169,6 +169,95 @@ The initial database contains one assignment extension configuration, one
 scheduled post configuration, one quiz filler configuration, and one run record
 for each type.
 
+## Release 2: Multi-Agent quiz filling with human review
+
+Quiz filler automations have a `requireHumanReview` flag (on by default in the
+form and seed). When it is set, the worker routes the quiz through the shared
+non-containerised Multi-Agent Server (`:5004`) and holds the Canvas submission
+until the student decides:
+
+```mermaid
+sequenceDiagram
+    participant W as Automations worker
+    participant SB as shared-backend
+    participant AI as ai-mode (:5001)
+    participant MAS as multi-agent-server (:5004)
+    participant UI as /automations/runs/:id/review
+    W->>SB: start quiz submission, read questions
+    W->>AI: baseline answers (optional)
+    W->>MAS: POST /api/workflows/run (owner student-2)
+    MAS-->>W: Planner, Worker answers, Reviewer critique (AwaitingHumanReview)
+    W->>W: run result REV, proposal + submission token stored in SQLite
+    UI->>W: GET /api/automation-runs/{id}/quiz-review
+    UI->>W: POST decision (Approve / Correct / PartialAccept / Reject)
+    W->>MAS: POST /api/workflows/{id}/human-review
+    W->>SB: save approved answers (not on Reject)
+```
+
+- The goal sent to the Multi-Agent Server has a strict JSON answer contract.
+  Option IDs are replaced with option numbers before leaving the slice and
+  mapped back afterwards. If the Worker output is not valid answer JSON, the
+  validated AI Mode baseline is used and the review page says so.
+- `Approve` saves the proposal unchanged, `Correct` saves edited answers for
+  every question, `PartialAccept` saves only the selected answers, and
+  `Reject` saves nothing. Every saved answer is checked against the
+  question's real options or text length limit. As in Release 1, answers are
+  only saved into the open quiz attempt; the student still turns the quiz in
+  on Canvas.
+- The run moves `REV` to `RUN` atomically before anything else happens, so a
+  proposal can be reviewed once. If the Multi-Agent Server is unreachable or
+  disabled the run returns to `REV`; Canvas failures end as `FAI`. Approved
+  runs end as `SUC` and rejected runs as `REJ`. The Canvas validation token is
+  never returned by the API and is cleared after the decision.
+- With human review on and `MultiAgentServer:Enabled=false`, a quiz run fails
+  before a Canvas submission is started. Without the flag, quiz filling keeps
+  the Release 1 direct AI Mode behaviour.
+
+Release 2 endpoints:
+
+- `GET /api/automation-runs/{id}/quiz-review` returns the questions, proposed
+  answers, proposal source and live Planner/Worker/Reviewer stages.
+- `POST /api/automation-runs/{id}/quiz-review` records the human decision.
+- `POST /api/automation-runs/{id}/quiz-review/revise` sends reviewer feedback
+  to the Multi-Agent Server (`/api/workflows/{id}/revise`), which re-runs
+  Planner, Worker and Reviewer. The run stays `REV` with the revised answers
+  and a new revision number; if the revision has no valid answers the previous
+  answers are kept. `Reject` remains final, as in the other slices.
+- `GET /api/integrations/capabilities` reports the AI Mode, MCP, RAG and
+  Multi-Agent flags (all `false` in the cloud baseline).
+
+### Testing
+
+`Api.Tests` holds the post-commit CI endpoint tests run by
+`.github/workflows/student-2.yml`:
+
+- Endpoint 1, `/api/automations`: create, read, list, update, delete and
+  validation (`AutomationEndpointsTests`).
+- Endpoint 2, `/api/automation-runs/{id}/quiz-review`: proposal retrieval,
+  approve, correct, reject, invalid option, double review and disabled
+  Multi-Agent Server, plus Worker option mapping and baseline fallback
+  (`QuizReviewEndpointsTests`).
+
+```powershell
+dotnet test student-2\backend\AutomationsService.slnx
+```
+
+The tests use a temporary SQLite file and mock Canvas, AI Mode, the
+Multi-Agent Server and notifications. CI uploads the TRX report as the
+`student-2-endpoint-tests` artifact. Commit-time security scans (Ruff security
+rules, detect-secrets and pip-audit) are installed with
+`python tools/setup_precommit_security.py` and log to
+`.local/security-scans/pre-commit.log`.
+
+### Deployment
+
+Locally, start the host AI services with `python tools/run_ai_services.py` and
+the stack with `docker compose up --build`; Compose passes
+`MultiAgentServer__Enabled` from `MULTI_AGENT_ENABLED` and reaches the server at
+`http://host.docker.internal:5004`. The Azure baseline in
+`infra/azure/main.bicep` disables all four AI services, and
+`cloud-deployment.yml` smoke-tests Student 2 CRUD with every AI flag off.
+
 ## Adding an automation type
 
 Add the backend entity, polymorphic DTO classes marked with

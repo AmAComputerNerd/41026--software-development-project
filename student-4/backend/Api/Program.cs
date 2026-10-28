@@ -186,15 +186,15 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
+app.UseApiExceptionHandling();
+app.UseHttpsRedirection();
+
 app.MapUserEndpoints();
 app.MapStudentEndpoints();
 app.MapTeacherEndpoints();
 app.MapProfileSummaryEndpoints();
 app.MapMcpIntegrationEndpoints();
 app.MapRagIntegrationEndpoints();
-
-app.UseApiExceptionHandling();
-app.UseHttpsRedirection();
 
 app.MapHealthChecks(
     "/health/live",
