@@ -334,7 +334,7 @@ jobs:
           AI_MODE_ENABLED: 'false'
           MCP_ENABLED: 'false'
           RAG_ENABLED: 'false'
-          MULTI_AGENT_ENABLED: 'false'
+          MULTI_AGENT_ENABLED: 'flase'
           AiGateway__Enabled: 'false'
           McpServer__Enabled: 'false'
           RagServer__Enabled: 'false'
