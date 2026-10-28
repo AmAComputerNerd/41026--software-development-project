@@ -114,6 +114,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
+app.UseApiExceptionHandling();
+app.UseHttpsRedirection();
+
 // Endpoints
 app.MapNotificationEndpoints();
 app.MapPreferenceEndpoints();
@@ -142,8 +145,6 @@ app.MapHealthChecks(
     });
 
 // Infrastructure
-app.UseApiExceptionHandling();
-app.UseHttpsRedirection();
 await app.InitialiseDatabaseAsync();
 
 app.Run();
