@@ -231,7 +231,33 @@ jobs:
           MultiAgentServer__Enabled: 'false'
         run: |
           set -euo pipefail
-          fail() { echo "::error::$1"; cat "$RUNNER_TEMP/student-4-cloud-database.log" "$RUNNER_TEMP/student-4-cloud-api.log" 2>/dev/null; exit 1; }
+          fail() {
+            local message="${1:-Unknown failure}"
+            echo "::error::$message"
+            for log in "$RUNNER_TEMP/student-4-cloud-database.log" "$RUNNER_TEMP/student-4-cloud-api.log"; do
+              if [ -f "$log" ]; then
+                echo "--- $log ---"
+                cat "$log" || true
+              fi
+            done
+            exit 1
+          }
+
+          wait_for_url() {
+            local url="$1"
+            local label="$2"
+            for _ in $(seq 1 60); do
+              if curl -fsS --max-time 3 "$url" >/dev/null 2>&1; then
+                echo "$label is ready"
+                return 0
+              fi
+              sleep 1
+            done
+
+            echo "::error::$label did not become healthy within 60 seconds"
+            exit 1
+          }
+
           (
             cd student-4/database/Database
             ASPNETCORE_URLS=http://127.0.0.1:5204 \
@@ -239,12 +265,17 @@ jobs:
             exec dotnet bin/Release/net10.0/Database.dll
           ) > "$RUNNER_TEMP/student-4-cloud-database.log" 2>&1 &
           DATABASE_PID=$!
+
+          wait_for_url "http://127.0.0.1:5204/health/ready" "Student 4 database"
+
           (
             cd student-4/backend/Api
             exec dotnet bin/Release/net10.0/Api.dll
           ) > "$RUNNER_TEMP/student-4-cloud-api.log" 2>&1 &
           API_PID=$!
           trap 'kill "$API_PID" "$DATABASE_PID" 2>/dev/null || true; wait "$API_PID" "$DATABASE_PID" 2>/dev/null || true' EXIT
+
+          wait_for_url "http://127.0.0.1:5104/health/ready" "Student 4 API"
 
           READY=false
           for _ in {1..45}; do
@@ -299,7 +330,7 @@ jobs:
           new_user_email="cloud-test-$(date +%s)@example.com"
           create_result=$(curl --fail --silent --request POST \
               --header "Content-Type: application/json" \
-              --data "{\"email\":\"$new_user_email\",\"passwordHash\":\"TestPass123!\",\"firstName\":\"Cloud\",\"middleNames\":null,\"lastName\":\"TestUser\",\"gender\":\"NonBinary\",\"dateOfBirth\":\"2000-01-01T00:00:00Z\",\"userType\":\"Student\"}" \
+              --data "{\"email\":\"$new_user_email\",\"passwordHash\":\"TestPass123!\",\"firstName\":\"Cloud\",\"middleNames\":null,\"lastName\":\"TestUser\",\"gender\":\"NonBinary\",\"dateOfBirth\":\"2000-01-01T00:00:00Z\",\"userType\":\"Student\",\"studentDto\":{\"userId\":\"00000000-0000-0000-0000-000000000000\",\"courseStatus\":\"FullTime\",\"isInternational\":false,\"canvasApiKey\":\"test-key\"}}" \
               http://127.0.0.1:5104/api/users/) || fail "POST /api/users/ failed"
           echo "$create_result" | jq --exit-status 'has("id") and .email == "'"$new_user_email"'" and .firstName == "Cloud" and .lastName == "TestUser" and .userType == "Student"' || fail "POST user contract failed: $create_result"
           new_user_id=$(echo "$create_result" | jq --exit-status --raw-output '.id')
